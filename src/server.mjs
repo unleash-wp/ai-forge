@@ -237,26 +237,17 @@ const PAGE = `<!doctype html>
   .hero-inner h1 { font-size: 28px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
   .hero-desc { font-size: 15px; color: var(--muted); margin: 0; max-width: 68ch; line-height: 1.55; }
 
-  /* ---- Home hub (Metro tiles: current + future tools) ---- */
-  .hub { background: var(--surface); }
-  .hub-inner { max-width: 1120px; margin: 0 auto; padding: var(--s5) var(--s5) var(--s3); }
-  .metro { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: var(--s4); }
-  .tile { display: flex; flex-direction: column; gap: var(--s2); min-height: 128px; padding: var(--s4) var(--s5); border-radius: 5px; text-decoration: none; }
-  .tile-ic { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; margin-bottom: var(--s2); }
-  .tile-name { font: 700 17px/1.2 var(--font); }
-  .tile-desc { font-size: 13.5px; line-height: 1.5; }
-  .tile.active { background: var(--navy); }
-  .tile.active .tile-name { color: #fff; }
-  .tile.active .tile-desc { color: rgba(255,255,255,.82); }
-  .tile.active .tile-ic { background: rgba(255,255,255,.16); color: #fff; }
-  .tile.is-soon { background: var(--sunk); border: 1px solid var(--border); }
-  .tile.is-soon .tile-name { color: var(--heading); }
-  .tile.is-soon .tile-desc { color: var(--muted); }
-  .tile.is-soon .tile-ic { background: var(--border); color: var(--muted); }
-  .tile-soon { margin-top: auto; align-self: flex-start; font: 600 11px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
-  .tile.is-more { background: none; border: 1px dashed var(--border); }
-  .tile.is-more .tile-name, .tile.is-more .tile-desc { color: var(--muted); }
-  .tile.is-more .tile-ic { background: var(--sunk); color: var(--muted); font: 700 22px/1 var(--font); }
+  /* ---- Product nav (compact: switch tools, active highlighted) ---- */
+  .pnav-bar { background: var(--surface); }
+  .pnav-inner { max-width: 1120px; margin: 0 auto; padding: var(--s4) var(--s5) 0; }
+  .pnav { display: flex; flex-wrap: wrap; gap: var(--s2); }
+  .pnav-item { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 5px;
+    font: 600 13px/1 var(--font); color: var(--muted); background: none; border: 1px solid transparent; }
+  .pnav-item .pico { width: 26px; height: 26px; border-radius: 5px; display: grid; place-items: center; background: var(--sunk); color: var(--muted); flex: none; }
+  .pnav-item.active { background: var(--navy); color: #fff; }
+  .pnav-item.active .pico { background: rgba(255,255,255,.16); color: #fff; }
+  .pnav-item.is-soon em { font-style: italic; font-weight: 400; font-size: 11px; color: var(--muted); }
+  .pnav-item.is-more .pico { font: 700 16px/1 var(--font); }
 
   main { max-width: 1120px; margin: 0 auto; padding: var(--s6) var(--s5) var(--s8); }
 
@@ -487,28 +478,15 @@ const PAGE = `<!doctype html>
     <button class="collapse-toggle" id="collapseToggle" onclick="toggleControls()" aria-label="Show or hide filters" title="Show / hide filters"><svg class="chev" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button>
   </div>
 </header>
-<section class="hub">
-  <div class="hub-inner">
-    <div class="metro">
-      <div class="tile active">
-        <span class="tile-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-        <span class="tile-name">Changelog Generator</span>
-        <span class="tile-desc">Turn a date window into a release changelog across Core and Gutenberg.</span>
-      </div>
-      <div class="tile is-soon">
-        <span class="tile-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
-        <span class="tile-name">Props Generator</span>
-        <span class="tile-desc">Props and contributors from a schema and a WordPress Slack chat.</span>
-        <span class="tile-soon">Soon</span>
-      </div>
-      <div class="tile is-more">
-        <span class="tile-ic">+</span>
-        <span class="tile-name">More coming</span>
-        <span class="tile-desc">The toolkit keeps growing.</span>
-      </div>
+<div class="pnav-bar">
+  <div class="pnav-inner">
+    <div class="pnav">
+      <span class="pnav-item active"><span class="pico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>Changelog Generator</span>
+      <span class="pnav-item is-soon"><span class="pico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>Props Generator <em>soon</em></span>
+      <span class="pnav-item is-more"><span class="pico">+</span>More</span>
     </div>
   </div>
-</section>
+</div>
 <div class="controls">
   <div class="cinner">
     <form class="query" id="f">
