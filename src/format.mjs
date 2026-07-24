@@ -37,12 +37,12 @@ export function toPost(report, meta) {
   const { since, until, milestone } = meta;
   const t = report.totals;
   const d1 = since.slice(0, 10);
-  const issues = t.coreTickets + t.gutenbergPRs;
+  const changes = t.gutenbergPRs + t.coreChangesets;
   const out = [];
 
   out.push(`# What's in WordPress ${milestone || '<x.y>'} <!-- Beta/RC N -->?`);
   out.push('');
-  out.push(`For technical details on the more than ${issues} issues addressed since <!-- previous build -->, see the following links:`);
+  out.push(`For technical details on the more than ${changes} changes that landed since <!-- previous build -->, see the following links:`);
   out.push('');
   out.push(...sourcesLines(meta).map((l) => `${l.replace(/ - .*/, '')} since ${d1}`));
   out.push('');
