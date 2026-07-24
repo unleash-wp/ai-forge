@@ -4,7 +4,7 @@ import { fetchTicketDetails, resolveCookie } from './trac.mjs';
 import { applyDeepDetails } from './aggregate.mjs';
 import { toMarkdown, toPost } from './format.mjs';
 
-const HELP = `uwp (wp-release-helper) — summarize WordPress Core & Gutenberg changes for a release post.
+const HELP = `uwp (wp-release-helper) - summarize WordPress Core & Gutenberg changes for a release post.
 
 Usage:
   uwp --since <date> --until <date> [options]
@@ -59,7 +59,7 @@ export async function run(argv) {
     console.log(`Imported wporg_logged_in + wporg_sec from ${browser}, saved to ${path}.`);
     const ok = await validateCookie(cookie);
     console.log(ok
-      ? 'Verified — Trac reachable.'
+      ? 'Verified - Trac reachable.'
       : 'Saved, but Trac rejected it (expired session or bot wall). The tool still runs cookie-free.');
     return;
   }
@@ -77,7 +77,7 @@ export async function run(argv) {
   }
 
   if (!authenticated()) {
-    console.error('uwp: no GitHub token (gh not logged in) — using 60 req/h anonymous limit.');
+    console.error('uwp: no GitHub token (gh not logged in) - using 60 req/h anonymous limit.');
   }
 
   const { meta, report } = await generate({
@@ -91,7 +91,7 @@ export async function run(argv) {
   });
 
   if (meta.trackerMissing) {
-    console.error(`uwp: no dev-notes tracker for ${meta.milestone} — Core stays flat (use --deep or the wporg-context MCP to group).`);
+    console.error(`uwp: no dev-notes tracker for ${meta.milestone} - Core stays flat (use --deep or the wporg-context MCP to group).`);
   }
 
   if (args.deep) {

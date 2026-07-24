@@ -78,7 +78,7 @@ function fromFirefox() {
 // --- Chromium (Chrome / Edge): AES-128-CBC, key from the macOS Keychain ------
 function fromChromium(which) {
   // Chrome / Edge can live under a few different install folders, and users have
-  // arbitrary profile names — so scan every profile dir that holds a Cookies db.
+  // arbitrary profile names - so scan every profile dir that holds a Cookies db.
   const roots = which === 'edge'
     ? ['Library/Application Support/Microsoft Edge']
     : ['Library/Application Support/Google/Chrome', 'Library/Application Support/Chromium'];
@@ -103,7 +103,7 @@ function fromChromium(which) {
   try {
     pw = execFileSync('security', ['find-generic-password', '-w', '-s', service, '-a', account], { encoding: 'utf8' }).trim();
   } catch {
-    throw new Error(`Could not read the ${cap(which)} encryption key from the Keychain (access denied — approve the prompt, or the key is missing).`);
+    throw new Error(`Could not read the ${cap(which)} encryption key from the Keychain (access denied - approve the prompt, or the key is missing).`);
   }
   const key = pbkdf2Sync(pw, 'saltysalt', 1003, 16, 'sha1');
 
@@ -146,7 +146,7 @@ function fromSafari() {
   if (!file) throw new Error('Safari cookies file not found.');
   let buf;
   try { buf = readFileSync(file); }
-  catch { throw new Error('Cannot read the Safari cookies file — grant your terminal Full Disk Access (System Settings → Privacy).'); }
+  catch { throw new Error('Cannot read the Safari cookies file - grant your terminal Full Disk Access (System Settings → Privacy).'); }
   if (buf.slice(0, 4).toString('latin1') !== 'cook') throw new Error('Unexpected Safari cookies format.');
 
   const pageCount = buf.readUInt32BE(4);

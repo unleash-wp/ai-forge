@@ -1,7 +1,7 @@
 # wp-release-helper
 
 Fast change summaries for **WordPress release coordinators**. Give it a date
-window and it counts and lists everything that landed in Core and Gutenberg —
+window and it counts and lists everything that landed in Core and Gutenberg -
 ready to drop into a release post.
 
 - **Gutenberg** → `github.com/WordPress/gutenberg` (branch `wp/<milestone>`)
@@ -12,14 +12,14 @@ ready to drop into a release post.
   [Automattic `mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg)
   MCP (Trac is bot-walled for plain scripts).
 
-Everything the CLI needs is on GitHub — **no Trac cookie, deterministic, runs in
+Everything the CLI needs is on GitHub - **no Trac cookie, deterministic, runs in
 CI/Codex.**
 
 ## Quick start for release coordinators
 
-Clone the repo, then pick one path — no build, no dependencies.
+Clone the repo, then pick one path - no build, no dependencies.
 
-**With Claude Code or Codex** — open the repo and just ask:
+**With Claude Code or Codex** - open the repo and just ask:
 
 > "Give me the WordPress 7.1 release changelog for July 15–22, as a post."
 
@@ -45,13 +45,13 @@ click-driven browser UI, or `npm link` once to get the short `uwp` command.
 | Core | Trac tickets, committed to SVN | the `wordpress-develop` git mirror |
 | Core grouping | Trac ticket metadata | the dev-notes tracker JSON (join on ticket #) |
 
-Core commit messages carry everything a release post needs — `Fixes #NNNNN`
+Core commit messages carry everything a release post needs - `Fixes #NNNNN`
 (closed Trac ticket), `Props alice, bob` (contributors), and
-`git-svn-id: …@62815` (changeset `r62815`) — so the mirror gives reliable
+`git-svn-id: …@62815` (changeset `r62815`) - so the mirror gives reliable
 counts and links without touching Trac. For component grouping the CLI joins
 each windowed ticket against the dev-notes tracker (which is already tagged with
 component + `dev-note`/`misc-dev-note`/`field-guide`). Tickets not in the
-tracker — newer than its snapshot, excluded components, or version bumps — land
+tracker - newer than its snapshot, excluded components, or version bumps - land
 under **Uncategorized**.
 
 ## Install
@@ -63,7 +63,7 @@ npm link        # installs the `uwp` command globally
 gh auth login   # optional but recommended: raises GitHub API limit to 5000/h
 ```
 
-No dependencies — plain Node ≥18 (uses the global `fetch`). Without `npm link`
+No dependencies - plain Node ≥18 (uses the global `fetch`). Without `npm link`
 you can still run it as `node bin/wp-release-helper.mjs …`.
 
 ## Usage
@@ -83,25 +83,25 @@ uwp serve            # -> http://localhost:4321
 Pick the **since/until** dates, milestone and branches, hit **Generate**, and
 get: a big count of issues addressed, the summary stat cards, a **Sources** block
 with the exact Trac-query and Gutenberg-commits links (the parameter links to drop
-into the post so anyone can verify), and the changelog under two tabs —
+into the post so anyone can verify), and the changelog under two tabs -
 **Changelog** (Gutenberg + Core, every commit linked) and **Props** (the merged
-contributor list) — plus **Copy post** / **Copy Markdown** / **Download** buttons.
+contributor list) - plus **Copy post** / **Copy Markdown** / **Download** buttons.
 The server binds to `127.0.0.1`, so nothing sensitive touches the browser.
 
-**Setup.** The **Setup** panel wires up two keys — each is your own (nothing is
+**Setup.** The **Setup** panel wires up two keys - each is your own (nothing is
 shared), stored locally in owner-only files (mode `600`) and sent only to GitHub
 / WordPress.org. Both have a **Disconnect** button.
 
-- **GitHub** — raises your API limit from 60 to 5000 req/h. Works with **any**
+- **GitHub** - raises your API limit from 60 to 5000 req/h. Works with **any**
   GitHub account: you never need access to the WordPress org and the token needs
   **no scopes** (it only reads public repos). One click if the `gh` CLI is logged
   in (auto-detected); otherwise create a token (leave every scope unchecked) and
-  paste it once — it auto-saves and tests on paste. Saved to
+  paste it once - it auto-saves and tests on paste. Saved to
   `~/.config/wp-trac/github-token`. Skip it entirely and the tool still runs at
   60 req/h.
-- **WordPress.org** — only for **deep** (full ticket descriptions). Quickest is
+- **WordPress.org** - only for **deep** (full ticket descriptions). Quickest is
   the one-click **import from your browser** (Chrome / Safari / Firefox / Edge,
-  macOS) — the local server reads `wporg_logged_in` + `wporg_sec` straight from
+  macOS) - the local server reads `wporg_logged_in` + `wporg_sec` straight from
   the browser's cookie store (Chrome/Edge prompt the Keychain to decrypt). Same
   thing on the CLI: `uwp cookie-import <browser>`. Or paste the cookie manually.
   A web page can't read it for you (it's HttpOnly), which is why the import runs
@@ -124,12 +124,12 @@ shared), stored locally in owner-only files (mode `600`) and sent only to GitHub
 
 - **Default (cookie-free):** ticket numbers, summaries, component, type, owner,
   classification, full Core changeset messages, dev-note grouping. Enough for
-  most Beta posts, zero setup — this is what makes onboarding instant.
+  most Beta posts, zero setup - this is what makes onboarding instant.
 - **`--deep` (one-time cookie):** adds the actual ticket **descriptions** for the
   whole milestone in a single request, and gives every changeset its real Trac
   component (no more Uncategorized). The description text lands in `--json`
   (`core.ticketDetails`) for grounding the post. Trac blocks cookieless scripts,
-  so this needs your WordPress.org session cookie once — there is no cookie-free
+  so this needs your WordPress.org session cookie once - there is no cookie-free
   way to read ticket bodies. Ticket *comments* are out of scope for the batch;
   read those per-ticket via the `wporg-context` MCP if needed.
 
@@ -149,9 +149,9 @@ shared), stored locally in owner-only files (mode `600`) and sent only to GitHub
 
 ## Gutenberg (`wp/7.1`)
 ### Bug (51)
-- … ([#80576](…)) — Mamaduka
+- … ([#80576](…)) - Mamaduka
 ## Core (`trunk`)
-- [r62830](…): XML-RPC: … — [#65682](…) — props josephscott, SergeyBiryukov
+- [r62830](…): XML-RPC: … - [#65682](…) - props josephscott, SergeyBiryukov
 ## Contributors (105)
 …
 ```
@@ -165,15 +165,15 @@ Run Claude Code from this repo and ask, e.g.:
 
 The skill runs the CLI, then (if the `wporg-context` MCP is connected) enriches
 the Core section with Trac component grouping and assembles a release post
-scaffold — without inventing any counts or highlights.
+scaffold - without inventing any counts or highlights.
 
-### Connect the Trac MCP (`wporg-context`) — optional fallback
+### Connect the Trac MCP (`wporg-context`) - optional fallback
 
 Only needed when a release has **no dev-notes tracker yet** (early in the
 cycle), or for live ticket detail / bbPress / BuddyPress. Otherwise the CLI
 groups Core from the tracker with no setup. The [Automattic
 `mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg) server is
-not on npm — clone + build:
+not on npm - clone + build:
 
 ```bash
 git clone https://github.com/Automattic/mcp-context-wporg ~/Documents/mcp-context-wporg
@@ -183,7 +183,7 @@ claude mcp add -s user -e WPORG_TRAC_COOKIE='<your wp.org cookie>' \
 ```
 
 `WPORG_TRAC_COOKIE` is your WordPress.org session cookie (Trac 403s bot traffic
-without it) — Automattic recommends a dedicated service account. MCP servers load
+without it) - Automattic recommends a dedicated service account. MCP servers load
 at session start, so restart Claude Code after adding it; test with the server's
 `validate-auth` tool.
 

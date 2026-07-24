@@ -31,7 +31,7 @@ export function toMarkdown(report, meta) {
 }
 
 // Ready-to-edit release post: the "What's in WordPress x.y Beta N?" template a
-// coordinator can fill in — deterministic count line + canonical source links +
+// coordinator can fill in - deterministic count line + canonical source links +
 // a highlights placeholder, backed by the grouped changelog as raw material.
 export function toPost(report, meta) {
   const { since, until, milestone } = meta;
@@ -44,13 +44,13 @@ export function toPost(report, meta) {
   out.push('');
   out.push(`For technical details on the more than ${issues} issues addressed since <!-- previous build -->, see the following links:`);
   out.push('');
-  out.push(...sourcesLines(meta).map((l) => `${l.replace(/ — .*/, '')} since ${d1}`));
+  out.push(...sourcesLines(meta).map((l) => `${l.replace(/ - .*/, '')} since ${d1}`));
   out.push('');
   out.push('<!-- HIGHLIGHTS: 1–3 short paragraphs on the notable changes.');
   out.push('     Every sentence must link a real PR/ticket from the lists below.');
   out.push('     Prefer Gutenberg [Feature] PRs and Core dev-note / field-guide tickets. -->');
   out.push('');
-  out.push('## Notable changes (raw material — trim to what matters)');
+  out.push('## Notable changes (raw material - trim to what matters)');
   out.push('');
   out.push(...gutenbergSection(report, meta.gbBranch));
   out.push(...coreSection(report, meta.coreBranch));
@@ -76,8 +76,8 @@ export function sourceUrls(meta) {
 function sourcesLines(meta) {
   const s = sourceUrls(meta);
   return [
-    `- [Closed Core Trac tickets](${s.trac})${s.milestone ? ` (milestone ${s.milestone})` : ''} — ${s.since} to ${s.until}`,
-    `- [Gutenberg commits](${s.gutenberg}) on \`${s.gbBranch}\` — ${s.since} to ${s.until}`,
+    `- [Closed Core Trac tickets](${s.trac})${s.milestone ? ` (milestone ${s.milestone})` : ''} - ${s.since} to ${s.until}`,
+    `- [Gutenberg commits](${s.gutenberg}) on \`${s.gbBranch}\` - ${s.since} to ${s.until}`,
   ];
 }
 
@@ -145,13 +145,13 @@ function tracDate(d) {
 
 function gbLine(c) {
   const ref = c.pr ? ` ([#${c.pr}](${GB}/pull/${c.pr}))` : '';
-  return `- ${c.subject}${ref} — ${c.author}`;
+  return `- ${c.subject}${ref} - ${c.author}`;
 }
 
 function coreLine(c) {
   const ref = c.changeset ? `[r${c.changeset}](${TRAC}/changeset/${c.changeset})` : `\`${c.shortSha}\``;
   const tix = c.tickets.map((n) => `[#${n}](${TRAC}/ticket/${n})`).join(' ');
   const cls = c.classification ? ` _[${c.classification}]_` : '';
-  const props = c.props.length ? ` — props ${c.props.join(', ')}` : '';
-  return `- ${ref}: ${c.subject}${cls}${tix ? ' — ' + tix : ''}${props}`;
+  const props = c.props.length ? ` - props ${c.props.join(', ')}` : '';
+  return `- ${ref}: ${c.subject}${cls}${tix ? ' - ' + tix : ''}${props}`;
 }
