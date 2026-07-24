@@ -1,0 +1,11 @@
+{
+  "id": "changelog",
+  "name": "Changelog Generator",
+  "description": "Turn a date window into a ready release-post changelog for Core and Gutenberg.",
+  "version": "0.1.0",
+  "coreVersion": ">=0.1.0",
+  "icon": "code",
+  "author": "UnleashWP",
+  "price": "free",
+  "updateSource": "github:unleash-wp/wp-release-helper"
+}

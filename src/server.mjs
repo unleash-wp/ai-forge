@@ -2,12 +2,10 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { generate } from './report.mjs';
-import { toMarkdown, toPost, sourceUrls } from './format.mjs';
-import { authenticated, tokenStatus, saveToken, deleteToken, checkToken, branches } from './github.mjs';
-import { fetchTicketDetails, resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './trac.mjs';
+import { authenticated, tokenStatus, saveToken, deleteToken, checkToken } from './github.mjs';
+import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './trac.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
-import { applyDeepDetails } from './aggregate.mjs';
+import { loadPlugins } from './plugins.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 // UnleashWP full-color wordmark for the white header bar (inverted to white in dark mode).
@@ -16,6 +14,8 @@ const LOGO = stripXml(readFileSync(join(DIR, 'brand/unleashwp-logo-full.svg'), '
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 
 export function startServer({ port = 4321 } = {}) {
+  // Load tool plugins once; every request awaits the same promise.
+  const pluginsReady = loadPlugins();
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`);
 
@@ -37,13 +37,9 @@ export function startServer({ port = 4321 } = {}) {
       }
       return;
     }
-    if (url.pathname === '/api/branches') {
-      const repo = url.searchParams.get('repo') === 'core' ? 'WordPress/wordpress-develop' : 'WordPress/gutenberg';
-      try {
-        json(res, 200, { branches: await branches(repo) });
-      } catch (err) {
-        json(res, 200, { branches: [], error: err.message });
-      }
+    // Tool registry: the rail + tool head render from these manifests.
+    if (url.pathname === '/api/plugins') {
+      json(res, 200, { plugins: (await pluginsReady).map((p) => p.manifest) });
       return;
     }
     if (url.pathname === '/brand/bulb.svg') {
@@ -141,33 +137,15 @@ export function startServer({ port = 4321 } = {}) {
       return;
     }
 
-    if (url.pathname === '/api/report') {
-      try {
-        const q = url.searchParams;
-        const { meta, report } = await generate({
-          since: q.get('since'),
-          until: q.get('until'),
-          milestone: q.get('milestone') || null,
-          gbBranch: q.get('gbBranch') || undefined,
-          coreBranch: q.get('coreBranch') || undefined,
-          labels: q.get('labels') !== 'false',
-          devNotes: q.get('devNotes') !== 'false',
-        });
-        if (q.get('deep') === 'true') {
-          try {
-            const cookie = resolveCookie();
-            if (!cookie) throw new Error('no Trac cookie saved yet');
-            applyDeepDetails(report, await fetchTicketDetails({ milestone: meta.milestone, cookie }));
-          } catch (err) {
-            meta.deepError = err.message; // never block the report on a deep failure
-          }
+    // Tool plugin routes (e.g. the Changelog Generator's /api/report + /api/branches).
+    const plugins = await pluginsReady;
+    for (const p of plugins) {
+      for (const r of p.routes) {
+        if (req.method === r.method && url.pathname === r.path) {
+          await r.handler(req, res, url, { json });
+          return;
         }
-        if (q.get('devNotesOnly') === 'true') { filterDevNotes(report); meta.devNotesOnly = true; }
-        json(res, 200, { meta, report, sources: sourceUrls(meta), markdown: toMarkdown(report, meta), post: toPost(report, meta) });
-      } catch (err) {
-        json(res, 400, { error: err.message });
       }
-      return;
     }
 
     res.writeHead(404);
@@ -210,27 +188,6 @@ function readBody(req) {
     req.on('data', (c) => { data += c; if (data.length > 1e6) req.destroy(); });
     req.on('end', () => resolve(data));
   });
-}
-
-// "Dev notes only": narrow the report to Core changesets flagged in the docs
-// tracker (dev-note / misc-dev-note / field-guide) and drop Gutenberg. Mutates
-// report in place so the same object feeds the view, counts and Markdown/post.
-function filterDevNotes(report) {
-  const kept = (report.core.commits || []).filter((c) => c.classification);
-  const byComponent = {};
-  for (const c of kept) {
-    const k = c.component || 'Uncategorized';
-    (byComponent[k] = byComponent[k] || []).push(c);
-  }
-  const tickets = [...new Set(kept.flatMap((c) => c.tickets || []))];
-  const contributors = [...new Set(kept.flatMap((c) => c.props || []))]
-    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-  report.core = { ...report.core, commits: kept, byComponent, tickets,
-    changesetCount: kept.length, ticketCount: tickets.length, contributors };
-  report.gutenberg = { commits: [], byCategory: null, contributors: [] };
-  report.totals = { gutenbergCommits: 0, gutenbergPRs: 0,
-    coreChangesets: kept.length, coreTickets: tickets.length, contributors: contributors.length };
-  return report;
 }
 
 // UnleashWP light-bulb mark (design system assets/brand/bulb-full.svg).
@@ -306,19 +263,21 @@ const PAGE = `<!doctype html>
 <div class="shell">
   <aside class="rail">
     <span class="rail-cap">Tools</span>
-    <button type="button" class="tool active" aria-current="true">
-      <span class="tool-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-      <span class="tool-name">Changelog Generator</span>
-    </button>
-    <button type="button" class="tool is-more" disabled>
-      <span class="tool-ic">+</span>
-      <span class="tool-name">More soon</span>
-    </button>
+    <div id="railTools">
+      <button type="button" class="tool active" aria-current="true">
+        <span class="tool-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+        <span class="tool-name">Changelog Generator</span>
+      </button>
+      <button type="button" class="tool is-more" disabled>
+        <span class="tool-ic">+</span>
+        <span class="tool-name">More soon</span>
+      </button>
+    </div>
   </aside>
   <main>
     <div class="tool-head">
-      <h1>Changelog Generator</h1>
-      <p>Turn a date window into a ready release-post changelog for Core and Gutenberg.</p>
+      <h1 id="toolTitle">Changelog Generator</h1>
+      <p id="toolDesc">Turn a date window into a ready release-post changelog for Core and Gutenberg.</p>
     </div>
     <section class="filters loading" id="filters">
     <div class="filters-loading"><span class="spin"></span> Loading milestones and branches…</div>
