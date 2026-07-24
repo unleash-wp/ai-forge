@@ -237,17 +237,19 @@ const PAGE = `<!doctype html>
   .hero-inner h1 { font-size: 28px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
   .hero-desc { font-size: 15px; color: var(--muted); margin: 0; max-width: 68ch; line-height: 1.55; }
 
-  /* ---- Product nav (compact: switch tools, active highlighted) ---- */
+  /* ---- Product tiles (small Windows-8 style: centered icon over label) ---- */
   .pnav-bar { background: var(--surface); }
   .pnav-inner { max-width: 1120px; margin: 0 auto; padding: var(--s4) var(--s5) 0; }
-  .pnav { display: flex; flex-wrap: wrap; gap: var(--s2); }
-  .pnav-item { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px 6px 6px; border-radius: 5px;
-    font: 600 13px/1 var(--font); color: var(--muted); background: none; border: 1px solid transparent; }
-  .pnav-item .pico { width: 26px; height: 26px; border-radius: 5px; display: grid; place-items: center; background: var(--sunk); color: var(--muted); flex: none; }
-  .pnav-item.active { background: var(--navy); color: #fff; }
-  .pnav-item.active .pico { background: rgba(255,255,255,.16); color: #fff; }
-  .pnav-item.is-soon em { font-style: italic; font-weight: 400; font-size: 11px; color: var(--muted); }
-  .pnav-item.is-more .pico { font: 700 16px/1 var(--font); }
+  .metro { display: flex; flex-wrap: wrap; gap: var(--s3); }
+  .tile { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 9px;
+    width: 124px; height: 106px; padding: var(--s3); border-radius: 5px; }
+  .tile-ic { display: grid; place-items: center; }
+  .tile-name { font: 600 13px/1.25 var(--font); }
+  .tile-soon { font: 600 9px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .tile.active { background: var(--navy); color: #fff; }
+  .tile.is-soon { background: var(--sunk); color: var(--text); }
+  .tile.is-more { background: none; border: 1px dashed var(--border); color: var(--muted); }
+  .tile.is-more .tile-ic { font: 700 20px/1 var(--font); }
 
   main { max-width: 1120px; margin: 0 auto; padding: var(--s6) var(--s5) var(--s8); }
 
@@ -480,10 +482,20 @@ const PAGE = `<!doctype html>
 </header>
 <div class="pnav-bar">
   <div class="pnav-inner">
-    <div class="pnav">
-      <span class="pnav-item active"><span class="pico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>Changelog Generator</span>
-      <span class="pnav-item is-soon"><span class="pico"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>Props Generator <em>soon</em></span>
-      <span class="pnav-item is-more"><span class="pico">+</span>More</span>
+    <div class="metro">
+      <div class="tile active">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+        <span class="tile-name">Changelog Generator</span>
+      </div>
+      <div class="tile is-soon">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
+        <span class="tile-name">Props Generator</span>
+        <span class="tile-soon">Soon</span>
+      </div>
+      <div class="tile is-more">
+        <span class="tile-ic">+</span>
+        <span class="tile-name">More</span>
+      </div>
     </div>
   </div>
 </div>
