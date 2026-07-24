@@ -222,12 +222,13 @@ const PAGE = `<!doctype html>
   @media (prefers-color-scheme: dark) { .logo svg { filter: brightness(0) invert(1); } }
 
   /* ---- App shell: tool rail (left) + workspace (right) ---- */
-  .shell { max-width: 1120px; margin: 0 auto; padding: 0 var(--s5); display: grid;
-    grid-template-columns: 150px minmax(0, 1fr); gap: var(--s6); align-items: start; }
+  .shell { max-width: 1160px; margin: 0 auto; padding: 0 var(--s5); display: grid;
+    grid-template-columns: 168px minmax(0, 1fr); gap: var(--s8); align-items: start; }
 
-  /* ---- Tool rail (Metro tiles: always on the page, grows downward) ---- */
-  .rail { position: sticky; top: 66px; padding: var(--s6) 0; display: flex; flex-direction: column; gap: var(--s3); }
-  .rail-cap { font: 600 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 2px var(--s1); }
+  /* ---- Tool rail (sidebar panel of Metro tiles: always on the page, grows downward) ---- */
+  .rail { position: sticky; top: 84px; margin-top: var(--s6); background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); box-shadow: var(--shadow-sm); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
+  .rail-cap { font: 600 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: var(--s2) var(--s1) var(--s1); }
   .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--s2);
     width: 100%; height: 88px; padding: var(--s3); border-radius: var(--r); border: 1px solid transparent;
     background: var(--sunk); color: var(--text); cursor: pointer; font: inherit;
@@ -256,7 +257,7 @@ const PAGE = `<!doctype html>
 
   @media (max-width: 780px) {
     .shell { grid-template-columns: 1fr; gap: var(--s4); }
-    .rail { position: static; top: auto; flex-direction: row; flex-wrap: wrap; padding: var(--s5) 0 0; gap: var(--s2); }
+    .rail { position: static; top: auto; margin-top: var(--s5); flex-direction: row; flex-wrap: wrap; padding: var(--s3); gap: var(--s2); }
     .rail-cap { width: 100%; }
     .tool { flex: 1 1 130px; height: 82px; }
     .tool.is-more { height: 82px; flex-basis: 90px; }
