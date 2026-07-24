@@ -1,17 +1,13 @@
-import { commits, labelsFor, authenticated } from './github.mjs';
-import { parseCommit } from './parse.mjs';
-import { fetchTracker } from './devnotes.mjs';
-import { buildReport } from './aggregate.mjs';
+import { authenticated } from './github.mjs';
+import { generate } from './report.mjs';
 import { toMarkdown } from './format.mjs';
 
-const GB_REPO = 'WordPress/gutenberg';
-const CORE_REPO = 'WordPress/wordpress-develop';
-
-const HELP = `wp-release-helper — summarize WordPress Core & Gutenberg changes for a release post.
+const HELP = `uwp (wp-release-helper) — summarize WordPress Core & Gutenberg changes for a release post.
 
 Usage:
-  wp-release-helper --since <date> --until <date> [options]
-  wp-release-helper <since> <until> [options]
+  uwp --since <date> --until <date> [options]
+  uwp <since> <until> [options]
+  uwp serve [--port <n>]            Open the browser UI.
 
 Options:
   --since <date>        Start of window (YYYY-MM-DD or ISO 8601). Required.
@@ -27,59 +23,50 @@ Options:
 Sources:
   Gutenberg  -> github.com/WordPress/gutenberg
   Core       -> github.com/WordPress/wordpress-develop (git mirror of Core SVN)
-  Trac ticket component/milestone grouping is added by the SKILL via the
-  Automattic mcp-context-wporg MCP server (Trac is bot-walled for scripts).
+  Core grouping -> WordPress/Documentation-Issue-Tracker dev-notes (cookie-free).
 
 Example:
-  wp-release-helper --since 2026-07-15 --until 2026-07-22 --milestone 7.1
+  uwp --since 2026-07-15 --until 2026-07-22 --milestone 7.1
+  uwp serve
 `;
 
 export async function run(argv) {
   const args = parseArgs(argv);
+
+  if (args._[0] === 'serve') {
+    const { startServer } = await import('./server.mjs');
+    return startServer({ port: Number(args.port) || 4321 });
+  }
+
   if (args.help) {
     console.log(HELP);
     return;
   }
 
-  const since = normDate(args.since ?? args._[0], false);
-  const until = normDate(args.until ?? args._[1], true);
+  const since = args.since ?? args._[0];
+  const until = args.until ?? args._[1];
   if (!since || !until) {
     console.log(HELP);
     throw new Error('--since and --until are required');
   }
 
-  const milestone = args.milestone ?? null;
-  const gbBranch = args['gb-branch'] ?? (milestone ? `wp/${milestone}` : 'trunk');
-  const coreBranch = args['core-branch'] ?? 'trunk';
-
   if (!authenticated) {
-    console.error('wp-release-helper: no GitHub token (gh not logged in) — using 60 req/h anonymous limit.');
+    console.error('uwp: no GitHub token (gh not logged in) — using 60 req/h anonymous limit.');
   }
 
-  const [gbRaw, coreRaw] = await Promise.all([
-    commits(GB_REPO, gbBranch, since, until),
-    commits(CORE_REPO, coreBranch, since, until),
-  ]);
+  const { meta, report } = await generate({
+    since,
+    until,
+    milestone: args.milestone ?? null,
+    gbBranch: args['gb-branch'],
+    coreBranch: args['core-branch'],
+    labels: args.labels !== false,
+    devNotes: args['dev-notes'] !== false,
+  });
 
-  const gb = gbRaw.map(parseCommit);
-  const core = coreRaw.map(parseCommit);
-
-  let gbLabels = null;
-  if (args.labels !== false) {
-    const prNums = [...new Set(gb.map((c) => c.pr).filter(Boolean))];
-    if (prNums.length) gbLabels = await labelsFor(GB_REPO, prNums);
+  if (meta.trackerMissing) {
+    console.error(`uwp: no dev-notes tracker for ${meta.milestone} — Core stays flat (use the wporg-context MCP to group).`);
   }
-
-  // Preferred Core categorization: the docs-team dev-notes tracker (cookie-free,
-  // component + classification tagged). Null when none exists for the milestone.
-  let tracker = null;
-  if (milestone && args['dev-notes'] !== false) {
-    tracker = await fetchTracker(milestone);
-    if (!tracker) console.error(`wp-release-helper: no dev-notes tracker for ${milestone} — Core stays flat (use the wporg-context MCP to group).`);
-  }
-
-  const report = buildReport(gb, core, gbLabels, tracker);
-  const meta = { since, until, milestone, gbBranch, coreBranch };
 
   if (args.json) {
     console.log(JSON.stringify({ meta, ...report }, null, 2));
@@ -119,11 +106,4 @@ function parseArgs(argv) {
     }
   }
   return args;
-}
-
-// Date-only -> full-day bounds; ISO strings pass through untouched.
-function normDate(v, isEnd) {
-  if (!v || v === true) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return `${v}T${isEnd ? '23:59:59' : '00:00:00'}Z`;
-  return v;
 }

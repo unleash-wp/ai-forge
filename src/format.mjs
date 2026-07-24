@@ -21,6 +21,17 @@ export function toMarkdown(report, meta) {
   out.push(`| Contributors (union) | ${t.contributors} |`);
   out.push('');
 
+  out.push('## Sources');
+  out.push('');
+  const d1 = since.slice(0, 10);
+  const d2 = until.slice(0, 10);
+  const tracUrl = `${TRAC}/query?status=closed&changetime=${tracDate(d1)}..${tracDate(d2)}` +
+    (milestone ? `&milestone=${milestone}` : '') +
+    '&group=component&col=id&col=summary&col=component&col=owner&col=type&col=priority&order=id';
+  out.push(`- [Closed Core Trac tickets](${tracUrl})${milestone ? ` (milestone ${milestone})` : ''} — ${d1} to ${d2}`);
+  out.push(`- [Gutenberg commits](${GB}/commits/${gbBranch}?since=${d1}&until=${d2}) on \`${gbBranch}\` — ${d1} to ${d2}`);
+  out.push('');
+
   out.push(`## Gutenberg (\`${gbBranch}\`)`);
   out.push('');
   if (report.gutenberg.byCategory) {
@@ -80,6 +91,12 @@ export function toMarkdown(report, meta) {
   out.push('');
 
   return out.join('\n');
+}
+
+// ISO date (YYYY-MM-DD) -> Trac changetime format MM/DD/YYYY.
+function tracDate(d) {
+  const [y, m, day] = d.split('-');
+  return `${m}/${day}/${y}`;
 }
 
 function gbLine(c) {
