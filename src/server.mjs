@@ -551,7 +551,7 @@ const PAGE = `<!doctype html>
   .props-metric b::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 5px;
     background: var(--yellow); border-radius: 3px; }
   .props-metric span { font-size: 14px; color: var(--muted); }
-  .props-actions { display: flex; align-items: center; gap: var(--s4); }
+  .props-actions { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
   .atbox { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text); cursor: pointer; white-space: nowrap; }
   .atbox input { cursor: pointer; }
   .propslist { margin: 0; font-size: 14.5px; line-height: 1.85; color: var(--text); }
@@ -818,6 +818,7 @@ var IC = {
   list: svgIc('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'),
   users: svgIc('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
   clip: svgIc('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+  table: svgIc('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'),
   ext: svgIc('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>')
 };
 var lastMarkdown = '', lastPost = '', rangeSince = '', rangeUntil = '';
@@ -1197,6 +1198,8 @@ function render(data) {
     '<div class="props-actions">' +
       '<label class="atbox"><input type="checkbox" id="propsAt" onchange="applyPropsFormat()"> Add @ before names</label>' +
       '<button class="ghost sm" onclick="copyProps()">' + IC.clip + 'Copy props line</button>' +
+      '<button class="ghost sm" onclick="copyCsv()">' + IC.table + 'CSV</button>' +
+      '<button class="ghost sm" onclick="copyPhp()">' + IC.md + 'PHP array</button>' +
     '</div></div>';
   pv += '<p class="propslist" id="propsList">' + all.map(esc).join(', ') + '</p>';
   pv += '<p class="note props-hint" id="propsHint" hidden>Slack handles usually match the wp.org username, but not always. Double-check before pinging.</p>';
@@ -1252,6 +1255,15 @@ function applyPropsFormat() {
   var hint = $('propsHint'); if (hint) hint.hidden = !at;
 }
 function copyProps() { navigator.clipboard.writeText(window._propsLine || ''); }
+// CSV + PHP array use the raw usernames (the @ toggle is only for the props line).
+// Build newline/tab via charCode: escape sequences in this inlined script get
+// interpreted by the outer PAGE template literal, which would break the strings.
+var NL = String.fromCharCode(10), TAB = String.fromCharCode(9);
+function copyCsv() { navigator.clipboard.writeText((window._props || []).join(NL)); }
+function copyPhp() {
+  var arr = (window._props || []).map(function (n) { return TAB + "'" + String(n).replace(/'/g, "\\'") + "',"; });
+  navigator.clipboard.writeText('array(' + NL + arr.join(NL) + NL + ')');
+}
 function downloadMd() {
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lastMarkdown], { type: 'text/markdown' }));
