@@ -119,25 +119,27 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
           <button className={filter === 'all' ? 'on' : ''} type="button" onClick={() => setFilter('all')}>All <span>{plugins.length}</span></button>
           <button className={filter === 'inactive' ? 'on' : ''} type="button" onClick={() => setFilter('inactive')}>Inactive <span>{inactiveCount}</span></button>
         </div>
-        <input className="list-search" type="text" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
-      </div>
-
-      <div className="bulk-bar">
-        <label className="bulk-all"><input type="checkbox" checked={allSelected} onChange={toggleAll} /> Select all</label>
-        <select value={bulk} onChange={(e) => setBulk(e.target.value)} disabled={!!busy}>
-          <option value="">Bulk actions</option>
-          <option value="activate">Activate</option>
-          <option value="deactivate">Deactivate</option>
-          <option value="update">Update</option>
-          <option value="remove">Remove</option>
-        </select>
-        <button className="ghost sm" type="button" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</button>
-        {selected.size > 0 && <span className="bulk-n">{selected.size} selected</span>}
-        <div className="bulk-check">
+        <div className="list-bar-right">
           {updMsg && <span className="upd-msg">{updMsg}</span>}
           <button className="ghost sm" type="button" onClick={checkUpdates}>Check for updates</button>
+          <input className="list-search" type="text" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
         </div>
       </div>
+
+      {selectableIds.length > 0 && (
+        <div className="bulk-bar">
+          <label className="bulk-all"><input type="checkbox" checked={allSelected} onChange={toggleAll} /> Select all</label>
+          <select value={bulk} onChange={(e) => setBulk(e.target.value)} disabled={!!busy}>
+            <option value="">Bulk actions</option>
+            <option value="activate">Activate</option>
+            <option value="deactivate">Deactivate</option>
+            <option value="update">Update</option>
+            <option value="remove">Remove</option>
+          </select>
+          <button className="ghost sm" type="button" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</button>
+          {selected.size > 0 && <span className="bulk-n">{selected.size} selected</span>}
+        </div>
+      )}
 
       <div className="tool-list">
         {shown.map((p) => {
@@ -146,7 +148,9 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
           const core = p.id === 'changelog';
           return (
             <div className={'tool-row' + (active ? '' : ' is-inactive')} key={p.id}>
-              <input type="checkbox" className="tr-cbx" checked={selected.has(p.id)} disabled={core} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />
+              {selectableIds.length > 0 && (core
+                ? <span className="tr-cbx tr-cbx-spacer" aria-hidden="true" />
+                : <input type="checkbox" className="tr-cbx" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
               <span className="tr-ic"><ToolIcon name={p.icon} size={20} /></span>
               <div className="tr-info">
                 <div className="tr-title">
