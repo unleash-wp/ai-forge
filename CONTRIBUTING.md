@@ -52,6 +52,11 @@ tools/<id>/
 hooks: `updateSource` powers the free "update available" note (via GitHub
 Releases); `price` stays `"free"` for community tools.
 
+`icon` is a keyword from the built-in RemixIcon palette (unknown → a plug icon):
+`code`, `git-commit`, `changelog`, `article`, `list`, `sparkling`, `magic`,
+`tools`, `rocket`, `terminal`, `palette`, `plug`, `flash`. To add more, extend
+the map in `src/client/icons.jsx`.
+
 ### 2. `client.jsx` - the UI
 
 Default-export a React component. The shell mounts it in `<main>` and hands it

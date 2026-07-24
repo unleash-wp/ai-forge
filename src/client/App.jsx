@@ -8,12 +8,9 @@ import Installer from './Installer.jsx';
 import SetupWizard from './SetupWizard.jsx';
 import PluginsManager from './PluginsManager.jsx';
 import REGISTRY from './registry.js';
+import { ToolIcon, PluginsIcon } from './icons.jsx';
 
 const PLUGINS_VIEW = '__plugins__';
-const RAIL_ICONS = {
-  code: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
-};
-const GRID_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
 
 // Non-blocking "update available" note (free, via GitHub Releases). Never
 // downloads code - just links the release notes.
@@ -112,12 +109,12 @@ export default function App() {
           <div id="railTools">
             {plugins.filter((p) => p.enabled !== false).map((p) => (
               <button key={p.id} type="button" className={'tool' + (p.id === activeId ? ' active' : '')} aria-current={p.id === activeId ? 'true' : undefined} onClick={() => setActiveId(p.id)}>
-                <span className="tool-ic" dangerouslySetInnerHTML={{ __html: RAIL_ICONS[p.icon] || RAIL_ICONS.code }} />
+                <span className="tool-ic"><ToolIcon name={p.icon} size={18} /></span>
                 <span className="tool-name">{p.name}</span>
               </button>
             ))}
             <button type="button" className={'tool tool--plugins' + (inPlugins ? ' active' : '')} aria-current={inPlugins ? 'true' : undefined} onClick={() => setActiveId(PLUGINS_VIEW)}>
-              <span className="tool-ic" dangerouslySetInnerHTML={{ __html: GRID_IC }} />
+              <span className="tool-ic"><PluginsIcon size={18} /></span>
               <span className="tool-name">Plugins</span>
             </button>
           </div>
