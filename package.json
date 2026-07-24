@@ -1,0 +1,20 @@
+{
+  "name": "wp-release-helper",
+  "version": "0.1.0",
+  "description": "Generate release-post change summaries for WordPress Core & Gutenberg from GitHub (+ Trac via MCP).",
+  "type": "module",
+  "bin": {
+    "wp-release-helper": "bin/wp-release-helper.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node bin/wp-release-helper.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unleash-wp/wp-release-helper"
+  },
+  "license": "GPL-2.0-or-later"
+}
