@@ -301,6 +301,17 @@ const PAGE = `<!doctype html>
   textarea { font: 13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
   input:focus, textarea:focus { outline: none; background: var(--surface); border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--ring); }
+
+  /* ---- Material-style checkboxes (background-image check = works in every browser) ---- */
+  input[type="checkbox"] { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; flex: none;
+    margin: 0; padding: 0; border: 2px solid var(--slate); border-radius: 3px; background: var(--surface);
+    cursor: pointer; transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease; }
+  input[type="checkbox"]:hover { border-color: var(--navy); box-shadow: 0 0 0 6px var(--ghost-hover); }
+  input[type="checkbox"]:checked { border-color: var(--navy); background-color: var(--navy); background-repeat: no-repeat;
+    background-position: center; background-size: 14px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E"); }
+  input[type="checkbox"]:focus { outline: none; box-shadow: none; }
+  input[type="checkbox"]:focus-visible { box-shadow: 0 0 0 3px var(--ring); }
   .rowbtns { display: flex; gap: var(--s2); align-items: center; margin-top: var(--s3); flex-wrap: wrap; }
   .msg { font-size: 12.5px; color: var(--muted); }
   .msg.good { color: var(--good); } .msg.bad { color: var(--bad); }
@@ -337,7 +348,7 @@ const PAGE = `<!doctype html>
   .checks { display: flex; gap: var(--s5); align-items: center; }
   form.query .checks label { flex-direction: row; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0;
     font-size: 13.5px; font-weight: 500; color: var(--text); cursor: pointer; white-space: nowrap; }
-  .checks input { width: 17px; height: 17px; padding: 0; box-shadow: none; accent-color: var(--navy); cursor: pointer; }
+  .checks input { cursor: pointer; }
   .info { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--border);
     color: var(--muted); font: 600 9px/1 var(--font); cursor: help; position: relative; opacity: .75; }
   .info:hover { opacity: 1; border-color: var(--muted); }
@@ -432,7 +443,7 @@ const PAGE = `<!doctype html>
   .props-metric span { font-size: 14px; color: var(--muted); }
   .props-actions { display: flex; align-items: center; gap: var(--s4); }
   .atbox { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text); cursor: pointer; white-space: nowrap; }
-  .atbox input { width: 17px; height: 17px; accent-color: var(--navy); cursor: pointer; }
+  .atbox input { cursor: pointer; }
   .propslist { margin: 0; font-size: 14.5px; line-height: 1.85; color: var(--text); }
   .props-hint { margin-top: var(--s3); }
   .props-hint[hidden] { display: none; }
