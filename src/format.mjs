@@ -144,14 +144,14 @@ function tracDate(d) {
 }
 
 function gbLine(c) {
-  const ref = c.pr ? ` ([#${c.pr}](${GB}/pull/${c.pr}))` : '';
-  return `- ${c.subject}${ref} - ${c.author}`;
+  const ref = c.pr ? `[#${c.pr}](${GB}/pull/${c.pr})` : '';
+  return `- ${ref ? ref + ' ' : ''}${c.subject} by ${c.author}`;
 }
 
 function coreLine(c) {
   const ref = c.changeset ? `[r${c.changeset}](${TRAC}/changeset/${c.changeset})` : `\`${c.shortSha}\``;
   const tix = c.tickets.map((n) => `[#${n}](${TRAC}/ticket/${n})`).join(' ');
   const cls = c.classification ? ` _[${c.classification}]_` : '';
-  const props = c.props.length ? ` - props ${c.props.join(', ')}` : '';
-  return `- ${ref}: ${c.subject}${cls}${tix ? ' - ' + tix : ''}${props}`;
+  const props = c.props.length ? ` by ${c.props.join(', ')}` : '';
+  return `- ${ref} ${c.subject}${cls}${tix ? ' ' + tix : ''}${props}`;
 }

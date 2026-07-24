@@ -31,7 +31,7 @@ test('toMarkdown renders the summary table and both sections', () => {
   assert.match(md, /# WordPress 7\.1 release changes/);
   assert.match(md, /Core changesets \(`trunk`\) \| 1/);
   assert.match(md, /\[r62830\]/);
-  assert.match(md, /props bob/);
+  assert.match(md, /by bob/);
   assert.match(md, /_\[dev-note\]_/);
   assert.match(md, /## Contributors \(2\)/);
 });

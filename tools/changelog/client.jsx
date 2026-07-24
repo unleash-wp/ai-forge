@@ -15,14 +15,17 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const codefmt = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
 
+// Contributor hygiene: strip any leading @ so names are clean by default (the
+// "Add @" toggle re-adds it), and drop automation accounts (github-actions[bot],
+// *-bot, dependabot, renovate, …) so props credit only real people.
+const cleanName = (n) => String(n).replace(/^@+/, '').trim();
+const isBot = (n) => /\[bot\]|(^|[^a-z])bot([^a-z]|$)|dependabot|renovate|greenkeeper|codecov|imgbot/i.test(String(n));
+
 function svgIc(inner) { return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; }
 const IC = {
-  post: svgIc('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>'),
   md: svgIc('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'),
   down: svgIc('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
   link: svgIc('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
-  list: svgIc('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'),
-  users: svgIc('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
   clip: svgIc('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
   table: svgIc('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'),
   ext: svgIc('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'),
@@ -53,7 +56,7 @@ function gbItem(c) {
   const ref = c.pr
     ? '<a class="ref" href="' + GB + '/pull/' + c.pr + '" target="_blank" rel="noopener">#' + c.pr + '</a>'
     : (c.sha ? '<a class="ref" href="' + GB + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : '');
-  return '<li>' + codefmt(c.subject) + (ref ? ' ' + ref : '') + ' <span class="who">' + esc(c.author) + '</span></li>';
+  return '<li>' + (ref ? ref + ' ' : '') + codefmt(c.subject) + ' <span class="who">by ' + esc(c.author) + '</span></li>';
 }
 function gbGroup(cat, items) { return '<h3 class="grp">' + esc(cat) + ' <span class="n">(' + items.length + ')</span></h3><ul class="list">' + items.map(gbItem).join('') + '</ul>'; }
 function coreItem(c) {
@@ -62,8 +65,8 @@ function coreItem(c) {
     : (c.sha ? '<a class="ref" href="' + CORE_GH + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : esc(c.shortSha));
   const tix = (c.tickets || []).map((n) => '<a class="ref" href="' + TRAC + '/ticket/' + n + '" target="_blank" rel="noopener">#' + n + '</a>').join(' ');
   const cls = c.classification ? ' <span class="tag">' + esc(c.classification) + '</span>' : '';
-  const props = c.props && c.props.length ? ' <span class="who">props ' + esc(c.props.join(', ')) + '</span>' : '';
-  return '<li>' + ref + ': ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + '</li>';
+  const props = c.props && c.props.length ? ' <span class="who">by ' + esc(c.props.join(', ')) + '</span>' : '';
+  return '<li>' + ref + ' ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + '</li>';
 }
 function coreGroup(comp, items) { return '<h3 class="grp">' + esc(comp) + ' <span class="n">(' + items.length + ')</span></h3><ul class="list">' + items.map(coreItem).join('') + '</ul>'; }
 
@@ -190,21 +193,24 @@ function Results({ data, since, until }) {
   }, [meta.milestone]);
   const issues = (t.coreTickets || 0) + (t.gutenbergPRs || 0);
   const changes = (t.gutenbergPRs || 0) + (t.coreChangesets || 0);
-  const all = uniq((report.gutenberg.contributors || []).concat(report.core.contributors || []))
+  const all = uniq((report.gutenberg.contributors || []).concat(report.core.contributors || [])
+    .map(cleanName).filter((n) => n && !isBot(n)))
     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
   const dn = !!meta.devNotesOnly;
   const s = data.sources || {};
 
-  const propsLine = all.map((n) => (propsAt ? '@' : '') + n).join(', ');
+  // @ is off by default and controlled by the toggle for both the view and every export.
+  const withAt = (n) => (propsAt ? '@' : '') + n;
+  const propsLine = all.map(withAt).join(', ');
   const copy = (text, label) => { navigator.clipboard.writeText(text); core.toast(label); };
   function downloadMd() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([data.markdown], { type: 'text/markdown' }));
     a.download = 'changelog.md'; a.click(); core.toast('Downloaded changelog.md');
   }
-  function copyCsv() { copy(all.join('\n'), 'CSV copied'); }
+  function copyCsv() { copy(all.map(withAt).join('\n'), 'CSV copied'); }
   function copyPhp() {
-    const arr = all.map((n) => "\t'" + String(n).replace(/'/g, "\\'") + "',");
+    const arr = all.map((n) => "\t'" + withAt(n).replace(/'/g, "\\'") + "',");
     copy('array(\n' + arr.join('\n') + '\n)', 'PHP array copied');
   }
   const stat = (n, l, counted) => <div className={'stat' + (counted ? ' counted' : '')} key={l}><b className="tnum">{n}</b><span>{l}</span>{counted && <span className="stat-tag">in total</span>}</div>;
@@ -217,7 +223,7 @@ function Results({ data, since, until }) {
           {!dn && stat(t.gutenbergPRs, 'Gutenberg PRs', true)}
           {stat(t.coreChangesets, dn ? 'Dev-note changesets' : 'Core changesets', !dn)}
           {stat(t.coreTickets, dn ? 'Dev-note tickets' : 'Core tickets', dn)}
-          {stat(t.contributors, 'Contributors')}
+          {stat(all.length, 'Contributors')}
         </div>
       </div>
 
@@ -226,11 +232,10 @@ function Results({ data, since, until }) {
       )}
 
       <div className="tabs" role="tablist">
-        <button className={'tab' + (tab === 'changelog' ? ' active' : '')} onClick={() => setTab('changelog')}><Ic html={IC.list} />Changelog<span className="cbadge">{changes}</span></button>
-        <button className={'tab' + (tab === 'props' ? ' active' : '')} onClick={() => setTab('props')}><Ic html={IC.users} />Props<span className="cbadge">{all.length}</span></button>
-        <button className={'tab' + (tab === 'devnotes' ? ' active' : '')} onClick={() => setTab('devnotes')}><Ic html={IC.post} />Dev Notes{devNotes ? <span className="cbadge">{devNotes.length}</span> : null}</button>
+        <button className={'tab' + (tab === 'changelog' ? ' active' : '')} onClick={() => setTab('changelog')}>Changelog<span className="cbadge">{changes}</span></button>
+        <button className={'tab' + (tab === 'props' ? ' active' : '')} onClick={() => setTab('props')}>Props<span className="cbadge">{all.length}</span></button>
+        <button className={'tab' + (tab === 'devnotes' ? ' active' : '')} onClick={() => setTab('devnotes')}>Dev Notes{devNotes ? <span className="cbadge">{devNotes.length}</span> : null}</button>
         <div className="tabtools">
-          <Button variant="ghost" size="sm" onClick={() => copy(data.post, 'Post copied')}><Ic html={IC.post} />Copy post</Button>
           <Button variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</Button>
           <Button variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />Download</Button>
         </div>
@@ -245,7 +250,6 @@ function Results({ data, since, until }) {
           </section>
         )}
         <div dangerouslySetInnerHTML={{ __html: changelogBodyHtml(data) }} />
-        <details><summary>Post template</summary><pre>{data.post}</pre></details>
         <details><summary>Raw Markdown</summary><pre>{data.markdown}</pre></details>
       </div>
 
