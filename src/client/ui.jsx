@@ -22,20 +22,29 @@ export function Checkbox({ className, ...rest }) {
 
 // Custom dropdown so it matches the design system (native <select> can't be
 // styled cross-browser). options: [{ value, label }]. value '' shows placeholder.
-export function Select({ value, onChange, options, placeholder = 'Select', disabled, block }) {
+// searchable adds a filter box + caps how many options render (for long lists).
+const OPT_CAP = 100;
+export function Select({ value, onChange, options, placeholder = 'Select', disabled, block, searchable }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const ref = useRef(null);
+  const searchRef = useRef(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setQuery(''); return; }
+    if (searchable && searchRef.current) searchRef.current.focus();
     const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
-  }, [open]);
+  }, [open, searchable]);
 
   const sel = options.find((o) => o.value === value);
+  const q = query.trim().toLowerCase();
+  const filtered = searchable && q ? options.filter((o) => o.label.toLowerCase().includes(q)) : options;
+  const shown = filtered.slice(0, OPT_CAP);
+
   return (
     <div className={'ui-select' + (block ? ' block' : '') + (open ? ' open' : '') + (disabled ? ' disabled' : '')} ref={ref}>
       <button type="button" className="ui-select-btn" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
@@ -44,11 +53,17 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
       </button>
       {open && (
         <div className="ui-select-menu" role="listbox">
-          {options.map((o) => (
+          {searchable && (
+            <input ref={searchRef} className="ui-select-search" value={query} placeholder="Search…" spellCheck="false"
+              onChange={(e) => setQuery(e.target.value)} onClick={(e) => e.stopPropagation()} />
+          )}
+          {shown.map((o) => (
             <button key={o.value} type="button" role="option" aria-selected={o.value === value}
               className={'ui-select-opt' + (o.value === value ? ' sel' : '')}
               onClick={() => { onChange(o.value); setOpen(false); }}>{o.label}</button>
           ))}
+          {shown.length === 0 && <div className="ui-select-note">No matches</div>}
+          {filtered.length > OPT_CAP && <div className="ui-select-note">+{filtered.length - OPT_CAP} more — refine search</div>}
         </div>
       )}
     </div>
