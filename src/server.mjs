@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { generate } from './report.mjs';
-import { toMarkdown } from './format.mjs';
+import { toMarkdown, toPost } from './format.mjs';
 import { authenticated } from './github.mjs';
 
 export function startServer({ port = 4321 } = {}) {
@@ -25,8 +25,7 @@ export function startServer({ port = 4321 } = {}) {
           labels: q.get('labels') !== 'false',
           devNotes: q.get('devNotes') !== 'false',
         });
-        const markdown = toMarkdown(report, meta);
-        json(res, 200, { meta, report, markdown });
+        json(res, 200, { meta, report, markdown: toMarkdown(report, meta), post: toPost(report, meta) });
       } catch (err) {
         json(res, 400, { error: err.message });
       }
@@ -143,6 +142,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&':'&amp;','<':'&lt;'
 const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
 let lastMarkdown = '';
+let lastPost = '';
 
 $('f').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -157,7 +157,7 @@ $('f').addEventListener('submit', async (e) => {
     const r = await fetch('/api/report?' + p);
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || 'request failed');
-    lastMarkdown = data.markdown;
+    lastMarkdown = data.markdown; lastPost = data.post;
     render(data);
     $('status').textContent = '';
   } catch (err) {
@@ -200,8 +200,10 @@ function render({ meta, report }) {
   h += '<section class="group"><h2>Contributors <span class="who">(' + all.length + ')</span></h2><p>' +
     all.map((c) => esc(c)).join(', ') + '</p></section>';
 
-  h += '<div class="toolbar"><button class="ghost" onclick="copyMd()">Copy Markdown</button>' +
+  h += '<div class="toolbar"><button onclick="copyPost()">Copy post template</button>' +
+    '<button class="ghost" onclick="copyMd()">Copy Markdown</button>' +
     '<button class="ghost" onclick="downloadMd()">Download .md</button></div>';
+  h += '<details><summary>Post template</summary><pre>' + esc(lastPost) + '</pre></details>';
   h += '<details><summary>Raw Markdown</summary><pre>' + esc(lastMarkdown) + '</pre></details>';
   $('out').innerHTML = h;
 }
@@ -230,6 +232,7 @@ function coreItem(c) {
   const props = c.props && c.props.length ? ' <span class="who">props ' + esc(c.props.join(', ')) + '</span>' : '';
   return '<li>' + ref + ': ' + esc(c.subject) + cls + (tix ? ' ' + tix : '') + props + '</li>';
 }
+function copyPost() { navigator.clipboard.writeText(lastPost); }
 function copyMd() { navigator.clipboard.writeText(lastMarkdown); }
 function downloadMd() {
   const a = document.createElement('a');
