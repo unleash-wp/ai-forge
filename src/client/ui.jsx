@@ -24,7 +24,7 @@ export function Checkbox({ className, ...rest }) {
 // styled cross-browser). options: [{ value, label }]. value '' shows placeholder.
 // searchable adds a filter box + caps how many options render (for long lists).
 const OPT_CAP = 100;
-export function Select({ value, onChange, options, placeholder = 'Select', disabled, block, searchable }) {
+export function Select({ value, onChange, options, placeholder = 'Select', disabled, block, searchable, ariaLabel }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const ref = useRef(null);
@@ -47,14 +47,14 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
 
   return (
     <div className={'ui-select' + (block ? ' block' : '') + (open ? ' open' : '') + (disabled ? ' disabled' : '')} ref={ref}>
-      <button type="button" className="ui-select-btn" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className="ui-select-btn" disabled={disabled} aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <span title={sel ? sel.label : undefined}>{sel ? sel.label : placeholder}</span>
         <svg className="ui-select-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
       </button>
       {open && (
         <div className="ui-select-menu" role="listbox">
           {searchable && (
-            <input ref={searchRef} className="ui-select-search" value={query} placeholder="Search…" spellCheck="false"
+            <input ref={searchRef} className="ui-select-search" value={query} placeholder="Search…" spellCheck="false" aria-label="Filter options"
               onChange={(e) => setQuery(e.target.value)} onClick={(e) => e.stopPropagation()} />
           )}
           {shown.map((o) => (

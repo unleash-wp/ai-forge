@@ -105,8 +105,8 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
 
   return (
     <>
-      {busy && <div className="warn">{busy}</div>}
-      {err && <div className="warn bad-note">{err}</div>}
+      {busy && <div className="warn" role="status" aria-live="polite">{busy}</div>}
+      {err && <div className="warn bad-note" role="alert">{err}</div>}
 
       <div className="install-bar">
         <span className="ib-label">Add a tool</span>
@@ -134,7 +134,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
       {selectableIds.length > 0 && (
         <div className="bulk-bar">
           <label className="bulk-all"><Checkbox checked={allSelected} onChange={toggleAll} /> Select all</label>
-          <Select value={bulk} onChange={setBulk} options={BULK_OPTIONS} placeholder="Bulk actions" disabled={!!busy} />
+          <Select value={bulk} onChange={setBulk} options={BULK_OPTIONS} placeholder="Bulk actions" ariaLabel="Bulk actions" disabled={!!busy} />
           <Button variant="ghost" size="sm" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</Button>
           {selected.size > 0 && <span className="bulk-n">{selected.size} selected</span>}
         </div>
