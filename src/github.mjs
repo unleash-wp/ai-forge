@@ -122,6 +122,31 @@ export async function commits(repo, branch, since, until) {
   return out;
 }
 
+// Branch names for a repo (up to a few pages), trunk first, then wp/x.y and
+// version branches surfaced ahead of the long tail so the picker is useful.
+export async function branches(repo) {
+  const names = new Set();
+  // Guarantee the release-relevant Gutenberg branches (wp/*) even though the repo
+  // has hundreds of branches — the plain listing could page them out.
+  if (repo.endsWith('/gutenberg')) {
+    try {
+      const refs = await apiJson(`repos/${repo}/git/matching-refs/heads/wp/`);
+      for (const r of refs) names.add(r.ref.replace('refs/heads/', ''));
+    } catch { /* ignore */ }
+    names.add('trunk');
+  }
+  let url = `https://api.github.com/repos/${repo}/branches?per_page=100`;
+  let pages = 0;
+  while (url && pages < 4) {
+    const { data, link } = await getJson(url);
+    for (const b of data) names.add(b.name);
+    url = nextLink(link);
+    pages++;
+  }
+  const rank = (n) => (n === 'trunk' ? 0 : /^(wp\/|\d+\.\d)/.test(n) ? 1 : 2);
+  return [...names].sort((a, b) => rank(a) - rank(b) || b.localeCompare(a));
+}
+
 // Label names for a list of issue/PR numbers, fetched with a bounded concurrency pool.
 export async function labelsFor(repo, numbers, concurrency = 8) {
   const result = new Map();
