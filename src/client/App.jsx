@@ -47,14 +47,21 @@ export default function App() {
     return fetch('/api/config/status').then((r) => r.json()).then(setStatus).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    fetch('/api/plugins').then((r) => r.json()).then((d) => {
+  // (Re)load the plugin list; keep the active tool valid (enabled), else fall back.
+  const loadPluginList = useCallback(() => {
+    return fetch('/api/plugins').then((r) => r.json()).then((d) => {
       const list = d.plugins || [];
       setPlugins(list);
-      if (list.length) setActiveId(list[0].id);
+      setActiveId((cur) => {
+        if (cur === PLUGINS_VIEW) return cur;
+        const enabled = list.filter((p) => p.enabled !== false);
+        if (cur && enabled.some((p) => p.id === cur)) return cur;
+        return enabled.length ? enabled[0].id : PLUGINS_VIEW;
+      });
     }).catch(() => {});
-    refreshStatus();
-  }, [refreshStatus]);
+  }, []);
+
+  useEffect(() => { loadPluginList(); refreshStatus(); }, [loadPluginList, refreshStatus]);
 
   const installing = status && !status.installed;
   useEffect(() => { document.body.classList.toggle('installing', !!installing); }, [installing]);
@@ -103,7 +110,7 @@ export default function App() {
         <aside className="rail" ref={railRef}>
           <span className="rail-cap">Tools</span>
           <div id="railTools">
-            {plugins.map((p) => (
+            {plugins.filter((p) => p.enabled !== false).map((p) => (
               <button key={p.id} type="button" className={'tool' + (p.id === activeId ? ' active' : '')} aria-current={p.id === activeId ? 'true' : undefined} onClick={() => setActiveId(p.id)}>
                 <span className="tool-ic" dangerouslySetInnerHTML={{ __html: RAIL_ICONS[p.icon] || RAIL_ICONS.code }} />
                 <span className="tool-name">{p.name}</span>
@@ -121,7 +128,7 @@ export default function App() {
             <h1>{inPlugins ? 'Plugins' : (active ? active.name : 'Changelog Generator')}</h1>
             <p>{inPlugins ? 'Tools installed on this Forge. Every tool is a plugin - add your own.' : (active ? active.description : '')}</p>
           </div>
-          {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} /> : (ActiveTool && <ActiveTool />)}
+          {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}
           <div ref={wizardRef}>
             <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
           </div>

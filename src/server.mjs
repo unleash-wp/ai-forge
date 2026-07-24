@@ -42,9 +42,27 @@ export function startServer({ port = 4321 } = {}) {
       }
       return;
     }
-    // Tool registry: the rail + tool head render from these manifests.
+    // Tool registry: the rail + tool head render from these manifests. Each
+    // carries an `enabled` flag (WP-style activate/deactivate; instant, no rebuild).
     if (url.pathname === '/api/plugins') {
-      json(res, 200, { plugins: (await pluginsReady).map((p) => p.manifest) });
+      const disabled = readDisabled();
+      json(res, 200, { plugins: (await pluginsReady).map((p) => ({ ...p.manifest, enabled: !disabled.has(p.manifest.id) })) });
+      return;
+    }
+    // Activate / deactivate a tool. Instant - just toggles a flag, no rebuild.
+    if (url.pathname === '/api/plugins/toggle' && req.method === 'POST') {
+      try {
+        const body = JSON.parse(await readBody(req) || '{}');
+        const id = (body.id || '').trim();
+        if (!id) throw new Error('missing id');
+        if (id === 'changelog' && !body.enabled) throw new Error('the core Changelog tool cannot be deactivated');
+        const set = readDisabled();
+        if (body.enabled) set.delete(id); else set.add(id);
+        writeDisabled(set);
+        json(res, 200, { ok: true });
+      } catch (err) {
+        json(res, 200, { ok: false, error: err.message });
+      }
       return;
     }
     // Free update check: newer GitHub Release than the installed plugin version.
@@ -209,7 +227,9 @@ export function startServer({ port = 4321 } = {}) {
 
     // Tool plugin routes (e.g. the Changelog Generator's /api/report + /api/branches).
     const plugins = await pluginsReady;
+    const disabledNow = readDisabled();
     for (const p of plugins) {
+      if (disabledNow.has(p.manifest.id)) continue; // deactivated tools serve nothing
       for (const r of p.routes) {
         if (req.method === r.method && url.pathname === r.path) {
           await r.handler(req, res, url, { json });
@@ -250,6 +270,19 @@ function markInstalled() {
   const p = installedPath();
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, '1\n', { mode: 0o600 });
+}
+
+// Deactivated tools: their id is listed here; they stay installed but the shell
+// hides them and their server routes are skipped. Toggling is instant (no build).
+function disabledPath() { return join(dirname(cookiePath()), 'disabled-tools.json'); }
+function readDisabled() {
+  try { return new Set(JSON.parse(readFileSync(disabledPath(), 'utf8')).disabled || []); }
+  catch { return new Set(); }
+}
+function writeDisabled(set) {
+  const p = disabledPath();
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, JSON.stringify({ disabled: [...set] }), { mode: 0o600 });
 }
 
 function readBody(req) {

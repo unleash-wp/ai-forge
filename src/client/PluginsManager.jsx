@@ -7,11 +7,12 @@ import { useState, useEffect, useRef } from 'react';
 
 const CODE_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
 
-export default function PluginsManager({ plugins, onOpen }) {
+export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [tab, setTab] = useState('installed');
   const [updates, setUpdates] = useState([]);
   const [market, setMarket] = useState(null); // null = loading
   const [source, setSource] = useState('');
+  const [q, setQ] = useState('');            // marketplace search
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
@@ -50,6 +51,14 @@ export default function PluginsManager({ plugins, onOpen }) {
     afterInstall('Removing ' + name + '… rebuilding.',
       fetch('/api/plugins/uninstall', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }));
   }
+  // Activate / deactivate is instant - no rebuild, just refresh the list.
+  function toggle(id, enabled) {
+    setErr('');
+    fetch('/api/plugins/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, enabled }) })
+      .then((r) => r.json())
+      .then((d) => { if (d.ok) { if (onChanged) onChanged(); } else setErr(d.error || 'failed'); })
+      .catch(() => setErr('request failed'));
+  }
 
   return (
     <>
@@ -65,8 +74,10 @@ export default function PluginsManager({ plugins, onOpen }) {
         <div className="plugins-grid">
           {plugins.map((p) => {
             const up = upFor(p.id);
+            const active = p.enabled !== false;
+            const core = p.id === 'changelog';
             return (
-              <div className="plugin-card" key={p.id}>
+              <div className={'plugin-card' + (active ? '' : ' is-disabled')} key={p.id}>
                 <div className="pc-top">
                   <span className="pc-ic" dangerouslySetInnerHTML={{ __html: CODE_IC }} />
                   <div><h3>{p.name}</h3><div className="pc-meta">v{p.version}{p.author ? ' · ' + p.author : ''}</div></div>
@@ -74,9 +85,11 @@ export default function PluginsManager({ plugins, onOpen }) {
                 <p>{p.description}</p>
                 <div className="pc-foot">
                   <span className="badge-free">{p.price === 'free' ? 'Free' : p.price}</span>
+                  {!active && <span className="badge-off">Inactive</span>}
                   {up && <a className="badge-up" href={up.url} target="_blank" rel="noopener">Update → {up.latest}</a>}
-                  <button className="ghost sm pc-open" type="button" onClick={() => onOpen(p.id)}>Open</button>
-                  {p.id !== 'changelog' && <button className="ghost sm" type="button" disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</button>}
+                  {active && <button className="ghost sm pc-open" type="button" onClick={() => onOpen(p.id)}>Open</button>}
+                  {!core && <button className={'ghost sm' + (active ? '' : ' pc-open')} type="button" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</button>}
+                  {!core && <button className="ghost sm" type="button" disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</button>}
                 </div>
               </div>
             );
@@ -101,13 +114,17 @@ export default function PluginsManager({ plugins, onOpen }) {
       ) : (
         <>
           <p className="note market-note">Curated and verified by UnleashWP. One-click install runs the same builder as a manual install.</p>
-          {market === null ? (
-            <div className="empty"><p>Loading the marketplace…</p></div>
-          ) : market.length === 0 ? (
-            <div className="empty"><h3>No verified tools published yet</h3><p>The registry is brand new. <a href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Build the first one →</a></p></div>
-          ) : (
+          <div className="market-search">
+            <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tools…" spellCheck="false" />
+          </div>
+          {(() => {
+            if (market === null) return <div className="empty"><p>Loading the marketplace…</p></div>;
+            const shown = market.filter((t) => (t.name + ' ' + t.description).toLowerCase().includes(q.trim().toLowerCase()));
+            if (market.length === 0) return <div className="empty"><h3>No verified tools published yet</h3><p>The registry is brand new. <a href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Build the first one →</a></p></div>;
+            if (shown.length === 0) return <div className="empty"><p>No tools match "{q}".</p></div>;
+            return (
             <div className="plugins-grid">
-              {market.map((t) => {
+              {shown.map((t) => {
                 const installed = installedIds.has(t.id);
                 return (
                   <div className="plugin-card" key={t.id}>
@@ -127,7 +144,8 @@ export default function PluginsManager({ plugins, onOpen }) {
                 );
               })}
             </div>
-          )}
+            );
+          })()}
         </>
       )}
     </>
