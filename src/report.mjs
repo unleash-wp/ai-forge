@@ -25,8 +25,12 @@ export async function generate(opts, onStep = () => {}) {
     commits(GB_REPO, gbBranch, since, until),
     commits(CORE_REPO, coreBranch, since, until),
   ]);
-  const gb = gbRaw.map(parseCommit);
-  const core = coreRaw.map(parseCommit);
+  // Keep only substantive changes so the rendered list and the headline count
+  // agree. Gutenberg is 100% PR-merged; its non-PR commits are release plumbing
+  // (version bumps, "Update Changelog", SECURITY.md). Every Core commit on the
+  // SVN mirror carries a changeset; anything without one is a mirror artifact.
+  const gb = gbRaw.map(parseCommit).filter((c) => c.pr);
+  const core = coreRaw.map(parseCommit).filter((c) => c.changeset);
 
   let gbLabels = null;
   if (wantLabels) {

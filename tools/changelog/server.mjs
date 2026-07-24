@@ -5,8 +5,7 @@
 import { generate } from '../../src/report.mjs';
 import { toMarkdown, toPost, sourceUrls } from '../../src/format.mjs';
 import { branches } from '../../src/github.mjs';
-import { fetchTicketDetails, resolveCookie } from '../../src/trac.mjs';
-import { applyDeepDetails } from '../../src/aggregate.mjs';
+import { applyCommitBodies, applyDeepDetails } from '../../src/aggregate.mjs';
 import { mcpAvailable, mcpTicketDetails } from '../../src/mcp.mjs';
 import { fetchDevNotes } from '../../src/makenotes.mjs';
 
@@ -44,22 +43,21 @@ async function reportHandler(req, res, url, ctx) {
       devNotes: q.get('devNotes') !== 'false',
     });
     if (q.get('deep') === 'true') {
-      try {
-        // Prefer the MCP (authenticated Trac, per-ticket, batched + cached). Fall
-        // back to the direct milestone CSV when the MCP server isn't installed.
-        if (mcpAvailable()) {
+      // Cookie-free baseline: each Core change gets its own GitHub commit body as
+      // the description. Always available, no extra request, no credentials.
+      applyCommitBodies(report);
+      meta.deepSource = 'commit';
+      // Optional enrichment: fill any gaps with the Trac ticket description via
+      // the MCP. Never block the report on a deep failure - the bodies still show.
+      if (mcpAvailable()) {
+        try {
           const details = await mcpTicketDetails(report.core.tickets || []);
           applyDeepDetails(report, details);
-          meta.deepSource = 'mcp';
+          meta.deepSource = 'commit+mcp';
           if (details.capped) meta.deepCapped = true;
-        } else {
-          const cookie = resolveCookie();
-          if (!cookie) throw new Error('no Trac cookie saved yet');
-          applyDeepDetails(report, await fetchTicketDetails({ milestone: meta.milestone, cookie }));
-          meta.deepSource = 'trac';
+        } catch (err) {
+          meta.deepError = err.message;
         }
-      } catch (err) {
-        meta.deepError = err.message; // never block the report on a deep failure
       }
     }
     if (q.get('devNotesOnly') === 'true') { filterDevNotes(report); meta.devNotesOnly = true; }

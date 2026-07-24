@@ -23,6 +23,15 @@ export function parseCommit(c) {
     ? propsMatch[1].split(',').map((s) => s.trim()).filter(Boolean)
     : [];
 
+  // The human description: everything after the subject minus the machine
+  // trailers (Props / Fixes / See / Merges / git-svn-id / sign-offs). This is
+  // the "better detail" the GitHub commit carries that the ticket list doesn't.
+  const body = msg.split('\n').slice(1)
+    .filter((ln) => !/^\s*(Props[:\s]|Unprops\b|Fix(?:e[sd])?\s+#|Clos(?:e[sd])?\s+#|See\s+#|Merges\s+\[|Reverts?\s+\[|git-svn-id:|Co-authored-by:|Signed-off-by:)/i.test(ln))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
   return {
     sha: c.sha,
     shortSha: (c.sha || '').slice(0, 9),
@@ -35,5 +44,6 @@ export function parseCommit(c) {
     seeTickets: [...new Set(seeTickets)],
     changeset,
     props,
+    body,
   };
 }
