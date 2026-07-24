@@ -194,6 +194,11 @@ function Results({ data, since, until }) {
   }, [meta.milestone]);
   const issues = (t.coreTickets || 0) + (t.gutenbergPRs || 0);
   const changes = (t.gutenbergCommits || 0) + (t.coreChangesets || 0);
+  // Core-tickets card: prefer the Trac milestone count (matches the Sources
+  // "Closed Core Trac tickets" link exactly) when the server could fetch it with
+  // a saved cookie; otherwise the cookie-free count of tickets the in-window
+  // changesets close.
+  const coreTicketsShown = report.core.tracTicketCount != null ? report.core.tracTicketCount : (t.coreTickets || 0);
   const all = uniq((report.gutenberg.contributors || []).concat(report.core.contributors || [])
     .map(cleanName).filter((n) => n && !isBot(n)))
     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
@@ -223,7 +228,7 @@ function Results({ data, since, until }) {
         <div className="stats">
           {!dn && stat(t.gutenbergCommits, 'Gutenberg changes', true)}
           {stat(t.coreChangesets, dn ? 'Dev-note changesets' : 'Core changesets', !dn)}
-          {stat(t.coreTickets, dn ? 'Dev-note tickets' : 'Core tickets', dn)}
+          {stat(coreTicketsShown, dn ? 'Dev-note tickets' : 'Core tickets', dn)}
           {stat(all.length, 'Contributors')}
         </div>
       </div>
