@@ -436,7 +436,7 @@ const PAGE = `<!doctype html>
 
 
   .sources { padding: var(--s5) var(--s6); margin: 0 0 var(--s6); }
-  .sources h2 { font-size: 15px; font-weight: 700; color: var(--heading); margin: 0 0 var(--s2); }
+  .sources h2 { font-size: 20px; font-weight: 700; color: var(--heading); margin: 0 0 var(--s3); letter-spacing: -.01em; }
   .sources h2 em { font-style: normal; font-weight: 500; color: var(--muted); font-size: 13px; }
   .srcrow { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) 0; border-top: 1px solid var(--border); }
   .srcrow:first-of-type { border-top: 0; }
@@ -446,6 +446,10 @@ const PAGE = `<!doctype html>
   section.group > h2 { font-size: 21px; font-weight: 700; color: var(--heading); letter-spacing: -.01em;
     border-bottom: 2px solid var(--border); padding-bottom: var(--s3); margin: 0 0 var(--s4); }
   section.group > h2 .who { font-size: 14px; }
+  .grouplink { display: inline-flex; align-items: center; gap: 8px; color: var(--heading); }
+  .grouplink svg { color: var(--muted); transition: color .12s; }
+  .grouplink:hover { color: var(--accent); }
+  .grouplink:hover svg { color: var(--accent); }
   h3.grp { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted);
     margin: var(--s5) 0 var(--s2); }
   h3.grp .n { color: var(--muted); font-weight: 500; }
@@ -633,7 +637,8 @@ var IC = {
   link: svgIc('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
   list: svgIc('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'),
   users: svgIc('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
-  clip: svgIc('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')
+  clip: svgIc('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+  ext: svgIc('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>')
 };
 var lastMarkdown = '', lastPost = '', rangeSince = '', rangeUntil = '';
 var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -849,18 +854,19 @@ function render(data) {
     '</div></div>';
 
   var cl = '';
+  var s = data.sources || {};
   if (data.sources) {
-    var s = data.sources, mile = s.milestone ? ' (milestone ' + esc(s.milestone) + ')' : '';
+    var mile = s.milestone ? ' (milestone ' + esc(s.milestone) + ')' : '';
     cl += '<section class="card sources"><h2>Sources <em>link these in the post so anyone can verify</em></h2>' +
       srcRow(s.trac, 'Closed Core Trac tickets' + mile + ', ' + esc(s.since) + ' to ' + esc(s.until)) +
       srcRow(s.gutenberg, 'Gutenberg commits on ' + esc(s.gbBranch) + ', ' + esc(s.since) + ' to ' + esc(s.until)) +
       '</section>';
   }
-  cl += '<section class="group"><h2>Gutenberg <span class="who">(' + esc(meta.gbBranch) + ')</span></h2>';
+  cl += '<section class="group">' + groupHead('Gutenberg', s.gutenberg, meta.gbBranch);
   if (report.gutenberg.byCategory) sortGroups(report.gutenberg.byCategory).forEach(function (g) { cl += gbGroup(g[0], g[1]); });
   else cl += '<ul class="list">' + report.gutenberg.commits.map(gbItem).join('') + '</ul>';
   cl += '</section>';
-  cl += '<section class="group"><h2>Core <span class="who">(' + esc(meta.coreBranch) + ')</span></h2>';
+  cl += '<section class="group">' + groupHead('Core', s.trac, meta.coreBranch);
   if (report.core.tracker) {
     cl += '<p class="note">Grouped via <code>' + esc(report.core.tracker.slug) + '</code> dev-notes tracker.</p>';
     sortGroups(report.core.byComponent, true).forEach(function (g) { cl += coreGroup(g[0], g[1]); });
@@ -881,6 +887,12 @@ function render(data) {
   $('out').innerHTML = h;
 }
 
+// Section heading that links to the same source URL as the Sources block, so the
+// list visibly points back at the real GitHub / Trac query it was built from.
+function groupHead(label, url, who) {
+  var inner = url ? '<a class="grouplink" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + IC.ext + '</a>' : label;
+  return '<h2>' + inner + ' <span class="who">(' + esc(who) + ')</span></h2>';
+}
 function srcRow(url, text) {
   return '<div class="srcrow"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + text + '</a>' +
     '<button class="ghost sm" onclick="copyText(this.dataset.u)" data-u="' + esc(url) + '">' + IC.link + 'Copy link</button></div>';
