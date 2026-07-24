@@ -300,7 +300,7 @@ export default function ChangelogTool() {
       if (!alive) return;
       const list = d.branches || [], versions = [];
       list.forEach((b) => { if (b.indexOf('wp/') === 0) { const v = b.slice(3); if (/^[0-9]+[.][0-9]+$/.test(v) && versions.indexOf(v) === -1) versions.push(v); } });
-      setGbBranches(list.slice(0, 80)); setMilestones(versions);
+      setGbBranches(list); setMilestones(versions);
       if (versions.length) { setMilestone(versions[0]); const want = 'wp/' + versions[0]; if (list.indexOf(want) !== -1) setGbBranch(want); }
     }).catch(() => {});
     const cr = fetch('/api/branches?repo=core').then((r) => r.json()).then((d) => {
@@ -352,8 +352,8 @@ export default function ChangelogTool() {
           <div className="qfields">
             <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
             <label>Milestone<Select block value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="—" /></label>
-            <label>Gutenberg branch<Select block value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
-            <label>Core branch<Select block value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
+            <label>Gutenberg branch<Select block searchable value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
+            <label>Core branch<Select block searchable value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
           </div>
           <div className="qactions">
             <div className="checks">
