@@ -1,21 +1,21 @@
-// The visible plugin system, laid out like the WordPress plugins admin table:
-// a vertical table (Plugin | Description columns), not a card grid. Name in bold
-// with action links beneath (Open / Activate|Deactivate / Remove); inactive rows
-// grey out; an "All | Inactive" filter + a search box; version + author meta.
-//  - Installed: an install bar (GitHub URL / .zip) + the installed tools table.
-//  - Marketplace: curated verified tools as a table with a search box + Install.
-// Installing runs the tool's code after a server-side rebuild (gated behind the
-// user's own action + trust note). Activate/deactivate is instant (no rebuild).
+// The visible plugin system as a polished vertical list (rows, not cards): each
+// tool is a row with an icon, name + description, meta, and right-aligned action
+// buttons - like a modern extensions manager. WP-style lifecycle: install,
+// activate/deactivate (instant, no rebuild), remove; an All/Inactive filter +
+// search; a curated verified Marketplace tab. Installing runs the tool's code
+// after a server-side rebuild (gated behind the user's own action + trust note).
 import { useState, useEffect, useRef } from 'react';
+
+const CODE_IC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
 
 export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [tab, setTab] = useState('installed');
   const [updates, setUpdates] = useState([]);
-  const [market, setMarket] = useState(null); // null = loading
+  const [market, setMarket] = useState(null);
   const [source, setSource] = useState('');
-  const [q, setQ] = useState('');       // marketplace search
-  const [iq, setIq] = useState('');     // installed search
-  const [filter, setFilter] = useState('all'); // all | inactive
+  const [q, setQ] = useState('');
+  const [iq, setIq] = useState('');
+  const [filter, setFilter] = useState('all');
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
@@ -85,53 +85,49 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
               <input ref={fileRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={(e) => uploadZip(e.target.files[0])} />
             </form>
           </div>
-          <p className="pc-trust">Installs run the tool's code on this machine. Only install tools you trust. <a href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Build your own →</a></p>
 
-          <div className="pt-bar">
-            <div className="pt-filters">
-              <button className={filter === 'all' ? 'active' : ''} type="button" onClick={() => setFilter('all')}>All <span className="c">({plugins.length})</span></button>
-              <span className="sep">|</span>
-              <button className={filter === 'inactive' ? 'active' : ''} type="button" onClick={() => setFilter('inactive')}>Inactive <span className="c">({inactiveCount})</span></button>
+          <div className="list-bar">
+            <div className="seg">
+              <button className={filter === 'all' ? 'on' : ''} type="button" onClick={() => setFilter('all')}>All <span>{plugins.length}</span></button>
+              <button className={filter === 'inactive' ? 'on' : ''} type="button" onClick={() => setFilter('inactive')}>Inactive <span>{inactiveCount}</span></button>
             </div>
-            <div className="pt-search"><input type="text" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" /></div>
+            <input className="list-search" type="text" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
           </div>
 
-          <div className="plugin-table">
-            <div className="pt-head"><span>Plugin</span><span>Description</span></div>
+          <div className="tool-list">
             {installedShown.map((p) => {
               const up = upFor(p.id);
               const active = p.enabled !== false;
               const core = p.id === 'changelog';
               return (
-                <div className={'pt-row' + (active ? '' : ' is-inactive')} key={p.id}>
-                  <div className="pt-name">
-                    <h3>{p.name}</h3>
-                    <div className="row-actions">
-                      {active && <button className="linkbtn" type="button" onClick={() => onOpen(p.id)}>Open</button>}
-                      {!core && <button className="linkbtn" type="button" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</button>}
-                      {!core && <button className="linkbtn danger" type="button" disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</button>}
-                      {core && <span className="row-note">Core tool</span>}
+                <div className={'tool-row' + (active ? '' : ' is-inactive')} key={p.id}>
+                  <span className="tr-ic" dangerouslySetInnerHTML={{ __html: CODE_IC }} />
+                  <div className="tr-info">
+                    <div className="tr-title">
+                      <h3>{p.name}</h3>
+                      {core && <span className="chip">Core</span>}
+                      {!active && <span className="chip chip-off">Inactive</span>}
+                      {up && <a className="chip chip-up" href={up.url} target="_blank" rel="noopener">Update {up.latest}</a>}
                     </div>
+                    <p className="tr-desc">{p.description}</p>
+                    <div className="tr-sub">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</div>
                   </div>
-                  <div className="pt-desc">
-                    <p>{p.description}</p>
-                    <div className="pt-meta">
-                      {!active && <span className="badge-off">Inactive</span>}
-                      {up && <a className="badge-up" href={up.url} target="_blank" rel="noopener">Update → {up.latest}</a>}
-                      <span>Version {p.version} | By {p.author || 'unknown'} | {p.price === 'free' ? 'Free' : p.price}</span>
-                    </div>
+                  <div className="tr-actions">
+                    {active && <button className="ghost sm" type="button" onClick={() => onOpen(p.id)}>Open</button>}
+                    {!core && <button className="ghost sm" type="button" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</button>}
+                    {!core && <button className="ghost sm danger" type="button" disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</button>}
                   </div>
                 </div>
               );
             })}
-            {installedShown.length === 0 && <div className="pt-row"><div className="pt-name" /><div className="pt-desc"><p>No tools match.</p></div></div>}
+            {installedShown.length === 0 && <div className="tool-empty">No tools match.</div>}
           </div>
         </>
       ) : (
         <>
-          <p className="note market-note">Curated and verified by UnleashWP. One-click install runs the same builder as a manual install.</p>
-          <div className="market-search">
-            <input type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tools…" spellCheck="false" />
+          <div className="list-bar">
+            <p className="market-note">Curated and verified by UnleashWP. One-click install runs the same builder as a manual install.</p>
+            <input className="list-search" type="text" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tools…" spellCheck="false" />
           </div>
           {(() => {
             if (market === null) return <div className="empty"><p>Loading the marketplace…</p></div>;
@@ -139,26 +135,24 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
             if (market.length === 0) return <div className="empty"><h3>No verified tools published yet</h3><p>The registry is brand new. <a href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Build the first one →</a></p></div>;
             if (shown.length === 0) return <div className="empty"><p>No tools match "{q}".</p></div>;
             return (
-              <div className="plugin-table">
-                <div className="pt-head"><span>Tool</span><span>Description</span></div>
+              <div className="tool-list">
                 {shown.map((t) => {
                   const installed = installedIds.has(t.id);
                   return (
-                    <div className="pt-row" key={t.id}>
-                      <div className="pt-name">
-                        <h3>{t.name}</h3>
-                        <div className="row-actions">
-                          {installed ? <span className="row-note">Installed</span>
-                            : t.source === 'core' ? <span className="row-note">Core</span>
-                            : <button className="linkbtn" type="button" disabled={!!busy} onClick={() => installSource(t.source, t.name)}>Install</button>}
+                    <div className="tool-row" key={t.id}>
+                      <span className="tr-ic" dangerouslySetInnerHTML={{ __html: CODE_IC }} />
+                      <div className="tr-info">
+                        <div className="tr-title">
+                          <h3>{t.name}</h3>
+                          {t.verified && <span className="chip chip-ok">✓ Verified</span>}
                         </div>
+                        <p className="tr-desc">{t.description}</p>
+                        <div className="tr-sub">Version {t.version} · By {t.author || 'unknown'} · {t.price === 'free' ? 'Free' : t.price}</div>
                       </div>
-                      <div className="pt-desc">
-                        <p>{t.description}</p>
-                        <div className="pt-meta">
-                          {t.verified && <span className="badge-verified">✓ Verified</span>}
-                          <span>Version {t.version} | By {t.author || 'unknown'} | {t.price === 'free' ? 'Free' : t.price}</span>
-                        </div>
+                      <div className="tr-actions">
+                        {installed ? <span className="tr-state">Installed</span>
+                          : t.source === 'core' ? <span className="tr-state">Core</span>
+                          : <button className="primary sm" type="button" disabled={!!busy} onClick={() => installSource(t.source, t.name)}>Install</button>}
                       </div>
                     </div>
                   );
