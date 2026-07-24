@@ -1,0 +1,120 @@
+// Core shell: header + tool rail (from /api/plugins) + the active tool plugin +
+// the shared setup wizard + first-run installer. Brand = UnleashWP, platform =
+// Forge; tools live under it. The shell knows nothing tool-specific.
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { CoreContext, useToast } from './core.jsx';
+import { LOGO_FULL } from './brand.js';
+import Installer from './Installer.jsx';
+import SetupWizard from './SetupWizard.jsx';
+import REGISTRY from './registry.js';
+
+const RAIL_ICONS = {
+  code: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+};
+
+export default function App() {
+  const toast = useToast();
+  const [status, setStatus] = useState(null);
+  const [plugins, setPlugins] = useState([]);
+  const [activeId, setActiveId] = useState(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const railRef = useRef(null);
+  const headerRef = useRef(null);
+  const wizardRef = useRef(null);
+
+  const refreshStatus = useCallback(() => {
+    return fetch('/api/config/status').then((r) => r.json()).then(setStatus).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/plugins').then((r) => r.json()).then((d) => {
+      const list = d.plugins || [];
+      setPlugins(list);
+      if (list.length) setActiveId(list[0].id);
+    }).catch(() => {});
+    refreshStatus();
+  }, [refreshStatus]);
+
+  const installing = status && !status.installed;
+  useEffect(() => { document.body.classList.toggle('installing', !!installing); }, [installing]);
+
+  // pin the rail under the sticky header + shadow the header on scroll
+  useEffect(() => {
+    function onScroll() { setScrolled(window.scrollY > 4); }
+    function place() { if (railRef.current && headerRef.current) railRef.current.style.top = (headerRef.current.offsetHeight + 12) + 'px'; }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', place);
+    place(); onScroll();
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', place); };
+  });
+
+  const openSetup = useCallback(() => setWizardOpen(true), []);
+  useEffect(() => {
+    if (wizardOpen && wizardRef.current) wizardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    function onKey(e) { if (e.key === 'Escape') setWizardOpen(false); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [wizardOpen]);
+
+  const gh = status && status.github, trac = status && status.trac;
+  const active = plugins.find((p) => p.id === activeId);
+  const ActiveTool = activeId ? REGISTRY[activeId] : null;
+  const coreApi = { toast, openSetup, status, refreshStatus };
+
+  return (
+    <CoreContext.Provider value={coreApi}>
+      {installing && <Installer status={status} onDone={refreshStatus} />}
+
+      <header ref={headerRef} className={scrolled ? 'scrolled' : ''}>
+        <div className="bar">
+          <a className="logo" href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP" dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
+          <span className="divider" />
+          <a href="#" className="product" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Forge</a>
+          <div className="pills">
+            <button className={'pill ' + (gh && gh.set ? 'ok' : 'off')} onClick={() => setWizardOpen((o) => !o)}><span className="ic" />GitHub</button>
+            <button className={'pill ' + (trac && trac.set ? 'ok' : 'off')} onClick={() => setWizardOpen((o) => !o)}><span className="ic" />Trac</button>
+          </div>
+        </div>
+      </header>
+
+      <div className="shell">
+        <aside className="rail" ref={railRef}>
+          <span className="rail-cap">Tools</span>
+          <div id="railTools">
+            {plugins.map((p) => (
+              <button key={p.id} type="button" className={'tool' + (p.id === activeId ? ' active' : '')} aria-current={p.id === activeId ? 'true' : undefined} onClick={() => setActiveId(p.id)}>
+                <span className="tool-ic" dangerouslySetInnerHTML={{ __html: RAIL_ICONS[p.icon] || RAIL_ICONS.code }} />
+                <span className="tool-name">{p.name}</span>
+              </button>
+            ))}
+            <button type="button" className="tool is-more" disabled>
+              <span className="tool-ic">+</span>
+              <span className="tool-name">More soon</span>
+            </button>
+          </div>
+        </aside>
+        <main>
+          <div className="tool-head">
+            <h1>{active ? active.name : 'Changelog Generator'}</h1>
+            <p>{active ? active.description : ''}</p>
+          </div>
+          {ActiveTool && <ActiveTool />}
+          <div ref={wizardRef}>
+            <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
+          </div>
+        </main>
+      </div>
+
+      <footer className="site-footer">
+        <div className="finner">
+          <div className="fleft">
+            <span>&copy; {new Date().getFullYear()} <a href="https://unleash-wp.com" target="_blank" rel="noopener">UnleashWP</a> · Benjamin Zekavica · data via <a href="https://github.com/Automattic/mcp-context-wporg" target="_blank" rel="noopener">Automattic mcp-context-wporg</a></span>
+            <span className="fnote">Independent project, not affiliated with Automattic or the WordPress project.</span>
+          </div>
+          <a className="ficon" href="https://github.com/unleash-wp/wp-release-helper" target="_blank" rel="noopener" aria-label="Contribute on GitHub" title="Contribute on GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 012-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+        </div>
+      </footer>
+    </CoreContext.Provider>
+  );
+}
