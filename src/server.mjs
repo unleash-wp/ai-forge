@@ -526,7 +526,7 @@ const PAGE = `<!doctype html>
               <div class="cal-title" id="caltitle"></div>
               <button type="button" class="cal-nav" id="calnext" aria-label="Next month"></button>
             </div>
-            <div class="cal-dow"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
+            <div class="cal-dow"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
             <div class="cal-grid" id="calgrid"></div>
           </div>
         </div>
@@ -648,7 +648,7 @@ function fmtRange(a, b) {
   function draw() {
     title.textContent = MON[view.getMonth()] + ' ' + view.getFullYear();
     $('calnext').disabled = view.getFullYear() > today.getFullYear() || (view.getFullYear() === today.getFullYear() && view.getMonth() >= today.getMonth());
-    var startDow = (new Date(view.getFullYear(), view.getMonth(), 1).getDay() + 6) % 7; // Monday-first
+    var startDow = new Date(view.getFullYear(), view.getMonth(), 1).getDay(); // Sunday-first (US)
     var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
     var s, e;
     if (pendStart) {
