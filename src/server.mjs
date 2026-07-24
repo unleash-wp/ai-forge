@@ -230,7 +230,7 @@ const PAGE = `<!doctype html>
     border-radius: var(--r); box-shadow: var(--shadow-sm); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
   .rail-cap { font: 600 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: var(--s2) var(--s1) var(--s1); }
   .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--s2);
-    width: 100%; height: 88px; padding: var(--s3); border-radius: var(--r); border: 1px solid transparent;
+    width: 100%; aspect-ratio: 1 / 1; padding: var(--s3); border-radius: var(--r); border: 1px solid transparent;
     background: var(--sunk); color: var(--text); cursor: pointer; font: inherit;
     transition: transform .12s ease, box-shadow .12s ease, background .14s ease; }
   .tool:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
@@ -241,7 +241,7 @@ const PAGE = `<!doctype html>
   .tool.active:hover { transform: none; }
   .tool.is-soon { color: var(--muted); cursor: default; }
   .tool.is-soon:hover { transform: none; box-shadow: none; }
-  .tool.is-more { background: none; border: 1px dashed var(--border); color: var(--muted); height: 62px; cursor: default; }
+  .tool.is-more { background: none; border: 1px dashed var(--border); color: var(--muted); cursor: default; }
   .tool.is-more:hover { transform: none; box-shadow: none; }
   .tool.is-more .tool-ic { font: 400 22px/1 var(--font); }
 
