@@ -221,22 +221,48 @@ const PAGE = `<!doctype html>
   .pill.off .ic { border: 1.5px solid var(--yellow); color: var(--yellow); }
   @media (prefers-color-scheme: dark) { .logo svg { filter: brightness(0) invert(1); } }
 
-  /* ---- Hero (product hub: pick a tool, see the active one) ---- */
+  /* ---- Collapse toggle (show / hide the filter bar, tool only) ---- */
+  .collapse-toggle { margin-left: var(--s2); width: 30px; height: 30px; border: 0; background: none; padding: 0;
+    color: var(--muted); cursor: pointer; display: inline-grid; place-items: center; }
+  .collapse-toggle[hidden] { display: none; }
+  .collapse-toggle:hover { color: var(--navy); }
+  .collapse-toggle:focus { outline: none; }
+  .collapse-toggle:focus-visible { border-radius: 5px; box-shadow: 0 0 0 3px var(--ring); }
+  .collapse-toggle .chev { transform: rotate(180deg); transition: transform .44s cubic-bezier(.34,1.56,.64,1); }
+  body.filters-collapsed .collapse-toggle .chev { transform: rotate(0deg); }
+
+  /* ---- Tool hero (title of the active tool) ---- */
   .hero { background: var(--surface); }
   .hero-inner { max-width: 1120px; margin: 0 auto; padding: var(--s7) var(--s5) var(--s5); }
-  .prod-tabs { display: flex; align-items: flex-end; gap: var(--s6); border-bottom: 1px solid var(--border); margin-bottom: var(--s5); }
-  .prod-tab { position: relative; background: none; border: 0; padding: 0 0 var(--s3); margin-bottom: -1px;
-    font: 600 15px/1 var(--font); color: var(--muted); display: inline-flex; align-items: center; gap: 7px; }
-  .prod-tab.active { color: var(--heading); }
-  .prod-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--navy); }
-  .prod-tab.is-soon em { font-style: italic; font-weight: 400; font-size: 12.5px; color: var(--muted); }
   .hero-inner h1 { font-size: 28px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
   .hero-desc { font-size: 15px; color: var(--muted); margin: 0; max-width: 68ch; line-height: 1.55; }
+
+  /* ---- Home hub (Metro tiles: current + future tools) ---- */
+  .hub { background: var(--surface); }
+  .hub-inner { max-width: 1120px; margin: 0 auto; padding: var(--s5) var(--s5) var(--s3); }
+  .metro { display: grid; grid-template-columns: repeat(auto-fill, minmax(248px, 1fr)); gap: var(--s4); }
+  .tile { display: flex; flex-direction: column; gap: var(--s2); min-height: 128px; padding: var(--s4) var(--s5); border-radius: 5px; text-decoration: none; }
+  .tile-ic { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; margin-bottom: var(--s2); }
+  .tile-name { font: 700 17px/1.2 var(--font); }
+  .tile-desc { font-size: 13.5px; line-height: 1.5; }
+  .tile.active { background: var(--navy); }
+  .tile.active .tile-name { color: #fff; }
+  .tile.active .tile-desc { color: rgba(255,255,255,.82); }
+  .tile.active .tile-ic { background: rgba(255,255,255,.16); color: #fff; }
+  .tile.is-soon { background: var(--sunk); border: 1px solid var(--border); }
+  .tile.is-soon .tile-name { color: var(--heading); }
+  .tile.is-soon .tile-desc { color: var(--muted); }
+  .tile.is-soon .tile-ic { background: var(--border); color: var(--muted); }
+  .tile-soon { margin-top: auto; align-self: flex-start; font: 600 11px/1 var(--font); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .tile.is-more { background: none; border: 1px dashed var(--border); }
+  .tile.is-more .tile-name, .tile.is-more .tile-desc { color: var(--muted); }
+  .tile.is-more .tile-ic { background: var(--sunk); color: var(--muted); font: 700 22px/1 var(--font); }
 
   main { max-width: 1120px; margin: 0 auto; padding: var(--s6) var(--s5) var(--s8); }
 
   /* ---- Controls band (toolbar under header) ---- */
-  .controls { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; z-index: 15; overflow: visible; }
+  .controls { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; z-index: 15; overflow: visible;
+    transition: max-height .44s cubic-bezier(.34,1.56,.64,1); }
   .cinner { max-width: 1120px; margin: 0 auto; padding: var(--s4) var(--s5); }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); }
@@ -453,21 +479,34 @@ const PAGE = `<!doctype html>
   <div class="bar">
     <a class="logo" href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP">${LOGO}</a>
     <span class="divider"></span>
-    <a href="/" class="product">Release Helper</a>
+    <a href="#" class="product" onclick="window.scrollTo({ top: 0, behavior: 'smooth' }); return false;">Release Helper</a>
     <div class="pills">
       <button class="pill" id="pillGh" onclick="toggleWizard()"><span class="ic"></span>GitHub</button>
       <button class="pill" id="pillTrac" onclick="toggleWizard()"><span class="ic"></span>Trac</button>
     </div>
+    <button class="collapse-toggle" id="collapseToggle" onclick="toggleControls()" aria-label="Show or hide filters" title="Show / hide filters"><svg class="chev" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button>
   </div>
 </header>
-<section class="hero">
-  <div class="hero-inner">
-    <div class="prod-tabs">
-      <span class="prod-tab active">Changelog Generator</span>
-      <span class="prod-tab is-soon">Props Generator <em>(soon)</em></span>
+<section class="hub">
+  <div class="hub-inner">
+    <div class="metro">
+      <div class="tile active">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+        <span class="tile-name">Changelog Generator</span>
+        <span class="tile-desc">Turn a date window into a release changelog across Core and Gutenberg.</span>
+      </div>
+      <div class="tile is-soon">
+        <span class="tile-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
+        <span class="tile-name">Props Generator</span>
+        <span class="tile-desc">Props and contributors from a schema and a WordPress Slack chat.</span>
+        <span class="tile-soon">Soon</span>
+      </div>
+      <div class="tile is-more">
+        <span class="tile-ic">+</span>
+        <span class="tile-name">More coming</span>
+        <span class="tile-desc">The toolkit keeps growing.</span>
+      </div>
     </div>
-    <h1>Changelog Generator</h1>
-    <p class="hero-desc">Turn a date window into a release changelog across Core and Gutenberg, grounded in real PRs and tickets.</p>
   </div>
 </section>
 <div class="controls">
@@ -904,6 +943,24 @@ $('milestone').addEventListener('change', syncGbToMilestone);
   window.addEventListener('scroll', onScroll, { passive: true });
   place(); onScroll();
 })();
+
+// Show/hide the filter bar (tool only)
+function toggleControls() {
+  var c = document.querySelector('.controls');
+  var willCollapse = !document.body.classList.contains('filters-collapsed');
+  if (willCollapse) {
+    c.style.maxHeight = c.scrollHeight + 'px'; c.style.overflow = 'hidden';
+    void c.offsetHeight;
+    document.body.classList.add('filters-collapsed');
+    c.style.maxHeight = '0px';
+  } else {
+    document.body.classList.remove('filters-collapsed');
+    c.style.overflow = 'hidden';
+    c.style.maxHeight = c.scrollHeight + 'px';
+    setTimeout(function () { if (!document.body.classList.contains('filters-collapsed')) { c.style.maxHeight = 'none'; c.style.overflow = 'visible'; } }, 480);
+  }
+}
+
 $('out').innerHTML = emptyState();
 
 refreshStatus();
