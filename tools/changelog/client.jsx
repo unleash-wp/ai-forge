@@ -216,7 +216,6 @@ function Results({ data, since, until }) {
         <div className="stats">
           {!dn && stat(t.gutenbergPRs, 'Gutenberg PRs', true)}
           {stat(t.coreChangesets, dn ? 'Dev-note changesets' : 'Core changesets', !dn)}
-          {!dn && stat(t.gutenbergCommits, 'GB commits')}
           {stat(t.coreTickets, dn ? 'Dev-note tickets' : 'Core tickets', dn)}
           {stat(t.contributors, 'Contributors')}
         </div>
