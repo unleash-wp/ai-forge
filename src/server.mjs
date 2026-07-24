@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { generate } from './report.mjs';
 import { toMarkdown, toPost, sourceUrls } from './format.mjs';
-import { authenticated, tokenStatus, branches } from './github.mjs';
+import { authenticated, tokenStatus, saveToken, deleteToken, checkToken, branches } from './github.mjs';
 import { fetchTicketDetails, resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './trac.mjs';
 import { applyDeepDetails } from './aggregate.mjs';
 
@@ -50,6 +50,30 @@ export function startServer({ port = 4321 } = {}) {
           envLocked: !!process.env.WPORG_TRAC_COOKIE,
         },
       });
+      return;
+    }
+
+    if (url.pathname === '/api/github-token' && req.method === 'POST') {
+      if (process.env.GITHUB_TOKEN) { json(res, 400, { error: 'GITHUB_TOKEN env is set and overrides the file. Unset it to save one here.' }); return; }
+      const value = (JSON.parse(await readBody(req) || '{}').token || '').trim();
+      if (!value) { json(res, 400, { error: 'empty token' }); return; }
+      json(res, 200, { ok: true, path: saveToken(value) });
+      return;
+    }
+
+    if (url.pathname === '/api/github-token' && req.method === 'DELETE') {
+      if (process.env.GITHUB_TOKEN) { json(res, 400, { error: 'GITHUB_TOKEN env is set; unset it in your shell to disconnect.' }); return; }
+      deleteToken();
+      json(res, 200, { ok: true });
+      return;
+    }
+
+    if (url.pathname === '/api/github-token/test' && req.method === 'POST') {
+      try {
+        json(res, 200, await checkToken());
+      } catch (err) {
+        json(res, 200, { ok: false, message: err.message });
+      }
       return;
     }
 
@@ -538,6 +562,7 @@ const PAGE = `<!doctype html>
     <span class="divider"></span>
     <a href="#" class="product" onclick="window.scrollTo({ top: 0, behavior: 'smooth' }); return false;">Release Helper</a>
     <div class="pills">
+      <button class="pill" id="pillGh" onclick="toggleWizard()"><span class="ic"></span>GitHub</button>
       <button class="pill" id="pillTrac" onclick="toggleWizard()"><span class="ic"></span>Trac</button>
     </div>
   </div>
@@ -594,10 +619,28 @@ const PAGE = `<!doctype html>
   <section class="card wizard" id="wizard">
     <button class="wiz-close" type="button" onclick="closeWizard()" aria-label="Close setup">&times;</button>
     <h2>Setup</h2>
-    <p class="lead">One optional key. GitHub needs no setup here — it is auto-detected from the <code>gh</code> CLI, or runs at 60 requests an hour with no token at all (public data only). The only thing to add is your WordPress.org cookie, and only if you want <b>deep</b> (full ticket descriptions). Stored locally, owner-only, sent only to WordPress.org.</p>
+    <p class="lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own — nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
     <div class="steps">
-      <div class="step" id="stepTrac">
+      <div class="step" id="stepGh">
         <div class="num"><span class="d">1</span></div>
+        <div>
+          <h3>GitHub <em>lifts the API limit from 60 to 5000 requests an hour</em></h3>
+          <div id="ghConnected" class="connected" hidden></div>
+          <div id="ghSetup">
+            <p>Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b> — it only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</p>
+            <ol><li>One click if the <code>gh</code> CLI is logged in (detected automatically), or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it below.</li></ol>
+            <input type="password" id="ghToken" placeholder="ghp_… or github_pat_…" autocomplete="off" spellcheck="false">
+            <div class="rowbtns">
+              <button class="primary sm" type="button" onclick="saveGh()">Save &amp; connect</button>
+              <button class="ghost sm" type="button" onclick="testGh()">Test</button>
+              <span class="msg" id="ghMsg"></span>
+            </div>
+          </div>
+          <button class="expander" id="ghEdit" hidden onclick="editGh()">Use a different token</button>
+        </div>
+      </div>
+      <div class="step" id="stepTrac">
+        <div class="num"><span class="d">2</span></div>
         <div>
           <h3>WordPress.org <em>only needed for “deep” (full ticket descriptions)</em></h3>
           <div id="tracConnected" class="connected" hidden></div>
@@ -761,12 +804,25 @@ function resetFilters() {
 }
 function setPill(id, set, source) {
   var el = $(id); el.className = 'pill ' + (set ? 'ok' : 'off');
-  el.innerHTML = '<span class="ic"></span>Trac';
+  el.innerHTML = '<span class="ic"></span>' + (id === 'pillGh' ? 'GitHub' : 'Trac');
 }
 function refreshStatus() {
   return fetch('/api/config/status').then(function (r) { return r.json(); }).then(function (d) {
+    setPill('pillGh', d.github.set, d.github.source);
     setPill('pillTrac', d.trac.set, d.trac.source);
-    // Trac step (the only setup step)
+    // GitHub step
+    if (d.github.set) {
+      $('stepGh').className = 'step done';
+      $('ghConnected').hidden = false;
+      var ghSrc = d.github.source === 'gh' ? 'GitHub CLI (gh)' : (d.github.source === 'env' ? 'GITHUB_TOKEN env' : 'saved token');
+      $('ghConnected').innerHTML = '<span>✓</span> Connected · ' + ghSrc + ' · 5000/h' +
+        (d.github.source === 'file' ? '<button class="disc-btn" type="button" onclick="disconnectGh()">Disconnect</button>'
+          : '<span class="disc-note">' + (d.github.source === 'gh' ? 'via gh CLI — run gh auth logout to remove' : 'set by env var') + '</span>');
+      $('ghSetup').hidden = true; $('ghEdit').hidden = (d.github.source !== 'file');
+    } else {
+      $('stepGh').className = 'step'; $('ghConnected').hidden = true; $('ghSetup').hidden = false; $('ghEdit').hidden = true;
+    }
+    // Trac step
     if (d.trac.set) {
       $('stepTrac').className = 'step done';
       $('tracConnected').hidden = false;
@@ -779,12 +835,32 @@ function refreshStatus() {
     }
   }).catch(function () {});
 }
+function editGh() { $('ghSetup').hidden = false; $('ghEdit').hidden = true; $('ghToken').focus(); }
 function editTrac() { $('tracSetup').hidden = false; $('tracEdit').hidden = true; $('cookieVal').focus(); }
+function disconnectGh() {
+  fetch('/api/github-token', { method: 'DELETE' }).then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.error) { msg('ghMsg', d.error, 'bad'); } else { $('ghToken').value = ''; refreshStatus(); } });
+}
 function disconnectCookie() {
   fetch('/api/cookie', { method: 'DELETE' }).then(function (r) { return r.json(); })
     .then(function (d) { if (d && d.error) { msg('cookieMsg', d.error, 'bad'); } else { $('cookieVal').value = ''; refreshStatus(); } });
 }
 function msg(id, text, kind) { var el = $(id); el.className = 'msg' + (kind ? ' ' + kind : ''); el.textContent = text; }
+
+function saveGh() {
+  var token = $('ghToken').value.trim();
+  if (!token) { msg('ghMsg', 'paste the token first', 'bad'); return; }
+  msg('ghMsg', 'saving…');
+  fetch('/api/github-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (x) { if (x.ok) { $('ghToken').value = ''; testGh(); } else msg('ghMsg', x.d.error, 'bad'); });
+}
+function testGh() {
+  msg('ghMsg', 'testing…');
+  fetch('/api/github-token/test', { method: 'POST' }).then(function (r) { return r.json(); }).then(function (d) {
+    msg('ghMsg', d.message, d.ok ? 'good' : 'bad'); refreshStatus();
+  });
+}
 
 function saveCookie() {
   var cookie = $('cookieVal').value.trim();
@@ -800,7 +876,8 @@ function testCookie() {
     msg('cookieMsg', d.message, d.ok ? 'good' : 'bad'); refreshStatus();
   });
 }
-// auto-save+test the instant the cookie is pasted (one-paste flow)
+// auto-save+test the instant a key is pasted (one-paste flow)
+$('ghToken').addEventListener('paste', function () { setTimeout(saveGh, 30); });
 $('cookieVal').addEventListener('paste', function () { setTimeout(saveCookie, 30); });
 
 // ---- Report ----

@@ -88,18 +88,21 @@ into the post so anyone can verify), and the changelog under two tabs —
 contributor list) — plus **Copy post** / **Copy Markdown** / **Download** buttons.
 The server binds to `127.0.0.1`, so nothing sensitive touches the browser.
 
-**Setup.** There is nothing to set up for GitHub. It reads only public repos, so
-any account works — you never need access to the WordPress org and no token
-scopes. If the `gh` CLI is logged in it is auto-detected (60 → 5000 req/h);
-otherwise the tool just runs at 60 req/h. The header's GitHub badge shows which
-tier you're on.
+**Setup.** The **Setup** panel wires up two keys — each is your own (nothing is
+shared), stored locally in owner-only files (mode `600`) and sent only to GitHub
+/ WordPress.org. Both have a **Disconnect** button.
 
-The one optional key is the **WordPress.org** cookie, and only for **deep** (full
-ticket descriptions). Open the **Setup** panel and paste your `wporg_logged_in` +
-`wporg_sec` cookie once; it auto-saves and tests the moment you paste, and a
-**Disconnect** button removes it again. Saved to `~/.config/wp-trac/cookie`
-(owner-only, mode `600`), sent only to WordPress.org. A web page can't read that
-cookie for you (it's HttpOnly), so the one paste is the simplest safe path.
+- **GitHub** — raises your API limit from 60 to 5000 req/h. Works with **any**
+  GitHub account: you never need access to the WordPress org and the token needs
+  **no scopes** (it only reads public repos). One click if the `gh` CLI is logged
+  in (auto-detected); otherwise create a token (leave every scope unchecked) and
+  paste it once — it auto-saves and tests on paste. Saved to
+  `~/.config/wp-trac/github-token`. Skip it entirely and the tool still runs at
+  60 req/h.
+- **WordPress.org** — only for **deep** (full ticket descriptions). Paste your
+  `wporg_logged_in` + `wporg_sec` cookie once; it auto-saves and tests the moment
+  you paste. Saved to `~/.config/wp-trac/cookie`. A web page can't read that
+  cookie for you (it's HttpOnly), so the one paste is the simplest safe path.
 
 | Option | Meaning |
 | --- | --- |

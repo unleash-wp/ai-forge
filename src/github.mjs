@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
@@ -16,6 +16,11 @@ export function saveToken(value) {
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, value.trim() + '\n', { mode: 0o600 });
   return p;
+}
+
+// Remove the saved token file (the setup wizard's Disconnect). No-op if absent.
+export function deleteToken() {
+  try { unlinkSync(tokenPath()); return true; } catch { return false; }
 }
 
 function readSavedToken() {
