@@ -252,12 +252,18 @@ const PAGE = `<!doctype html>
     box-shadow: var(--shadow-sm); padding: var(--s5) var(--s6); margin-bottom: var(--s6); }
 
   @media (max-width: 780px) {
-    .shell { grid-template-columns: 1fr; gap: var(--s4); }
-    .rail { position: static; top: auto; margin-top: var(--s5); flex-direction: row; flex-wrap: wrap; padding: var(--s3); gap: var(--s2); }
+    .shell { grid-template-columns: 1fr; gap: var(--s4); padding: 0 var(--s4); }
+    .rail { position: static; top: auto; margin-top: var(--s5); flex-direction: row; flex-wrap: wrap; gap: var(--s2); }
     .rail-cap { width: 100%; }
-    .tool { flex: 1 1 130px; height: 82px; }
-    .tool.is-more { height: 82px; flex-basis: 90px; }
+    .tool { flex: 1 1 120px; height: 76px; }
+    .tool.is-more { height: 76px; }
     main { padding-top: var(--s4); }
+    .tool-head h1 { font-size: 22px; }
+    .filters { padding: var(--s5) var(--s4); }
+    .qfields { gap: var(--s4); }
+    .qactions { flex-direction: column; align-items: stretch; gap: var(--s4); }
+    .checks { gap: var(--s4); flex-wrap: wrap; }
+    .go { width: 100%; justify-content: flex-end; gap: var(--s4); }
   }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); }
@@ -305,6 +311,8 @@ const PAGE = `<!doctype html>
   .ghost { background: transparent; color: var(--primary); border-color: var(--border); }
   .ghost:hover { border-color: var(--primary); background: var(--ghost-hover); }
   .sm { padding: 9px 15px; font-size: 13px; }
+  .ghost.sm { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  button svg { flex: none; }
 
   /* ---- Query form (two clean rows: fields, then options + actions) ---- */
   form.query { display: block; }
@@ -464,8 +472,15 @@ const PAGE = `<!doctype html>
   .cal-nav:disabled { opacity: .3; cursor: not-allowed; }
   .cal-nav:disabled:hover { background: var(--surface); }
 
-  @media (max-width: 640px) {
-    form.query { gap: var(--s4); } form.query .go { margin-left: 0; width: 100%; } form.query .go button { width: 100%; }
+  @media (max-width: 560px) {
+    .bar { padding: 11px var(--s4); gap: var(--s2); }
+    .divider, .product { display: none; }
+    .logo svg { height: 20px; }
+    .pills { margin-left: auto; }
+    .pill { padding: 7px 11px; font-size: 12px; }
+    .tabs { flex-wrap: wrap; gap: var(--s4); }
+    .tabtools { width: 100%; margin-left: 0; flex-wrap: wrap; }
+    .go .primary { flex: 1; }
   }
 </style>
 </head>
@@ -595,6 +610,17 @@ var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) {
 var GB = 'https://github.com/WordPress/gutenberg';
 var TRAC = 'https://core.trac.wordpress.org';
 var CORE_GH = 'https://github.com/WordPress/wordpress-develop';
+// Inline icons for the results toolbar / tabs (16px, stroke = currentColor).
+function svgIc(inner) { return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; }
+var IC = {
+  post: svgIc('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>'),
+  md: svgIc('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'),
+  down: svgIc('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>'),
+  link: svgIc('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
+  list: svgIc('<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>'),
+  users: svgIc('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  clip: svgIc('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')
+};
 var lastMarkdown = '', lastPost = '', rangeSince = '', rangeUntil = '';
 var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function fmtDay(isoStr) { var p = isoStr.split('-'); return MON[(+p[1]) - 1] + ' ' + (+p[2]); }
@@ -800,12 +826,12 @@ function render(data) {
     '). Showing the cookie-free changelog. Save a fresh wordpress.org cookie in Setup for full descriptions.</div>';
 
   h += '<div class="tabs" role="tablist">' +
-    '<button class="tab active" data-tab="changelog">Changelog<span class="cbadge">' + changes + '</span></button>' +
-    '<button class="tab" data-tab="props">Props<span class="cbadge">' + all.length + '</span></button>' +
+    '<button class="tab active" data-tab="changelog">' + IC.list + 'Changelog<span class="cbadge">' + changes + '</span></button>' +
+    '<button class="tab" data-tab="props">' + IC.users + 'Props<span class="cbadge">' + all.length + '</span></button>' +
     '<div class="tabtools">' +
-      '<button class="ghost sm" onclick="copyPost()">Copy post</button>' +
-      '<button class="ghost sm" onclick="copyMd()">Copy Markdown</button>' +
-      '<button class="ghost sm" onclick="downloadMd()">Download</button>' +
+      '<button class="ghost sm" onclick="copyPost()">' + IC.post + 'Copy post</button>' +
+      '<button class="ghost sm" onclick="copyMd()">' + IC.md + 'Copy Markdown</button>' +
+      '<button class="ghost sm" onclick="downloadMd()">' + IC.down + 'Download</button>' +
     '</div></div>';
 
   var cl = '';
@@ -834,7 +860,7 @@ function render(data) {
   h += '<div class="panel" id="p-changelog">' + cl + '</div>';
 
   var pv = '<div class="propshead"><p>Props to <b>' + all.length + '</b> contributors for this window.</p>' +
-    '<button class="ghost sm" onclick="copyProps()">Copy props line</button></div>';
+    '<button class="ghost sm" onclick="copyProps()">' + IC.clip + 'Copy props line</button></div>';
   pv += '<p class="propslist">' + all.map(esc).join(', ') + '</p>';
   h += '<div class="panel hidden" id="p-props">' + pv + '</div>';
 
@@ -843,7 +869,7 @@ function render(data) {
 
 function srcRow(url, text) {
   return '<div class="srcrow"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + text + '</a>' +
-    '<button class="ghost sm" onclick="copyText(this.dataset.u)" data-u="' + esc(url) + '">Copy link</button></div>';
+    '<button class="ghost sm" onclick="copyText(this.dataset.u)" data-u="' + esc(url) + '">' + IC.link + 'Copy link</button></div>';
 }
 function uniq(arr) { var seen = {}, out = []; arr.forEach(function (x) { if (!seen[x]) { seen[x] = 1; out.push(x); } }); return out; }
 function sortGroups(obj, uncatLast) {
