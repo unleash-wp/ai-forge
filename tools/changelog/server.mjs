@@ -5,6 +5,7 @@
 import { generate } from '../../src/report.mjs';
 import { toMarkdown, toPost, sourceUrls } from '../../src/format.mjs';
 import { branches } from '../../src/github.mjs';
+import { resolveCookie, countTracTickets } from '../../src/trac.mjs';
 import { applyCommitBodies, applyDeepDetails } from '../../src/aggregate.mjs';
 import { mcpAvailable, mcpTicketDetails } from '../../src/mcp.mjs';
 import { fetchDevNotes } from '../../src/makenotes.mjs';
@@ -61,7 +62,26 @@ async function reportHandler(req, res, url, ctx) {
       }
     }
     if (q.get('devNotesOnly') === 'true') { filterDevNotes(report); meta.devNotesOnly = true; }
-    ctx.json(res, 200, { meta, report, sources: sourceUrls(meta), markdown: toMarkdown(report, meta), post: toPost(report, meta) });
+
+    const sources = sourceUrls(meta);
+    // Align the Core-tickets card with the exact Trac query the Sources link
+    // opens, so clicking "verify" shows the same number. Needs a saved cookie
+    // (the CSV endpoint is bot-walled); without one the card keeps the cookie-free
+    // count of tickets the in-window changesets close. Dev-notes-only has its own
+    // ticket meaning, so leave it alone.
+    if (meta.milestone && !meta.devNotesOnly) {
+      const cookie = resolveCookie();
+      if (cookie) {
+        try {
+          report.core.tracTicketCount = await countTracTickets(sources.trac, cookie);
+          meta.ticketSource = 'trac';
+        } catch (err) {
+          meta.ticketCountError = err.message; // fall back to the changeset-derived count
+        }
+      }
+    }
+
+    ctx.json(res, 200, { meta, report, sources, markdown: toMarkdown(report, meta), post: toPost(report, meta) });
   } catch (err) {
     ctx.json(res, 400, { error: err.message });
   }

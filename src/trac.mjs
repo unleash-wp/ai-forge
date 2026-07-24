@@ -93,6 +93,28 @@ export async function fetchTicketDetails({ milestone, cookie }) {
   return map;
 }
 
+// Count the rows the Sources "Closed Core Trac tickets" link returns, so the
+// Core-tickets card can match the exact query the user clicks to verify. Takes
+// that same query URL and just asks Trac for every row as CSV. Needs the cookie
+// (the CSV endpoint is behind Trac's bot wall).
+export async function countTracTickets(queryUrl, cookie) {
+  if (!cookie) throw new Error('no Trac cookie');
+  const url = queryUrl + (queryUrl.includes('?') ? '&' : '?') + 'max=0&format=csv';
+  const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' } });
+  const body = await res.text();
+  if (!res.ok || /Checking your browser|__challenge|Javascript required/.test(body.slice(0, 600))) {
+    throw new Error(`Trac blocked the request (HTTP ${res.status}). Cookie expired, or the bot wall is up.`);
+  }
+  const rows = parseCsv(body);
+  if (!rows.length) return 0;
+  const head = rows[0].map((h) => h.trim().toLowerCase());
+  const iId = head.indexOf('id');
+  if (iId === -1) throw new Error('unexpected Trac CSV (no id column)');
+  let n = 0;
+  for (const row of rows.slice(1)) if (Number(row[iId])) n++;
+  return n;
+}
+
 const pick = (row, i) => (i >= 0 ? (row[i] ?? '').trim() : '');
 
 // RFC 4180 CSV: handles quoted fields with embedded commas, quotes and newlines
