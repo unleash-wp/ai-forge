@@ -426,4 +426,10 @@
   .badge-verified { font: 600 0.6875rem/1 var(--font); color: #fff; background: var(--good);
     padding: 0.3125rem 0.5rem; border-radius: 0.3125rem; }
   .badge-installed { font: 600 0.6875rem/1 var(--font); color: var(--muted); }
-  .market-note { margin: 0 0 var(--s4); }
+  .market-note { margin: 0 0 var(--s3); }
+  .market-search { margin: 0 0 var(--s4); }
+  .market-search input { max-width: 22rem; }
+  .plugin-card.is-disabled { opacity: .58; }
+  .plugin-card.is-disabled .pc-ic { background: var(--slate); }
+  .badge-off { font: 600 0.6875rem/1 var(--font); text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); background: var(--tagbg); padding: 0.3125rem 0.5rem; border-radius: 0.3125rem; }
