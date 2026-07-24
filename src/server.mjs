@@ -8,7 +8,6 @@ import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 import { checkUpdates } from './update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
-import { getMarketplace } from './marketplace.mjs';
 import { tmpdir } from 'node:os';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -71,16 +70,6 @@ export function startServer({ port = 4321 } = {}) {
         json(res, 200, { updates: await checkUpdates(await pluginsReady) });
       } catch (err) {
         json(res, 200, { updates: [], error: err.message });
-      }
-      return;
-    }
-
-    // Curated/verified marketplace catalog to browse + install from.
-    if (url.pathname === '/api/marketplace') {
-      try {
-        json(res, 200, await getMarketplace());
-      } catch (err) {
-        json(res, 200, { tools: [], error: err.message });
       }
       return;
     }
