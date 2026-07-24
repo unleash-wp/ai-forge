@@ -1,5 +1,7 @@
 import { authenticated } from './github.mjs';
 import { generate } from './report.mjs';
+import { fetchTicketDetails, resolveCookie } from './trac.mjs';
+import { applyDeepDetails } from './aggregate.mjs';
 import { toMarkdown, toPost } from './format.mjs';
 
 const HELP = `uwp (wp-release-helper) — summarize WordPress Core & Gutenberg changes for a release post.
@@ -17,6 +19,11 @@ Options:
   --core-branch <ref>   wordpress-develop branch (default: trunk).
   --no-labels           Skip Gutenberg [Type] label grouping (fewer API calls).
   --no-dev-notes        Skip the Core dev-notes tracker; leave Core flat.
+  --deep                Read full Trac ticket descriptions (one cookie-gated CSV
+                        request); fills Uncategorized + adds descriptions to JSON.
+                        Needs a WordPress.org cookie (see --trac-cookie).
+  --trac-cookie <file>  File holding the WPORG_TRAC_COOKIE value for --deep
+                        (or set the WPORG_TRAC_COOKIE env var).
   --post                Emit a fill-in release-post template (headline, count
                         line, source links, highlights placeholder + changelog).
   --json                Emit raw JSON instead of Markdown.
@@ -67,7 +74,14 @@ export async function run(argv) {
   });
 
   if (meta.trackerMissing) {
-    console.error(`uwp: no dev-notes tracker for ${meta.milestone} — Core stays flat (use the wporg-context MCP to group).`);
+    console.error(`uwp: no dev-notes tracker for ${meta.milestone} — Core stays flat (use --deep or the wporg-context MCP to group).`);
+  }
+
+  if (args.deep) {
+    const cookie = resolveCookie({ cookieFile: args['trac-cookie'] });
+    const details = await fetchTicketDetails({ milestone: meta.milestone, cookie });
+    applyDeepDetails(report, details);
+    console.error(`uwp: --deep read ${details.size} Trac tickets (with descriptions).`);
   }
 
   if (args.json) {
@@ -90,6 +104,8 @@ function parseArgs(argv) {
       args.json = true;
     } else if (a === '--post') {
       args.post = true;
+    } else if (a === '--deep') {
+      args.deep = true;
     } else if (a === '--no-labels') {
       args.labels = false;
     } else if (a === '--no-dev-notes') {

@@ -92,7 +92,23 @@ uses your local `gh` token, so nothing sensitive touches the browser.
 | `--gb-branch <ref>` | Override the Gutenberg branch. |
 | `--core-branch <ref>` | Override the `wordpress-develop` branch (default `trunk`). |
 | `--no-labels` | Skip Gutenberg label grouping (fewer API calls). |
+| `--post` | Emit a fill-in release-post template. |
+| `--deep` | Read full Trac ticket **descriptions** (one cookie-gated CSV request); fills Uncategorized + adds descriptions to `--json`. |
+| `--trac-cookie <file>` | File with the `WPORG_TRAC_COOKIE` value for `--deep` (or set the env var). |
 | `--json` | Emit raw JSON instead of Markdown. |
+
+### Reading depth
+
+- **Default (cookie-free):** ticket numbers, summaries, component, type, owner,
+  classification, full Core changeset messages, dev-note grouping. Enough for
+  most Beta posts, zero setup — this is what makes onboarding instant.
+- **`--deep` (one-time cookie):** adds the actual ticket **descriptions** for the
+  whole milestone in a single request, and gives every changeset its real Trac
+  component (no more Uncategorized). The description text lands in `--json`
+  (`core.ticketDetails`) for grounding the post. Trac blocks cookieless scripts,
+  so this needs your WordPress.org session cookie once — there is no cookie-free
+  way to read ticket bodies. Ticket *comments* are out of scope for the batch;
+  read those per-ticket via the `wporg-context` MCP if needed.
 
 ### Output (Markdown, abridged)
 
