@@ -17,7 +17,8 @@ CI/Codex.**
 
 ## Quick start for release coordinators
 
-Clone the repo, then pick one path - no build, no dependencies.
+Clone the repo, then pick one path. The CLI runs on plain Node with no build;
+the browser UI (`serve`) is a webpack/SCSS bundle built by `npm install`.
 
 **With Claude Code or Codex** - open the repo and just ask:
 
@@ -74,9 +75,13 @@ uwp --since 2026-07-15 --until 2026-07-22 --milestone 7.1
 
 ### Browser UI
 
-Prefer clicking a date range over typing flags:
+Prefer clicking a date range over typing flags. The browser UI is a webpack
+build (SCSS + JS bundled into `dist/`), so it needs a one-time `npm install`
+(which builds it via the `prepare` script; or run `npm run build`). The CLI
+report path above needs neither.
 
 ```bash
+npm install          # builds the UI bundle (dist/)
 uwp serve            # -> http://localhost:4321
 ```
 
