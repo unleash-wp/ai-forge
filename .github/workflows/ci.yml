@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Install without the prepare build, then build explicitly so a broken
+      # bundle is its own clearly-labelled failing step.
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Build the browser UI bundle
+        run: npm run build
+
+      - name: Syntax-check all source modules
+        run: node --check src/*.mjs bin/*.mjs webpack.config.cjs
+
+      - name: Unit tests
+        run: node --test
