@@ -434,6 +434,8 @@ const PAGE = `<!doctype html>
   .atbox { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text); cursor: pointer; white-space: nowrap; }
   .atbox input { width: 17px; height: 17px; accent-color: var(--navy); cursor: pointer; }
   .propslist { margin: 0; font-size: 14.5px; line-height: 1.85; color: var(--text); }
+  .props-hint { margin-top: var(--s3); }
+  .props-hint[hidden] { display: none; }
 
   /* ---- Empty state ---- */
   .empty { text-align: center; padding: var(--s8) var(--s5); }
@@ -894,6 +896,7 @@ function render(data) {
       '<button class="ghost sm" onclick="copyProps()">' + IC.clip + 'Copy props line</button>' +
     '</div></div>';
   pv += '<p class="propslist" id="propsList">' + all.map(esc).join(', ') + '</p>';
+  pv += '<p class="note props-hint" id="propsHint" hidden>Slack handles usually match the wp.org username, but not always. Double-check before pinging.</p>';
   h += '<div class="panel hidden" id="p-props">' + pv + '</div>';
 
   $('out').innerHTML = h;
@@ -943,6 +946,7 @@ function applyPropsFormat() {
   var list = (window._props || []).map(function (n) { return (at ? '@' : '') + n; });
   window._propsLine = list.join(', ');
   var el = $('propsList'); if (el) el.textContent = window._propsLine;
+  var hint = $('propsHint'); if (hint) hint.hidden = !at;
 }
 function copyProps() { navigator.clipboard.writeText(window._propsLine || ''); }
 function downloadMd() {
