@@ -1,8 +1,8 @@
-# Example release post — structure reference
+# Example release post - structure reference
 
 A real "What's in WordPress 7.1 Beta 3?" post. Use it as the shape/tone target.
 Note how every claim maps to a linked PR/ticket and the two source links match
-the CLI's **Sources** block. Do not copy its wording — regenerate from the CLI
+the CLI's **Sources** block. Do not copy its wording - regenerate from the CLI
 data for the actual window.
 
 ---
@@ -45,7 +45,7 @@ will continue in a community plugin.
 - The **two links** = the CLI **Sources** block verbatim.
 - "Apply globally" = a Gutenberg `[Feature]` PR (#79839) in the CLI list.
 - The media-upload sentences = individual Core/Gutenberg fixes (GIF hang, EXIF
-  rotation, HEIC double-entry) — each a real PR/ticket title.
+  rotation, HEIC double-entry) - each a real PR/ticket title.
 - "Coding Standards 3.4.0" = Core changeset with its ticket.
-- The Unicode-email note is editorial context the coordinator adds — outside the
+- The Unicode-email note is editorial context the coordinator adds - outside the
   data; include only when the user provides it.

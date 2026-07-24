@@ -108,7 +108,7 @@ export function startServer({ port = 4321 } = {}) {
         saveCookie(cookie);                          // persist (owner-only); value never returned
         const ok = await validateCookie(cookie);
         json(res, 200, { ok, saved: true, message: ok
-          ? `Imported from ${browser} and verified — Trac reachable.`
+          ? `Imported from ${browser} and verified - Trac reachable.`
           : `Imported from ${browser}, but Trac rejected it (expired session or bot wall). Saved anyway; the tool runs cookie-free.` });
       } catch (err) {
         json(res, 200, { ok: false, message: err.message });
@@ -636,18 +636,18 @@ const PAGE = `<!doctype html>
       <div class="inst-step" id="inst1">
         <span class="inst-kicker">Step 1 of 2</span>
         <h2>Connect GitHub</h2>
-        <p>Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account — no access to the WordPress org, no token scopes. It only reads public repos.</p>
+        <p>Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account - no access to the WordPress org, no token scopes. It only reads public repos.</p>
         <div class="inst-ok" id="inst1Detected" hidden></div>
         <div id="inst1Paste">
           <ol><li>Detected automatically if the <code>gh</code> CLI is logged in, or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it:</li></ol>
-          <input type="password" id="instGh" placeholder="ghp_… or github_pat_…  (optional — skip for 60/h)" autocomplete="off" spellcheck="false">
+          <form onsubmit="return false" autocomplete="off" style="margin:0"><input type="password" id="instGh" placeholder="ghp_… or github_pat_…  (optional - skip for 60/h)" autocomplete="off" spellcheck="false"></form>
           <span class="msg" id="instGhMsg"></span>
         </div>
       </div>
       <div class="inst-step" id="inst2" hidden>
         <span class="inst-kicker">Step 2 of 2</span>
         <h2>Connect WordPress.org</h2>
-        <p>Needed for <b>deep</b> — full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
+        <p>Needed for <b>deep</b> - full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
         <div class="quickimport">
           <span class="qi-label">Quick import from your browser <span class="qi-note">(you must be logged in there)</span></span>
           <div class="qi-btns" id="instQiBtns"></div>
@@ -660,7 +660,7 @@ const PAGE = `<!doctype html>
           <textarea id="instCookie" rows="3" placeholder="wporg_logged_in=…; wporg_sec=…"></textarea>
         </details>
         <span class="msg" id="instCookieMsg"></span>
-        <div class="inst-escape" id="instEscape" hidden>Trac isn't reachable right now (bot wall or expired cookie). You can <button class="back" type="button" onclick="instContinueAnyway()">continue anyway</button> — the tool runs cookie-free and you can add the cookie later in Setup.</div>
+        <div class="inst-escape" id="instEscape" hidden>Trac isn't reachable right now (bot wall or expired cookie). You can <button class="back" type="button" onclick="instContinueAnyway()">continue anyway</button> - the tool runs cookie-free and you can add the cookie later in Setup.</div>
       </div>
     </div>
     <div class="inst-foot">
@@ -732,7 +732,7 @@ const PAGE = `<!doctype html>
   <section class="card wizard" id="wizard">
     <button class="wiz-close" type="button" onclick="closeWizard()" aria-label="Close setup">&times;</button>
     <h2>Setup</h2>
-    <p class="lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own — nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
+    <p class="lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own - nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
     <div class="steps">
       <div class="step" id="stepGh">
         <div class="num"><span class="d">1</span></div>
@@ -740,9 +740,9 @@ const PAGE = `<!doctype html>
           <h3>GitHub <em>lifts the API limit from 60 to 5000 requests an hour</em></h3>
           <div id="ghConnected" class="connected" hidden></div>
           <div id="ghSetup">
-            <p>Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b> — it only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</p>
+            <p>Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b> - it only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</p>
             <ol><li>One click if the <code>gh</code> CLI is logged in (detected automatically), or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it below.</li></ol>
-            <input type="password" id="ghToken" placeholder="ghp_… or github_pat_…" autocomplete="off" spellcheck="false">
+            <form onsubmit="return false" autocomplete="off" style="margin:0"><input type="password" id="ghToken" placeholder="ghp_… or github_pat_…" autocomplete="off" spellcheck="false"></form>
             <div class="rowbtns">
               <button class="primary sm" type="button" onclick="saveGh()">Save &amp; connect</button>
               <button class="ghost sm" type="button" onclick="testGh()">Test</button>
@@ -950,7 +950,7 @@ function instPrimary() {
     } else { instGoto(2); }
   } else {
     var c = $('instCookie').value.trim();
-    if (!c) { instMsg('instCookieMsg', 'Paste your cookie to finish — or continue anyway below.', 'bad'); $('instEscape').hidden = false; return; }
+    if (!c) { instMsg('instCookieMsg', 'Paste your cookie to finish - or continue anyway below.', 'bad'); $('instEscape').hidden = false; return; }
     instMsg('instCookieMsg', 'saving and testing…');
     fetch('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie: c }) })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
@@ -969,7 +969,7 @@ function instFinishDone() {
     $('installer').hidden = true; document.body.classList.remove('installing'); refreshStatus();
   });
 }
-// Detect the browser this page is running in — the import only makes sense for
+// Detect the browser this page is running in - the import only makes sense for
 // the browser the user is actually logged into wordpress.org with.
 function currentBrowser() {
   var ua = navigator.userAgent;
@@ -1021,7 +1021,7 @@ function refreshStatus() {
       $('installer').hidden = false;
       if (d.github.set) {
         $('inst1Detected').hidden = false;
-        $('inst1Detected').innerHTML = '<span>✓</span> GitHub ready — ' + (d.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token') + ' · 5000/h';
+        $('inst1Detected').innerHTML = '<span>✓</span> GitHub ready - ' + (d.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token') + ' · 5000/h';
         $('inst1Paste').hidden = true;
       } else { $('inst1Detected').hidden = true; $('inst1Paste').hidden = false; }
       instGoto(installerStep);
@@ -1040,7 +1040,7 @@ function refreshStatus() {
           : '<span class="disc-note">' + (d.github.source === 'gh' ? 'auto-detected from the gh CLI' : 'set by env var') + '</span>');
       $('ghSetup').hidden = true;
       // A saved token beats gh (resolution order env -> file -> gh), so always
-      // allow changing it — except when GITHUB_TOKEN env is set, which wins hard.
+      // allow changing it - except when GITHUB_TOKEN env is set, which wins hard.
       $('ghEdit').hidden = (d.github.source === 'env');
       $('ghEdit').textContent = d.github.source === 'gh' ? 'Use your own token instead' : 'Use a different token';
     } else {
@@ -1124,7 +1124,7 @@ $('f').addEventListener('submit', function (e) {
   }).catch(function (err) {
     var m = err.message || 'request failed';
     if (/rate limit|\b403\b/i.test(m)) {
-      $('status').innerHTML = 'GitHub rate limit reached — that is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.';
+      $('status').innerHTML = 'GitHub rate limit reached - that is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.';
       openWizard();
     } else if (/cookie/i.test(m)) {
       $('status').textContent = 'Error: ' + m; openWizard();

@@ -6,7 +6,7 @@ const TRAC = 'https://core.trac.wordpress.org';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
   '(KHTML, like Gecko) Chrome/126.0 Safari/537.36';
 
-// Default cookie file — shared with sirreal's wordpress-trac plugin and outside
+// Default cookie file - shared with sirreal's wordpress-trac plugin and outside
 // any repo, so it is never committed by accident.
 export function cookiePath() {
   const base = process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
@@ -27,7 +27,7 @@ export function deleteCookie() {
 }
 
 // Trac's CSV export (unlike its HTML query) needs a logged-in WordPress.org
-// session cookie — the same WPORG_TRAC_COOKIE the mcp-context-wporg server uses —
+// session cookie - the same WPORG_TRAC_COOKIE the mcp-context-wporg server uses -
 // or it returns the "Checking your browser" bot wall. Resolution order:
 // WPORG_TRAC_COOKIE env, then an explicit file, then the default cookie file.
 export function resolveCookie({ cookieFile } = {}) {
@@ -59,7 +59,7 @@ export async function validateCookie(cookie) {
 // Returns Map<id, { summary, description, component, type, owner, priority }>.
 export async function fetchTicketDetails({ milestone, cookie }) {
   if (!milestone) throw new Error('--deep needs --milestone');
-  if (!cookie) throw new Error('no Trac cookie — set WPORG_TRAC_COOKIE or pass --trac-cookie <file>');
+  if (!cookie) throw new Error('no Trac cookie - set WPORG_TRAC_COOKIE or pass --trac-cookie <file>');
 
   const url = `${TRAC}/query?status=closed&milestone=${encodeURIComponent(milestone)}` +
     '&max=0&order=id&col=id&col=summary&col=component&col=type&col=owner&col=priority&col=description&format=csv';

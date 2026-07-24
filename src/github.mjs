@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
-// Local config file for a saved GitHub token — same owner-only dir as the Trac
+// Local config file for a saved GitHub token - same owner-only dir as the Trac
 // cookie, outside any repo so it is never committed by accident.
 export function tokenPath() {
   const base = process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
@@ -69,13 +69,13 @@ export function authenticated() {
 // (never counts against the limit) and report the ceiling it gives back.
 export async function checkToken() {
   const { token, source } = resolveToken();
-  if (!token) return { ok: false, message: 'No token — GitHub API limited to 60 req/h.' };
+  if (!token) return { ok: false, message: 'No token - GitHub API limited to 60 req/h.' };
   const res = await fetch('https://api.github.com/rate_limit', { headers: headers() });
-  if (res.status === 401) return { ok: false, message: 'GitHub rejected the token (401 — expired or wrong value).' };
+  if (res.status === 401) return { ok: false, message: 'GitHub rejected the token (401 - expired or wrong value).' };
   if (!res.ok) return { ok: false, message: `GitHub ${res.status} ${res.statusText}.` };
   const d = await res.json();
   const core = (d.resources && d.resources.core) || d.rate || {};
-  return { ok: true, source, message: `Token works — ${core.limit}/h limit (${core.remaining} left).` };
+  return { ok: true, source, message: `Token works - ${core.limit}/h limit (${core.remaining} left).` };
 }
 
 function headers() {
@@ -96,7 +96,7 @@ async function getJson(url) {
   const res = await fetch(url, { headers: headers() });
   if (!res.ok) {
     let hint = '';
-    if (res.status === 403) hint = ' (rate limit — run `gh auth login` for 5000/h)';
+    if (res.status === 403) hint = ' (rate limit - run `gh auth login` for 5000/h)';
     if (res.status === 404) hint = ' (repo or branch not found)';
     throw new Error(`GitHub ${res.status} ${res.statusText}${hint}: ${url}`);
   }
@@ -132,7 +132,7 @@ export async function commits(repo, branch, since, until) {
 export async function branches(repo) {
   const names = new Set();
   // Guarantee the release-relevant Gutenberg branches (wp/*) even though the repo
-  // has hundreds of branches — the plain listing could page them out.
+  // has hundreds of branches - the plain listing could page them out.
   if (repo.endsWith('/gutenberg')) {
     try {
       const refs = await apiJson(`repos/${repo}/git/matching-refs/heads/wp/`);

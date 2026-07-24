@@ -1,7 +1,7 @@
-# wp-release-helper — instructions for coding agents (Codex & others)
+# wp-release-helper - instructions for coding agents (Codex & others)
 
 This repo turns a date window into a WordPress release-post changelog for Core +
-Gutenberg. **Zero dependencies, plain Node ≥18** — nothing to install or build.
+Gutenberg. **Zero dependencies, plain Node ≥18** - nothing to install or build.
 
 ## Task: produce a release changelog / post
 
@@ -30,7 +30,7 @@ Gutenberg. **Zero dependencies, plain Node ≥18** — nothing to install or bui
    changeset commit messages instead, and say descriptions were not read.
 4. Fill the highlights: **1–3 short paragraphs, each sentence backed by a real
    PR or Trac ticket you read.** Link them inline. Do not invent features, do not
-   estimate counts or dates — the tool's numbers and links are the source of
+   estimate counts or dates - the tool's numbers and links are the source of
    truth.
 
 ## Optional
@@ -42,10 +42,10 @@ Gutenberg. **Zero dependencies, plain Node ≥18** — nothing to install or bui
 
 ## Where things are
 
-- `bin/wp-release-helper.mjs` — CLI entry.
-- `src/report.mjs` — fetch + aggregate pipeline (shared by CLI and server).
-- `src/format.mjs` — Markdown report (`toMarkdown`) and post template (`toPost`).
-- `src/server.mjs` — the `serve` browser UI.
+- `bin/wp-release-helper.mjs` - CLI entry.
+- `src/report.mjs` - fetch + aggregate pipeline (shared by CLI and server).
+- `src/format.mjs` - Markdown report (`toMarkdown`) and post template (`toPost`).
+- `src/server.mjs` - the `serve` browser UI.
 - Sources: Gutenberg = `WordPress/gutenberg`; Core = `WordPress/wordpress-develop`
   mirror; Core component grouping = `WordPress/Documentation-Issue-Tracker`
   dev-notes tracker (cookie-free GitHub JSON).

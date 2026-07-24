@@ -38,23 +38,23 @@ The CLI outputs: summary counts table, Gutenberg grouped by `[Type]`/`[Feature]`
 label, Core grouped by Trac component + dev-note classification (via the
 dev-notes tracker, step 3), and a merged contributor list.
 
-### 3. Core component grouping — automatic via the dev-notes tracker
+### 3. Core component grouping - automatic via the dev-notes tracker
 
 When you pass `--milestone`, the CLI already groups Core by Trac component using
 the WordPress docs-team **dev-notes tracker**
 (`WordPress/Documentation-Issue-Tracker/<x-y>-dev-notes`). This is cookie-free
 GitHub JSON, human-reviewed, tagged with `component` **and** `classification`
 (`dev-note` / `misc-dev-note` / `field-guide`). The CLI joins it on ticket
-number so the window stays exact. Nothing to run — it's in the output. Disable
+number so the window stays exact. Nothing to run - it's in the output. Disable
 with `--no-dev-notes`.
 
-Changesets whose ticket is not in the tracker — newer than its snapshot,
-excluded components (Build/Test Tools, tests), or version bumps with no ticket —
+Changesets whose ticket is not in the tracker - newer than its snapshot,
+excluded components (Build/Test Tools, tests), or version bumps with no ticket -
 land under **Uncategorized**. That is expected, not an error.
 
 #### Fallback: the `wporg-context` MCP (only when no tracker exists)
 
-Early in a cycle the docs team hasn't triaged yet, so there is no tracker — the
+Early in a cycle the docs team hasn't triaged yet, so there is no tracker - the
 CLI prints a notice and leaves Core flat. Then use the Automattic
 `mcp-context-wporg` MCP (registered here as `wporg-context`, tools
 `mcp__wporg-context__*`) for component data:
@@ -67,9 +67,9 @@ CLI prints a notice and leaves Core flat. Then use the Automattic
 - Needs `WPORG_TRAC_COOKIE` on the server; run `validate-auth` to check.
 
 Also handy for live ticket detail and bbPress/BuddyPress. Never invent component
-names — if neither source is available, ship the flat Core list.
+names - if neither source is available, ship the flat Core list.
 
-### 3b. Read the tickets in full (grounding — do this before writing)
+### 3b. Read the tickets in full (grounding - do this before writing)
 
 The CLI gives ticket **numbers, summaries and metadata** cookie-free, but not the
 ticket **description or discussion**. To ground the prose in what each ticket
@@ -96,25 +96,25 @@ messages (still substantial), and leave Uncategorized as-is.
 Release coordinators publish a "What's in WordPress <x.y> Beta/RC N?" post.
 Match that shape (see `references/example-post.md`):
 
-1. **Headline** — `What's in WordPress <x.y> <Beta/RC N>?`
-2. **Count line + sources** — e.g. "For technical details on the N issues
+1. **Headline** - `What's in WordPress <x.y> <Beta/RC N>?`
+2. **Count line + sources** - e.g. "For technical details on the N issues
    addressed since <previous build>, see:" then the two links from the CLI's
    **Sources** block (Trac query + Gutenberg commits for the window). The count
-   is the CLI's `coreTickets` + `gutenbergPRs`, or the Trac/GH totals — never
+   is the CLI's `coreTickets` + `gutenbergPRs`, or the Trac/GH totals - never
    estimated.
-3. **Prose highlights** — 1-3 short paragraphs on the notable changes, grouped
+3. **Prose highlights** - 1-3 short paragraphs on the notable changes, grouped
    loosely (styling, media, editor, developer). Each sentence must trace to a
    real PR/ticket title from the CLI output; link the PR/ticket inline. Prefer
    the Gutenberg `[Feature]`-labelled PRs and the Core `dev-note` /
-   `field-guide` tickets — those are what the docs team flagged as noteworthy.
-4. **Notes** — deferrals ("X will not be included…"), security builds, or
+   `field-guide` tickets - those are what the docs team flagged as noteworthy.
+4. **Notes** - deferrals ("X will not be included…"), security builds, or
    cross-release context, only if present in the data or given by the user.
-5. **Contributors** — the union list.
+5. **Contributors** - the union list.
 
 **Grounding rules (hard):**
 - Never write a highlight that is not backed by a PR/ticket title in the CLI
   output. No invented features, no guessed impact.
-- Counts and links come straight from the tool — never estimate or round beyond
+- Counts and links come straight from the tool - never estimate or round beyond
   what the CLI reports (a "more than N" phrasing is fine if N is the real count).
 - If you are unsure what a change does, quote the PR/ticket title rather than
   paraphrasing speculatively.

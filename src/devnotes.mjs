@@ -1,7 +1,7 @@
 import { apiJson } from './github.mjs';
 
 // The WordPress docs team triages each release into a per-release folder of
-// component JSON files here — cookie-free, already component + classification
+// component JSON files here - cookie-free, already component + classification
 // tagged. We use it as the preferred Core categorization source.
 const REPO = 'WordPress/Documentation-Issue-Tracker';
 
