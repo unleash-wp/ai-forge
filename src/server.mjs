@@ -223,27 +223,24 @@ const PAGE = `<!doctype html>
 
   /* ---- App shell: tool rail (left) + workspace (right) ---- */
   .shell { max-width: 1160px; margin: 0 auto; padding: 0 var(--s5); display: grid;
-    grid-template-columns: 168px minmax(0, 1fr); gap: var(--s8); align-items: start; }
+    grid-template-columns: 124px minmax(0, 1fr); gap: var(--s6); align-items: start; }
 
-  /* ---- Tool rail (sidebar panel of Metro tiles: always on the page, grows downward) ---- */
-  .rail { position: sticky; top: 84px; margin-top: var(--s6); background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--r); box-shadow: var(--shadow-sm); padding: var(--s3); display: flex; flex-direction: column; gap: var(--s3); }
-  .rail-cap { font: 600 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: var(--s2) var(--s1) var(--s1); }
-  .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--s2);
-    width: 100%; aspect-ratio: 1 / 1; padding: var(--s3); border-radius: var(--r); border: 1px solid transparent;
+  /* ---- Tool rail (compact sidebar of small Metro tiles; grows downward) ---- */
+  .rail { position: sticky; top: 82px; margin-top: var(--s6); background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); box-shadow: var(--shadow-sm); padding: var(--s2); display: flex; flex-direction: column; gap: var(--s2); }
+  .rail-cap { font: 600 9.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: var(--s1) var(--s1) 2px; }
+  .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 5px;
+    width: 100%; padding: var(--s3) 6px; border-radius: var(--r); border: 1px solid transparent;
     background: var(--sunk); color: var(--text); cursor: pointer; font: inherit;
     transition: transform .12s ease, box-shadow .12s ease, background .14s ease; }
   .tool:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .tool-ic { display: grid; place-items: center; }
-  .tool-name { font: 600 12.5px/1.2 var(--font); }
-  .tool-badge { font: 600 8.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .tool-name { font: 600 10.5px/1.2 var(--font); }
   .tool.active { background: var(--navy); color: #fff; box-shadow: var(--shadow-sm); cursor: default; }
   .tool.active:hover { transform: none; }
-  .tool.is-soon { color: var(--muted); cursor: default; }
-  .tool.is-soon:hover { transform: none; box-shadow: none; }
   .tool.is-more { background: none; border: 1px dashed var(--border); color: var(--muted); cursor: default; }
   .tool.is-more:hover { transform: none; box-shadow: none; }
-  .tool.is-more .tool-ic { font: 400 22px/1 var(--font); }
+  .tool.is-more .tool-ic { font: 400 16px/1 var(--font); }
 
   /* ---- Workspace (the active tool) ---- */
   main { min-width: 0; padding: var(--s6) 0 var(--s8); }
@@ -489,7 +486,7 @@ const PAGE = `<!doctype html>
   <aside class="rail">
     <span class="rail-cap">Tools</span>
     <button type="button" class="tool active" aria-current="true">
-      <span class="tool-ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+      <span class="tool-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
       <span class="tool-name">Changelog Generator</span>
     </button>
     <button type="button" class="tool is-more" disabled>
