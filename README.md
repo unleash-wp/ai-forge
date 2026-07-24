@@ -6,22 +6,31 @@ ready to drop into a release post.
 
 - **Gutenberg** → `github.com/WordPress/gutenberg` (branch `wp/<milestone>`)
 - **Core** → `github.com/WordPress/wordpress-develop` (git mirror of Core SVN)
-- **Trac** ticket component/milestone grouping → added by the bundled Claude
-  Code skill via the [Automattic `mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg)
-  MCP server (Trac itself is bot-walled for plain scripts).
+- **Core component + dev-note classification** → the docs-team dev-notes tracker
+  ([`WordPress/Documentation-Issue-Tracker`](https://github.com/WordPress/Documentation-Issue-Tracker)),
+  cookie-free GitHub JSON. Fallback when no tracker exists yet: the
+  [Automattic `mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg)
+  MCP (Trac is bot-walled for plain scripts).
 
-## Why the two sources
+Everything the CLI needs is on GitHub — **no Trac cookie, deterministic, runs in
+CI/Codex.**
+
+## Why these sources
 
 | Surface | Where changes live | This tool reads |
 | --- | --- | --- |
 | Gutenberg | GitHub PRs on `wp/<milestone>` | commits + `[Type]` labels |
 | Core | Trac tickets, committed to SVN | the `wordpress-develop` git mirror |
+| Core grouping | Trac ticket metadata | the dev-notes tracker JSON (join on ticket #) |
 
 Core commit messages carry everything a release post needs — `Fixes #NNNNN`
 (closed Trac ticket), `Props alice, bob` (contributors), and
 `git-svn-id: …@62815` (changeset `r62815`) — so the mirror gives reliable
-counts and links without touching Trac. Component grouping is the one thing that
-needs Trac, and the skill adds it via MCP when available.
+counts and links without touching Trac. For component grouping the CLI joins
+each windowed ticket against the dev-notes tracker (which is already tagged with
+component + `dev-note`/`misc-dev-note`/`field-guide`). Tickets not in the
+tracker — newer than its snapshot, excluded components, or version bumps — land
+under **Uncategorized**.
 
 ## Install
 
@@ -83,11 +92,13 @@ The skill runs the CLI, then (if the `wporg-context` MCP is connected) enriches
 the Core section with Trac component grouping and assembles a release post
 scaffold — without inventing any counts or highlights.
 
-### Connect the Trac MCP (`wporg-context`)
+### Connect the Trac MCP (`wporg-context`) — optional fallback
 
-Core component grouping comes from the [Automattic
-`mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg) server
-(not on npm — clone + build):
+Only needed when a release has **no dev-notes tracker yet** (early in the
+cycle), or for live ticket detail / bbPress / BuddyPress. Otherwise the CLI
+groups Core from the tracker with no setup. The [Automattic
+`mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg) server is
+not on npm — clone + build:
 
 ```bash
 git clone https://github.com/Automattic/mcp-context-wporg ~/Documents/mcp-context-wporg

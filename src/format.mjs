@@ -39,16 +39,37 @@ export function toMarkdown(report, meta) {
     out.push('');
   }
 
+  const tracker = report.core.tracker;
   out.push(`## Core (\`${coreBranch}\`)`);
   out.push('');
-  out.push('> Component / milestone grouping needs Trac. Enrich with the Automattic `mcp-context-wporg` MCP (see SKILL.md).');
-  out.push('');
-  if (report.core.commits.length) {
-    for (const c of report.core.commits) out.push(coreLine(c));
+  if (tracker) {
+    out.push(`> Grouped by Trac component via the \`${tracker.slug}\` dev-notes tracker.`);
+    if (tracker.stats) {
+      const s = tracker.stats;
+      out.push(`> Milestone classification: ${Object.entries(s).map(([k, v]) => `${v} ${k}`).join(' · ')}.`);
+    }
+    out.push('');
+    const groups = Object.entries(report.core.byComponent).sort((a, b) => {
+      if (a[0] === 'Uncategorized') return 1;
+      if (b[0] === 'Uncategorized') return -1;
+      return b[1].length - a[1].length;
+    });
+    for (const [component, items] of groups) {
+      out.push(`### ${component} (${items.length})`);
+      out.push('');
+      for (const c of items) out.push(coreLine(c));
+      out.push('');
+    }
   } else {
-    out.push('_No changesets in window._');
+    out.push('> Component grouping needs Trac. Add `--milestone` (dev-notes tracker) or the `wporg-context` MCP (see SKILL.md).');
+    out.push('');
+    if (report.core.commits.length) {
+      for (const c of report.core.commits) out.push(coreLine(c));
+    } else {
+      out.push('_No changesets in window._');
+    }
+    out.push('');
   }
-  out.push('');
 
   const all = [...new Set([...report.gutenberg.contributors, ...report.core.contributors])].sort((a, b) =>
     a.toLowerCase().localeCompare(b.toLowerCase())
@@ -69,6 +90,7 @@ function gbLine(c) {
 function coreLine(c) {
   const ref = c.changeset ? `[r${c.changeset}](${TRAC}/changeset/${c.changeset})` : `\`${c.shortSha}\``;
   const tix = c.tickets.map((n) => `[#${n}](${TRAC}/ticket/${n})`).join(' ');
+  const cls = c.classification ? ` _[${c.classification}]_` : '';
   const props = c.props.length ? ` — props ${c.props.join(', ')}` : '';
-  return `- ${ref}: ${c.subject}${tix ? ' — ' + tix : ''}${props}`;
+  return `- ${ref}: ${c.subject}${cls}${tix ? ' — ' + tix : ''}${props}`;
 }

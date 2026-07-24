@@ -1,5 +1,6 @@
 import { commits, labelsFor, authenticated } from './github.mjs';
 import { parseCommit } from './parse.mjs';
+import { fetchTracker } from './devnotes.mjs';
 import { buildReport } from './aggregate.mjs';
 import { toMarkdown } from './format.mjs';
 
@@ -19,6 +20,7 @@ Options:
   --gb-branch <ref>     Gutenberg branch (default: wp/<milestone> or trunk).
   --core-branch <ref>   wordpress-develop branch (default: trunk).
   --no-labels           Skip Gutenberg [Type] label grouping (fewer API calls).
+  --no-dev-notes        Skip the Core dev-notes tracker; leave Core flat.
   --json                Emit raw JSON instead of Markdown.
   -h, --help            Show this help.
 
@@ -68,7 +70,15 @@ export async function run(argv) {
     if (prNums.length) gbLabels = await labelsFor(GB_REPO, prNums);
   }
 
-  const report = buildReport(gb, core, gbLabels);
+  // Preferred Core categorization: the docs-team dev-notes tracker (cookie-free,
+  // component + classification tagged). Null when none exists for the milestone.
+  let tracker = null;
+  if (milestone && args['dev-notes'] !== false) {
+    tracker = await fetchTracker(milestone);
+    if (!tracker) console.error(`wp-release-helper: no dev-notes tracker for ${milestone} — Core stays flat (use the wporg-context MCP to group).`);
+  }
+
+  const report = buildReport(gb, core, gbLabels, tracker);
   const meta = { since, until, milestone, gbBranch, coreBranch };
 
   if (args.json) {
@@ -89,6 +99,8 @@ function parseArgs(argv) {
       args.json = true;
     } else if (a === '--no-labels') {
       args.labels = false;
+    } else if (a === '--no-dev-notes') {
+      args['dev-notes'] = false;
     } else if (a.startsWith('--')) {
       const eq = a.indexOf('=');
       if (eq !== -1) {

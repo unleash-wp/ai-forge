@@ -35,44 +35,39 @@ label lookup (faster, fewer API calls). Needs `gh auth login` (5000 req/h);
 falls back to anonymous 60/h with a warning.
 
 The CLI outputs: summary counts table, Gutenberg grouped by `[Type]`/`[Feature]`
-label, a flat Core changeset list (with `rXXXXX` + Trac ticket links + props),
-and a merged contributor list.
+label, Core grouped by Trac component + dev-note classification (via the
+dev-notes tracker, step 3), and a merged contributor list.
 
-### 3. Group Core by Trac component via the `mcp-context-wporg` MCP
+### 3. Core component grouping — automatic via the dev-notes tracker
 
-The CLI cannot group Core by component — Trac is bot-walled for scripts. Use the
-**Automattic `mcp-context-wporg`** MCP server for the component metadata. Its
-tools are reached through two meta-tools:
+When you pass `--milestone`, the CLI already groups Core by Trac component using
+the WordPress docs-team **dev-notes tracker**
+(`WordPress/Documentation-Issue-Tracker/<x-y>-dev-notes`). This is cookie-free
+GitHub JSON, human-reviewed, tagged with `component` **and** `classification`
+(`dev-note` / `misc-dev-note` / `field-guide`). The CLI joins it on ticket
+number so the window stays exact. Nothing to run — it's in the output. Disable
+with `--no-dev-notes`.
 
-- `wporg-load-provider` with `{ "provider": "trac" }`
-- `wporg-execute-tool` with `{ "provider": "trac", "tool": "<name>", "args": {…} }`
+Changesets whose ticket is not in the tracker — newer than its snapshot,
+excluded components (Build/Test Tools, tests), or version bumps with no ticket —
+land under **Uncategorized**. That is expected, not an error.
 
-Trac tools available: `search-tickets`, `get-ticket {id}`, `list-components`,
-`get-timeline {days}`, `get-report {id}`, `validate-auth`.
+#### Fallback: the `wporg-context` MCP (only when no tracker exists)
 
-**Important — no changetime filter.** `search-tickets` filters by `milestone`,
-`component`, `status`, `type`, `priority`, `owner` — but not by a date range.
-So do NOT ask the MCP for "closed between X and Y". Instead **join on ticket
-number**, which keeps the window exact and the component data from Trac:
+Early in a cycle the docs team hasn't triaged yet, so there is no tracker — the
+CLI prints a notice and leaves Core flat. Then use the Automattic
+`mcp-context-wporg` MCP (registered here as `wporg-context`, tools
+`mcp__wporg-context__*`) for component data:
 
-1. Take the windowed, deterministic ticket set from the CLI JSON
-   (`core.commits[].tickets` — parsed from `Fixes #NNNNN` in the changesets in
-   the window).
-2. `search-tickets` with `{ milestone: "<x.y>", status: "closed", limit: 200 }`
-   to pull that milestone's closed tickets *with their `component`*. Page/raise
-   `limit` if the milestone has more.
-3. Join by ticket number: assign each windowed ticket its component from the
-   search results. For any windowed ticket missing from the milestone results,
-   call `get-ticket {id}` to fetch its component directly.
-4. Group the windowed Core changesets under their tickets' components.
+- meta-tools `wporg-load-provider {provider:"trac"}` then
+  `wporg-execute-tool {provider:"trac", tool:"…", args:{…}}`.
+- `search-tickets` has **no changetime filter** → join on ticket number:
+  `search-tickets {milestone, status:"closed", limit:200}` for component-per-
+  ticket, `get-ticket {id}` for any miss. Group the windowed changesets by it.
+- Needs `WPORG_TRAC_COOKIE` on the server; run `validate-auth` to check.
 
-The server is registered as `wporg-context` (tools exposed as
-`mcp__wporg-context__*`). Optionally run `validate-auth` first — Trac needs
-`WPORG_TRAC_COOKIE` set on the MCP server (a WordPress.org session cookie), else
-it 403s on the bot wall.
-
-If the MCP is **not** connected, say so and ship the flat Core list from the
-CLI; do not invent component names.
+Also handy for live ticket detail and bbPress/BuddyPress. Never invent component
+names — if neither source is available, ship the flat Core list.
 
 ### 4. Assemble the release post scaffold
 
