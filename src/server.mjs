@@ -273,10 +273,10 @@ const PAGE = `<!doctype html>
   /* ---- Header (white brand bar) ---- */
   header { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); transition: box-shadow .18s ease; }
   header.scrolled { box-shadow: var(--shadow); }
-  .bar { max-width: 70rem; margin: 0 auto; padding: 0.875rem var(--s5); display: flex; align-items: center; gap: var(--s4); }
+  .bar { max-width: 72.5rem; margin: 0 auto; padding: 0.875rem var(--s5); display: flex; align-items: center; gap: var(--s4); }
   .logo { display: inline-flex; align-items: center; flex: none; transition: opacity .15s; }
   .logo:hover { opacity: .78; }
-  .logo svg { height: 1.375rem; width: auto; display: block; }
+  .logo svg { height: 1.75rem; width: auto; display: block; }
   .divider { width: 0.0625rem; height: 1.25rem; background: var(--border); flex: none; }
   .product { font-size: 0.9688rem; font-weight: 500; color: var(--heading); letter-spacing: .005em; text-decoration: none; }
   .product:hover { color: var(--heading); opacity: .7; }
