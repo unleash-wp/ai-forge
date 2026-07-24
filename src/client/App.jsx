@@ -12,6 +12,23 @@ const RAIL_ICONS = {
   code: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
 };
 
+// Non-blocking "update available" note (free, via GitHub Releases). Never
+// downloads code - just links the release notes.
+function UpdateNote() {
+  const [updates, setUpdates] = useState([]);
+  useEffect(() => {
+    fetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
+  }, []);
+  if (!updates.length) return null;
+  return (
+    <div className="warn">
+      {updates.map((u) => (
+        <div key={u.id}>Update available: <b>{u.name}</b> {u.current} → {u.latest}. <a href={u.url} target="_blank" rel="noopener">Release notes</a></div>
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   const toast = useToast();
   const [status, setStatus] = useState(null);
@@ -95,6 +112,7 @@ export default function App() {
           </div>
         </aside>
         <main>
+          <UpdateNote />
           <div className="tool-head">
             <h1>{active ? active.name : 'Changelog Generator'}</h1>
             <p>{active ? active.description : ''}</p>
