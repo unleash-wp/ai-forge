@@ -15,6 +15,28 @@ ready to drop into a release post.
 Everything the CLI needs is on GitHub — **no Trac cookie, deterministic, runs in
 CI/Codex.**
 
+## Quick start for release coordinators
+
+Clone the repo, then pick one path — no build, no dependencies.
+
+**With Claude Code or Codex** — open the repo and just ask:
+
+> "Give me the WordPress 7.1 release changelog for July 15–22, as a post."
+
+The agent reads this repo's own instructions (`CLAUDE.md` / `AGENTS.md`), runs
+the tool, and drafts the post grounded in the real PRs and tickets.
+
+**In a terminal:**
+
+```bash
+git clone https://github.com/unleash-wp/wp-release-helper
+cd wp-release-helper
+node bin/wp-release-helper.mjs --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+```
+
+That prints a ready-to-edit release-post template. Add `serve` instead for a
+click-driven browser UI, or `npm link` once to get the short `uwp` command.
+
 ## Why these sources
 
 | Surface | Where changes live | This tool reads |

@@ -1,6 +1,6 @@
 import { authenticated } from './github.mjs';
 import { generate } from './report.mjs';
-import { toMarkdown } from './format.mjs';
+import { toMarkdown, toPost } from './format.mjs';
 
 const HELP = `uwp (wp-release-helper) — summarize WordPress Core & Gutenberg changes for a release post.
 
@@ -17,6 +17,8 @@ Options:
   --core-branch <ref>   wordpress-develop branch (default: trunk).
   --no-labels           Skip Gutenberg [Type] label grouping (fewer API calls).
   --no-dev-notes        Skip the Core dev-notes tracker; leave Core flat.
+  --post                Emit a fill-in release-post template (headline, count
+                        line, source links, highlights placeholder + changelog).
   --json                Emit raw JSON instead of Markdown.
   -h, --help            Show this help.
 
@@ -70,6 +72,8 @@ export async function run(argv) {
 
   if (args.json) {
     console.log(JSON.stringify({ meta, ...report }, null, 2));
+  } else if (args.post) {
+    console.log(toPost(report, meta));
   } else {
     console.log(toMarkdown(report, meta));
   }
@@ -84,6 +88,8 @@ function parseArgs(argv) {
       args.help = true;
     } else if (a === '--json') {
       args.json = true;
+    } else if (a === '--post') {
+      args.post = true;
     } else if (a === '--no-labels') {
       args.labels = false;
     } else if (a === '--no-dev-notes') {
