@@ -395,6 +395,25 @@ const PAGE = `<!doctype html>
   .empty h3 { margin: 0 0 var(--s2); font-size: 18px; color: var(--heading); font-weight: 700; }
   .empty p { margin: 0 auto; max-width: 48ch; font-size: 14.5px; color: var(--muted); line-height: 1.6; }
 
+  /* ---- Home (suite of tools) ---- */
+  .home { display: none; }
+  .home.active { display: block; }
+  .home-inner { max-width: 1120px; margin: 0 auto; padding: var(--s8) var(--s5); }
+  .home-inner h1 { font-size: 30px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
+  .home-sub { font-size: 16px; color: var(--muted); margin: 0 0 var(--s7); }
+  .tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--s5); }
+  .tool-card { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s3); padding: var(--s6);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-sm);
+    text-decoration: none; color: inherit; transition: transform .12s, box-shadow .12s, border-color .12s; }
+  a.tool-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--navy); }
+  .tool-card.is-soon { opacity: .72; }
+  .tool-ic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: var(--sunk); color: var(--navy); }
+  .tool-card h3 { font-size: 17px; font-weight: 700; color: var(--heading); margin: 0; }
+  .tool-card p { font-size: 14px; line-height: 1.55; color: var(--muted); margin: 0; }
+  .tool-cta { margin-top: var(--s1); font-size: 14px; font-weight: 600; color: var(--navy); }
+  .tool-badge { margin-top: var(--s1); font-size: 12px; font-weight: 600; color: var(--muted); background: var(--sunk);
+    border: 1px solid var(--border); border-radius: 5px; padding: 4px 9px; }
+
   .sources { padding: var(--s5) var(--s6); margin: 0 0 var(--s6); }
   .sources h2 { font-size: 15px; font-weight: 700; color: var(--heading); margin: 0 0 var(--s2); }
   .sources h2 em { font-style: normal; font-weight: 500; color: var(--muted); font-size: 13px; }
@@ -450,7 +469,7 @@ const PAGE = `<!doctype html>
   <div class="bar">
     <a class="logo" href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP">${LOGO}</a>
     <span class="divider"></span>
-    <a href="/" class="product">Release Helper</a>
+    <a href="#/" class="product">Release Helper</a>
     <div class="pills">
       <button class="pill" id="pillGh" onclick="toggleWizard()"><span class="ic"></span>GitHub</button>
       <button class="pill" id="pillTrac" onclick="toggleWizard()"><span class="ic"></span>Trac</button>
@@ -491,6 +510,26 @@ const PAGE = `<!doctype html>
   </div>
 </div>
 </div>
+<section id="home" class="home">
+  <div class="home-inner">
+    <h1>Release Helper</h1>
+    <p class="home-sub">A growing toolkit for WordPress release coordinators.</p>
+    <div class="tools">
+      <a class="tool-card" href="#/changelog">
+        <span class="tool-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
+        <h3>Changelog Generator</h3>
+        <p>Turn a date window into a release changelog across Core and Gutenberg, grounded in real PRs and tickets.</p>
+        <span class="tool-cta">Open</span>
+      </a>
+      <div class="tool-card is-soon">
+        <span class="tool-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
+        <h3>Props Generator</h3>
+        <p>Build the props and contributors section for a release post from a schema and a WordPress Slack chat.</p>
+        <span class="tool-badge">Coming soon</span>
+      </div>
+    </div>
+  </div>
+</section>
 <main>
   <section class="card wizard" id="wizard">
     <button class="wiz-close" type="button" onclick="closeWizard()" aria-label="Close setup">&times;</button>
@@ -914,6 +953,18 @@ $('milestone').addEventListener('change', syncGbToMilestone);
   onScroll();
 })();
 $('out').innerHTML = emptyState();
+// Suite routing: #/changelog shows the tool, everything else shows the home cards.
+function route() {
+  var isTool = location.hash === '#/changelog';
+  $('home').classList.toggle('active', !isTool);
+  document.querySelector('.controls').style.display = isTool ? '' : 'none';
+  document.querySelector('main').style.display = isTool ? '' : 'none';
+  var ct = document.getElementById('collapseToggle'); if (ct) ct.style.display = isTool ? '' : 'none';
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+route();
+
 refreshStatus();
 </script>
 </body>
