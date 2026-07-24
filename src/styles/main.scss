@@ -394,3 +394,29 @@
     .tabtools { width: 100%; margin-left: 0; flex-wrap: wrap; }
     .go .primary { flex: 1; }
   }
+
+  /* ---- Plugins manager ---- */
+  .plugins-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: var(--s4); }
+  .plugin-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: var(--s5);
+    box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: var(--s3); }
+  .plugin-card .pc-top { display: flex; align-items: center; gap: var(--s3); }
+  .pc-ic { width: 2.25rem; height: 2.25rem; border-radius: var(--r); background: var(--navy); color: #fff;
+    display: grid; place-items: center; flex: none; }
+  .pc-ic svg { width: 1.125rem; height: 1.125rem; }
+  .plugin-card h3 { margin: 0; font-size: 1rem; font-weight: 500; color: var(--heading); }
+  .pc-meta { font-size: 0.75rem; color: var(--muted); margin-top: 0.125rem; }
+  .plugin-card p { margin: 0; font-size: 0.875rem; color: var(--text); flex: 1; }
+  .pc-foot { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s1); }
+  .badge-free { font: 600 0.6875rem/1 var(--font); text-transform: uppercase; letter-spacing: .04em;
+    color: var(--good); background: var(--tagbg); padding: 0.3125rem 0.5rem; border-radius: 0.3125rem; }
+  a.badge-up { font: 600 0.6875rem/1 var(--font); color: #fff; background: var(--navy);
+    padding: 0.3125rem 0.5rem; border-radius: 0.3125rem; }
+  a.badge-up:hover { color: #fff; background: var(--slate-2); }
+  .pc-open { margin-left: auto; }
+  a.pc-add { text-decoration: none; border-style: dashed; border-color: var(--slate); }
+  a.pc-add:hover { border-color: var(--primary); }
+  .pc-plus { width: 2.25rem; height: 2.25rem; border-radius: var(--r); background: var(--sunk); color: var(--primary);
+    display: grid; place-items: center; font-size: 1.5rem; }
+  a.pc-add h3 { color: var(--heading); }
+  a.pc-add p { color: var(--muted); }
+  .pc-cta { font-size: 0.8125rem; font-weight: 500; color: var(--primary); }

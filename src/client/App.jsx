@@ -6,11 +6,14 @@ import { CoreContext, useToast } from './core.jsx';
 import { LOGO_FULL } from './brand.js';
 import Installer from './Installer.jsx';
 import SetupWizard from './SetupWizard.jsx';
+import PluginsManager from './PluginsManager.jsx';
 import REGISTRY from './registry.js';
 
+const PLUGINS_VIEW = '__plugins__';
 const RAIL_ICONS = {
   code: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
 };
+const GRID_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>';
 
 // Non-blocking "update available" note (free, via GitHub Releases). Never
 // downloads code - just links the release notes.
@@ -75,8 +78,9 @@ export default function App() {
   }, [wizardOpen]);
 
   const gh = status && status.github, trac = status && status.trac;
+  const inPlugins = activeId === PLUGINS_VIEW;
   const active = plugins.find((p) => p.id === activeId);
-  const ActiveTool = activeId ? REGISTRY[activeId] : null;
+  const ActiveTool = activeId && !inPlugins ? REGISTRY[activeId] : null;
   const coreApi = { toast, openSetup, status, refreshStatus };
 
   return (
@@ -105,19 +109,19 @@ export default function App() {
                 <span className="tool-name">{p.name}</span>
               </button>
             ))}
-            <button type="button" className="tool is-more" disabled>
-              <span className="tool-ic">+</span>
-              <span className="tool-name">More soon</span>
+            <button type="button" className={'tool tool--plugins' + (inPlugins ? ' active' : '')} aria-current={inPlugins ? 'true' : undefined} onClick={() => setActiveId(PLUGINS_VIEW)}>
+              <span className="tool-ic" dangerouslySetInnerHTML={{ __html: GRID_IC }} />
+              <span className="tool-name">Plugins</span>
             </button>
           </div>
         </aside>
         <main>
           <UpdateNote />
           <div className="tool-head">
-            <h1>{active ? active.name : 'Changelog Generator'}</h1>
-            <p>{active ? active.description : ''}</p>
+            <h1>{inPlugins ? 'Plugins' : (active ? active.name : 'Changelog Generator')}</h1>
+            <p>{inPlugins ? 'Tools installed on this Forge. Every tool is a plugin - add your own.' : (active ? active.description : '')}</p>
           </div>
-          {ActiveTool && <ActiveTool />}
+          {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} /> : (ActiveTool && <ActiveTool />)}
           <div ref={wizardRef}>
             <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
           </div>
