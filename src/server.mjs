@@ -817,8 +817,12 @@ function refreshStatus() {
       var ghSrc = d.github.source === 'gh' ? 'GitHub CLI (gh)' : (d.github.source === 'env' ? 'GITHUB_TOKEN env' : 'saved token');
       $('ghConnected').innerHTML = '<span>✓</span> Connected · ' + ghSrc + ' · 5000/h' +
         (d.github.source === 'file' ? '<button class="disc-btn" type="button" onclick="disconnectGh()">Disconnect</button>'
-          : '<span class="disc-note">' + (d.github.source === 'gh' ? 'via gh CLI — run gh auth logout to remove' : 'set by env var') + '</span>');
-      $('ghSetup').hidden = true; $('ghEdit').hidden = (d.github.source !== 'file');
+          : '<span class="disc-note">' + (d.github.source === 'gh' ? 'auto-detected from the gh CLI' : 'set by env var') + '</span>');
+      $('ghSetup').hidden = true;
+      // A saved token beats gh (resolution order env -> file -> gh), so always
+      // allow changing it — except when GITHUB_TOKEN env is set, which wins hard.
+      $('ghEdit').hidden = (d.github.source === 'env');
+      $('ghEdit').textContent = d.github.source === 'gh' ? 'Use your own token instead' : 'Use a different token';
     } else {
       $('stepGh').className = 'step'; $('ghConnected').hidden = true; $('ghSetup').hidden = false; $('ghEdit').hidden = true;
     }
