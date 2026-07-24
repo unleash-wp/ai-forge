@@ -4,7 +4,7 @@
 // / class names the vanilla UI did, so the existing SCSS styles it unchanged.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCore } from '../../src/client/core.jsx';
-import { Button, Select, Checkbox } from '../../src/client/ui.jsx';
+import { Button, Select, Checkbox } from '../../src/client/ui';
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
 
 const GB = 'https://github.com/WordPress/gutenberg';

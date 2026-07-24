@@ -6,7 +6,7 @@
 // after a server rebuild, gated behind the user's own action + a trust note.
 import { useState, useEffect, useRef } from 'react';
 import { ToolIcon } from './icons.jsx';
-import { Button, Select, TextInput, Checkbox } from './ui.jsx';
+import { Button, Select, TextInput, Checkbox } from './ui';
 
 const VERB = { activate: 'Activating', deactivate: 'Deactivating', update: 'Updating', remove: 'Removing' };
 const BULK_OPTIONS = [
