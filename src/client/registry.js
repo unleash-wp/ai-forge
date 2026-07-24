@@ -5,7 +5,7 @@
 // inside ES modules).
 const ctx = import.meta.webpackContext('../../tools', {
   recursive: true,
-  regExp: /^\.\/[^/]+\/client\.jsx$/,
+  regExp: /^\.\/(?!_)[^/]+\/client\.jsx$/, // skip _template etc.
 });
 
 const REGISTRY = {};
