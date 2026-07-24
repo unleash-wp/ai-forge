@@ -48,7 +48,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
   return (
     <div className={'ui-select' + (block ? ' block' : '') + (open ? ' open' : '') + (disabled ? ' disabled' : '')} ref={ref}>
       <button type="button" className="ui-select-btn" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <span>{sel ? sel.label : placeholder}</span>
+        <span title={sel ? sel.label : undefined}>{sel ? sel.label : placeholder}</span>
         <svg className="ui-select-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
       </button>
       {open && (
@@ -58,7 +58,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
               onChange={(e) => setQuery(e.target.value)} onClick={(e) => e.stopPropagation()} />
           )}
           {shown.map((o) => (
-            <button key={o.value} type="button" role="option" aria-selected={o.value === value}
+            <button key={o.value} type="button" role="option" aria-selected={o.value === value} title={o.label}
               className={'ui-select-opt' + (o.value === value ? ' sel' : '')}
               onClick={() => { onChange(o.value); setOpen(false); }}>{o.label}</button>
           ))}
