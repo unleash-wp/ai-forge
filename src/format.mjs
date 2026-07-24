@@ -153,5 +153,6 @@ function coreLine(c) {
   const tix = c.tickets.map((n) => `[#${n}](${TRAC}/ticket/${n})`).join(' ');
   const cls = c.classification ? ` _[${c.classification}]_` : '';
   const props = c.props.length ? ` by ${c.props.join(', ')}` : '';
-  return `- ${ref} ${c.subject}${cls}${tix ? ' ' + tix : ''}${props}`;
+  const desc = c.description ? `\n  ${c.description.replace(/\s+/g, ' ').trim()}` : '';
+  return `- ${ref} ${c.subject}${cls}${tix ? ' ' + tix : ''}${props}${desc}`;
 }

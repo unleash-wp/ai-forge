@@ -66,7 +66,8 @@ function coreItem(c) {
   const tix = (c.tickets || []).map((n) => '<a class="ref" href="' + TRAC + '/ticket/' + n + '" target="_blank" rel="noopener">#' + n + '</a>').join(' ');
   const cls = c.classification ? ' <span class="tag">' + esc(c.classification) + '</span>' : '';
   const props = c.props && c.props.length ? ' <span class="who">by ' + esc(c.props.join(', ')) + '</span>' : '';
-  return '<li>' + ref + ' ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + '</li>';
+  const desc = c.description ? '<div class="desc">' + codefmt(c.description.replace(/\s+/g, ' ').trim()) + '</div>' : '';
+  return '<li>' + ref + ' ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + desc + '</li>';
 }
 function coreGroup(comp, items) { return '<h3 class="grp">' + esc(comp) + ' <span class="n">(' + items.length + ')</span></h3><ul class="list">' + items.map(coreItem).join('') + '</ul>'; }
 
@@ -228,7 +229,7 @@ function Results({ data, since, until }) {
       </div>
 
       {meta.deepError && (
-        <div className="warn">Deep descriptions skipped ({esc(meta.deepError)}). Showing the cookie-free changelog. Save a fresh wordpress.org cookie in Setup for full descriptions.</div>
+        <div className="warn">MCP enrichment skipped ({esc(meta.deepError)}). Descriptions still show, sourced from the GitHub commit bodies.</div>
       )}
 
       <div className="tabs" role="tablist">
@@ -384,7 +385,7 @@ export default function ChangelogTool() {
               <label><Checkbox checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <button type="button" className="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." aria-label="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
               <label><Checkbox checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <button type="button" className="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." aria-label="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
               <label><Checkbox checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <button type="button" className="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." aria-label="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
-              <label><Checkbox checked={full} onChange={(e) => setFull(e.target.checked)} /> Full descriptions <button type="button" className="info" data-tip="Fetch full Trac ticket descriptions via the Automattic MCP (authenticated). Slower first run, then cached. Off = fast." aria-label="Fetch full Trac ticket descriptions via the Automattic MCP (authenticated). Slower first run, then cached. Off = fast." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
+              <label><Checkbox checked={full} onChange={(e) => setFull(e.target.checked)} /> Full descriptions <button type="button" className="info" data-tip="Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast." aria-label="Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
             </div>
             <div className="go"><button className="reset-link" type="button" onClick={reset}>Reset</button><Button variant="primary" type="submit" disabled={busy}>Generate</Button></div>
           </div>
