@@ -432,6 +432,9 @@ const PAGE = `<!doctype html>
   .warn { background: rgba(252,190,0,.12); border: 1px solid rgba(252,190,0,.45);
     color: var(--text); border-radius: var(--r-sm); padding: 11px 15px; font-size: 13.5px; margin-bottom: var(--s5); }
   .panel > section.group:first-child { margin-top: 0; }
+  .cl-filter { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s5);
+    padding-bottom: var(--s4); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .cl-filter-note { font-size: 13px; color: var(--muted); }
 
   /* ---- Props chips ---- */
   .propshead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s5); }
@@ -876,6 +879,10 @@ function render(data) {
 
   var cl = '';
   var s = data.sources || {};
+  if (report.core && report.core.tracker) {
+    cl += '<div class="cl-filter"><label class="atbox"><input type="checkbox" id="devOnly" onchange="applyDevFilter()"> Dev notes only</label>' +
+      '<span class="cl-filter-note" id="devCount"></span></div>';
+  }
   if (data.sources) {
     var mile = s.milestone ? ' (milestone ' + esc(s.milestone) + ')' : '';
     cl += '<section class="card sources"><h2>Sources <em>link these in the post so anyone can verify</em></h2>' +
@@ -958,6 +965,32 @@ function applyPropsFormat() {
   window._propsLine = list.join(', ');
   var el = $('propsList'); if (el) el.textContent = window._propsLine;
   var hint = $('propsHint'); if (hint) hint.hidden = !at;
+}
+// "Dev notes only" filter: keep just the Core items carrying a dev-notes-tracker
+// classification (dev-note / misc-dev-note / field-guide = the .tag span). Hides
+// empty component subheadings and the whole Gutenberg section (no dev-note flags).
+function applyDevFilter() {
+  var on = !!($('devOnly') && $('devOnly').checked);
+  var panel = $('p-changelog'); if (!panel) return;
+  var each = function (nl, fn) { [].forEach.call(nl, fn); };
+  each(panel.querySelectorAll('ul.list'), function (ul) {
+    var vis = 0;
+    each(ul.querySelectorAll('li'), function (li) {
+      var keep = !on || !!li.querySelector('.tag');
+      li.style.display = keep ? '' : 'none';
+      if (keep) vis++;
+    });
+    ul.style.display = vis ? '' : 'none';
+    var prev = ul.previousElementSibling;
+    if (prev && prev.className && prev.className.indexOf('grp') !== -1) prev.style.display = vis ? '' : 'none';
+  });
+  each(panel.querySelectorAll('section.group'), function (sec) {
+    var anyVis = false;
+    each(sec.querySelectorAll('ul.list'), function (u) { if (u.style.display !== 'none') anyVis = true; });
+    sec.style.display = (!on || anyVis) ? '' : 'none';
+  });
+  var badge = $('devCount');
+  if (badge) badge.textContent = on ? (panel.querySelectorAll('ul.list li .tag').length + ' flagged for dev notes / field guide') : '';
 }
 function copyProps() { navigator.clipboard.writeText(window._propsLine || ''); }
 function downloadMd() {
