@@ -122,7 +122,7 @@ export default function App() {
         <main>
           <UpdateNote />
           <div className="tool-head">
-            <h1>{inPlugins ? 'Plugins' : (active ? active.name : 'Changelog Generator')}</h1>
+            <h1>{inPlugins ? 'Plugins' : (active ? active.name : 'WP Changelog')}</h1>
             <p>{inPlugins ? 'Tools installed on this Forge. Every tool is a plugin - add your own.' : (active ? active.description : '')}</p>
           </div>
           {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}
