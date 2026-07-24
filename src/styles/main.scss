@@ -261,7 +261,8 @@
   .preset:hover { border-color: var(--navy); color: var(--navy); }
   .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
   .cal-title { font-weight: 700; font-size: 0.875rem; color: var(--heading); }
-  .cal-nav { width: 1.875rem; height: 1.875rem; border-radius: 0.3125rem; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: grid; place-items: center; color: var(--text); }
+  .cal-nav { width: 1.875rem; height: 1.875rem; padding: 0; border-radius: 0.3125rem; border: 1px solid var(--border);
+    background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; color: var(--text); flex: none; }
   .cal-nav:hover { background: var(--sunk); border-color: var(--primary); }
   .cal-nav svg { display: block; }
   .cal-dow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0.125rem; margin-bottom: 0.25rem; }
