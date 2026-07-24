@@ -250,6 +250,10 @@ const PAGE = `<!doctype html>
   /* ---- Filter panel ---- */
   .filters { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
     box-shadow: var(--shadow-sm); padding: var(--s5) var(--s6); margin-bottom: var(--s6); }
+  .filters-loading { display: none; align-items: center; justify-content: center; gap: 10px;
+    color: var(--muted); font-size: 14px; padding: var(--s7) 0; }
+  .filters.loading .filters-loading { display: flex; }
+  .filters.loading > form { display: none; }
 
   @media (max-width: 780px) {
     .shell { grid-template-columns: 1fr; gap: var(--s4); padding: 0 var(--s4); }
@@ -516,7 +520,8 @@ const PAGE = `<!doctype html>
       <h1>Changelog Generator</h1>
       <p>Turn a date window into a ready release-post changelog for Core and Gutenberg.</p>
     </div>
-    <section class="filters">
+    <section class="filters loading" id="filters">
+    <div class="filters-loading"><span class="spin"></span> Loading milestones and branches…</div>
     <form class="query" id="f">
       <div class="qfields">
         <div class="rangewrap">
@@ -942,7 +947,7 @@ function syncGbToMilestone() {
   for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value === want) { sel.value = want; return; } }
 }
 (function loadBranches() {
-  fetch('/api/branches?repo=gutenberg').then(function (r) { return r.json(); }).then(function (d) {
+  var gb = fetch('/api/branches?repo=gutenberg').then(function (r) { return r.json(); }).then(function (d) {
     var list = d.branches || [], versions = [];
     list.forEach(function (b) { if (b.indexOf('wp/') === 0) { var v = b.slice(3); if (/^[0-9]+[.][0-9]+$/.test(v) && versions.indexOf(v) === -1) versions.push(v); } });
     fillSelect($('gbBranch'), list.slice(0, 80), null);
@@ -950,9 +955,11 @@ function syncGbToMilestone() {
     if (versions.length) $('milestone').value = versions[0];
     syncGbToMilestone();
   }).catch(function () {});
-  fetch('/api/branches?repo=core').then(function (r) { return r.json(); }).then(function (d) {
+  var core = fetch('/api/branches?repo=core').then(function (r) { return r.json(); }).then(function (d) {
     fillSelect($('coreBranch'), (d.branches || []).slice(0, 80), 'trunk');
   }).catch(function () {});
+  // Reveal the search form only once both pickers are populated (spinner until then).
+  Promise.all([gb, core]).then(function () { $('filters').classList.remove('loading'); });
 })();
 $('milestone').addEventListener('change', syncGbToMilestone);
 
