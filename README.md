@@ -81,8 +81,16 @@ uwp serve            # -> http://localhost:4321
 ```
 
 Pick since/until/milestone, hit **Generate**, and get the summary counts, the
-grouped changelog, and a **Copy Markdown** / **Download .md** button. The server
-uses your local `gh` token, so nothing sensitive touches the browser.
+grouped changelog, and **Copy post template** / **Copy Markdown** / **Download**
+buttons. The server binds to `127.0.0.1` and uses your local `gh` token, so
+nothing sensitive touches the browser.
+
+For **deep** (full ticket descriptions), the page has a **Trac cookie** panel:
+open it, paste your WordPress.org `Cookie` header once (guided steps + a Test
+button), and it is stored locally at `~/.config/wp-trac/cookie` (mode `600`) —
+never transmitted anywhere. Then tick **deep (descriptions)** before Generate.
+Browsers can't read that cookie for you (cross-origin + HttpOnly), so the paste
+is manual by design; the same file works for `uwp --deep` on the CLI.
 
 | Option | Meaning |
 | --- | --- |

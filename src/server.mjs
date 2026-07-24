@@ -2,6 +2,8 @@ import { createServer } from 'node:http';
 import { generate } from './report.mjs';
 import { toMarkdown, toPost } from './format.mjs';
 import { authenticated } from './github.mjs';
+import { fetchTicketDetails, resolveCookie, saveCookie, cookiePath, validateCookie } from './trac.mjs';
+import { applyDeepDetails } from './aggregate.mjs';
 
 export function startServer({ port = 4321 } = {}) {
   const server = createServer(async (req, res) => {
@@ -10,6 +12,32 @@ export function startServer({ port = 4321 } = {}) {
     if (url.pathname === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(PAGE);
+      return;
+    }
+
+    if (url.pathname === '/api/cookie/status') {
+      const c = resolveCookie();
+      json(res, 200, { set: !!c, source: process.env.WPORG_TRAC_COOKIE ? 'env' : 'file', path: cookiePath() });
+      return;
+    }
+
+    if (url.pathname === '/api/cookie' && req.method === 'POST') {
+      const value = (JSON.parse(await readBody(req) || '{}').cookie || '').trim();
+      if (!value) return json(res, 400, { error: 'empty cookie' });
+      if (process.env.WPORG_TRAC_COOKIE) return json(res, 400, { error: 'WPORG_TRAC_COOKIE env is set and overrides the file — unset it to use a saved cookie.' });
+      json(res, 200, { ok: true, path: saveCookie(value) });
+      return;
+    }
+
+    if (url.pathname === '/api/cookie/test' && req.method === 'POST') {
+      const c = resolveCookie();
+      if (!c) return json(res, 200, { ok: false, message: 'No cookie set yet.' });
+      try {
+        const ok = await validateCookie(c);
+        json(res, 200, { ok, message: ok ? 'Cookie works — Trac reachable.' : 'Trac rejected it (expired or wrong cookie).' });
+      } catch (err) {
+        json(res, 200, { ok: false, message: err.message });
+      }
       return;
     }
 
@@ -25,6 +53,11 @@ export function startServer({ port = 4321 } = {}) {
           labels: q.get('labels') !== 'false',
           devNotes: q.get('devNotes') !== 'false',
         });
+        if (q.get('deep') === 'true') {
+          const cookie = resolveCookie();
+          if (!cookie) throw new Error('deep read needs a Trac cookie — set it in the Cookie panel first');
+          applyDeepDetails(report, await fetchTicketDetails({ milestone: meta.milestone, cookie }));
+        }
         json(res, 200, { meta, report, markdown: toMarkdown(report, meta), post: toPost(report, meta) });
       } catch (err) {
         json(res, 400, { error: err.message });
@@ -43,7 +76,7 @@ export function startServer({ port = 4321 } = {}) {
     }
     throw err;
   });
-  server.listen(port, () => {
+  server.listen(port, '127.0.0.1', () => {
     console.log(`uwp browser UI  ->  http://localhost:${port}`);
     if (!authenticated) console.log('uwp: no gh token — GitHub API limited to 60 req/h.');
     console.log('Press Ctrl+C to stop.');
@@ -54,6 +87,14 @@ export function startServer({ port = 4321 } = {}) {
 function json(res, code, obj) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(obj));
+}
+
+function readBody(req) {
+  return new Promise((resolve) => {
+    let data = '';
+    req.on('data', (c) => { data += c; if (data.length > 1e6) req.destroy(); });
+    req.on('end', () => resolve(data));
+  });
 }
 
 const PAGE = `<!doctype html>
@@ -110,11 +151,37 @@ const PAGE = `<!doctype html>
   pre { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px;
     overflow-x: auto; font-size: 12px; }
   .note { color: var(--muted); font-size: 13px; }
+  .cookiebar { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; }
+  .cookiebar .row { display: flex; gap: 10px; align-items: center; }
+  textarea { width: 100%; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 8px 9px;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); margin-top: 8px; }
+  ol.note { margin: 8px 0 8px 18px; }
+  code { background: var(--tag); color: var(--tagfg); padding: 0 4px; border-radius: 4px; font-size: 12px; }
 </style>
 </head>
 <body>
 <header><h1>uwp <small>WordPress release changelog</small></h1></header>
 <main>
+  <section class="cookiebar">
+    <div class="row">
+      <strong>Trac cookie</strong>
+      <span id="cookiestatus" class="who">…</span>
+      <button class="ghost" type="button" onclick="toggleCookie()">Set / update</button>
+    </div>
+    <div id="cookiebox" hidden>
+      <p class="note">Only needed for <b>deep</b> (full ticket descriptions). Paste your WordPress.org <code>Cookie</code> header — stored locally at <code id="cookiepath"></code>, never sent anywhere else.</p>
+      <ol class="note">
+        <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Open &amp; log in to wordpress.org</a></li>
+        <li>DevTools → Application → Cookies → <code>https://wordpress.org</code> → copy <code>wporg_logged_in</code> and <code>wporg_sec</code> as <code>name=value; name=value</code> (or copy the whole Cookie request header from the Network tab).</li>
+      </ol>
+      <textarea id="cookieval" rows="3" placeholder="wporg_logged_in=…; wporg_sec=…"></textarea>
+      <div class="toolbar">
+        <button type="button" onclick="saveCookie()">Save</button>
+        <button class="ghost" type="button" onclick="testCookie()">Test</button>
+        <span id="cookiemsg" class="who"></span>
+      </div>
+    </div>
+  </section>
   <form id="f">
     <label>Since<input type="date" id="since" required></label>
     <label>Until<input type="date" id="until" required></label>
@@ -124,6 +191,7 @@ const PAGE = `<!doctype html>
     <div class="checks">
       <label><input type="checkbox" id="labels" checked> GB labels</label>
       <label><input type="checkbox" id="devNotes" checked> dev-notes</label>
+      <label><input type="checkbox" id="deep"> deep (descriptions)</label>
     </div>
     <button id="go" type="submit">Generate</button>
   </form>
@@ -151,7 +219,7 @@ $('f').addEventListener('submit', async (e) => {
     since: $('since').value, until: $('until').value,
     milestone: $('milestone').value.trim(), gbBranch: $('gbBranch').value.trim(),
     coreBranch: $('coreBranch').value.trim(),
-    labels: $('labels').checked, devNotes: $('devNotes').checked,
+    labels: $('labels').checked, devNotes: $('devNotes').checked, deep: $('deep').checked,
   });
   try {
     const r = await fetch('/api/report?' + p);
@@ -162,6 +230,7 @@ $('f').addEventListener('submit', async (e) => {
     $('status').textContent = '';
   } catch (err) {
     $('status').textContent = 'Error: ' + err.message;
+    if (/cookie/i.test(err.message)) { $('cookiebox').hidden = false; }
   } finally {
     $('go').disabled = false;
   }
@@ -239,6 +308,32 @@ function downloadMd() {
   a.href = URL.createObjectURL(new Blob([lastMarkdown], { type: 'text/markdown' }));
   a.download = 'changelog.md'; a.click();
 }
+
+// --- Trac cookie panel ---
+async function cookieStatus() {
+  try {
+    const d = await (await fetch('/api/cookie/status')).json();
+    $('cookiepath').textContent = d.path;
+    $('cookiestatus').textContent = d.set ? ('set (' + d.source + ')') : 'not set — needed for deep';
+  } catch { $('cookiestatus').textContent = ''; }
+}
+function toggleCookie() { $('cookiebox').hidden = !$('cookiebox').hidden; }
+async function saveCookie() {
+  const cookie = $('cookieval').value.trim();
+  if (!cookie) { $('cookiemsg').textContent = 'paste the cookie first'; return; }
+  $('cookiemsg').textContent = 'saving…';
+  const r = await fetch('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie }) });
+  const d = await r.json();
+  if (r.ok) { $('cookieval').value = ''; $('cookiemsg').textContent = 'saved — testing…'; await testCookie(); }
+  else $('cookiemsg').textContent = 'error: ' + d.error;
+  cookieStatus();
+}
+async function testCookie() {
+  $('cookiemsg').textContent = 'testing…';
+  const d = await (await fetch('/api/cookie/test', { method: 'POST' })).json();
+  $('cookiemsg').textContent = d.message;
+}
+cookieStatus();
 </script>
 </body>
 </html>`;
