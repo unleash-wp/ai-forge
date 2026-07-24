@@ -351,22 +351,22 @@ export default function ChangelogTool() {
         <form className="query" onSubmit={submit}>
           <div className="qfields">
             <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-            <label>Milestone<Select block searchable value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="—" /></label>
-            <label>Gutenberg branch<Select block searchable value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
-            <label>Core branch<Select block searchable value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
+            <label>Milestone<Select block searchable ariaLabel="Milestone" value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="—" /></label>
+            <label>Gutenberg branch<Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
+            <label>Core branch<Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
           </div>
           <div className="qactions">
             <div className="checks">
-              <label><Checkbox checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <span className="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => e.preventDefault()}>i</span></label>
-              <label><Checkbox checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <span className="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => e.preventDefault()}>i</span></label>
-              <label><Checkbox checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <span className="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => e.preventDefault()}>i</span></label>
+              <label><Checkbox checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <button type="button" className="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." aria-label="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
+              <label><Checkbox checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <button type="button" className="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." aria-label="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
+              <label><Checkbox checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <button type="button" className="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." aria-label="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
             </div>
             <div className="go"><button className="reset-link" type="button" onClick={reset}>Reset</button><Button variant="primary" type="submit" disabled={busy}>Generate</Button></div>
           </div>
         </form>
       </section>
 
-      {status && <div id="status">{status.startsWith('__spin__') ? <><span className="spin" /> {status.slice(8)}</> : status}</div>}
+      {status && <div id="status" role="status" aria-live="polite">{status.startsWith('__spin__') ? <><span className="spin" /> {status.slice(8)}</> : status}</div>}
 
       {data ? <Results data={data} since={since} until={until} />
         : (!status && (
