@@ -14,6 +14,7 @@ export async function loadPlugins() {
   const plugins = [];
   if (!existsSync(TOOLS)) return plugins;
   for (const id of readdirSync(TOOLS).sort()) {
+    if (id.startsWith('_')) continue; // _template etc. are copy-me examples, not live tools
     const dir = join(TOOLS, id);
     if (!statSync(dir).isDirectory()) continue;
     const manifestPath = join(dir, 'plugin.json');

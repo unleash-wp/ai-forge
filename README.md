@@ -1,8 +1,16 @@
-# wp-release-helper
+# UnleashWP Forge
 
-Fast change summaries for **WordPress release coordinators**. Give it a date
-window and it counts and lists everything that landed in Core and Gutenberg -
-ready to drop into a release post.
+A small, self-hosted **toolbelt for WordPress release and dev work**, by
+[UnleashWP](https://unleash-wp.com). The free core ships with the **Changelog
+Generator**: give it a date window and it counts and lists everything that landed
+in Core and Gutenberg - ready to drop into a release post.
+
+Forge is a **plugin platform**. Every tool is a folder under `tools/`, so the
+community can add more without touching the shell - see
+[CONTRIBUTING.md](CONTRIBUTING.md). It runs as a plain Node server with a React
+UI; the CLI keeps **zero runtime dependencies**.
+
+The Changelog Generator reads from:
 
 - **Gutenberg** → `github.com/WordPress/gutenberg` (branch `wp/<milestone>`)
 - **Core** → `github.com/WordPress/wordpress-develop` (git mirror of Core SVN)
