@@ -2,9 +2,9 @@
 // cookie). Both are the user's own, stored locally (owner-only), sent only to
 // GitHub / WordPress.org. Rendered as a card in <main>, toggled open by the shell.
 import { useState } from 'react';
-import { fetchJSON } from './core.jsx';
-import { currentBrowser, BROWSER_NAMES } from './browser.js';
-import { Button, TextInput, TextArea } from './ui';
+import { fetchJSON } from '../core.jsx';
+import { currentBrowser, BROWSER_NAMES } from '../browser.js';
+import { Button, TextInput, TextArea } from '../ui';
 
 export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const [ghToken, setGhToken] = useState('');
