@@ -283,6 +283,7 @@ export default function ChangelogTool() {
   const [labels, setLabels] = useState(true);
   const [devNotes, setDevNotes] = useState(true);
   const [devOnly, setDevOnly] = useState(false);
+  const [full, setFull] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [data, setData] = useState(null);
@@ -320,7 +321,7 @@ export default function ChangelogTool() {
     const d = new Date(), sd = new Date(d); sd.setDate(sd.getDate() - 7);
     setSince(isoD(sd)); setUntil(isoD(d));
     if (milestones.length) onMilestone(milestones[0]);
-    setCoreBranch('trunk'); setLabels(true); setDevNotes(true); setDevOnly(false);
+    setCoreBranch('trunk'); setLabels(true); setDevNotes(true); setDevOnly(false); setFull(false);
     setStatus(''); setData(null);
   }
 
@@ -331,7 +332,7 @@ export default function ChangelogTool() {
     setStatus('__spin__ Fetching commits, labels and dev-notes…');
     const p = new URLSearchParams({
       since, until, milestone: milestone.trim(), gbBranch: gbBranch.trim(), coreBranch: coreBranch.trim(),
-      labels, devNotes, devNotesOnly: devOnly, deep: 'true',
+      labels, devNotes, devNotesOnly: devOnly, deep: full,
     });
     fetch('/api/report?' + p).then((r) => r.json().then((d) => { if (!r.ok) throw new Error(d.error || 'request failed'); return d; }))
       .then((d) => { setData(d); setStatus(''); })
@@ -360,6 +361,7 @@ export default function ChangelogTool() {
               <label><Checkbox checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <button type="button" className="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." aria-label="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
               <label><Checkbox checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <button type="button" className="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." aria-label="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
               <label><Checkbox checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <button type="button" className="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." aria-label="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
+              <label><Checkbox checked={full} onChange={(e) => setFull(e.target.checked)} /> Full descriptions <button type="button" className="info" data-tip="Fetch full Trac ticket descriptions via the Automattic MCP (authenticated). Slower first run, then cached. Off = fast." aria-label="Fetch full Trac ticket descriptions via the Automattic MCP (authenticated). Slower first run, then cached. Off = fast." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
             </div>
             <div className="go"><button className="reset-link" type="button" onClick={reset}>Reset</button><Button variant="primary" type="submit" disabled={busy}>Generate</Button></div>
           </div>

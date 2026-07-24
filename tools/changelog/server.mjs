@@ -7,6 +7,7 @@ import { toMarkdown, toPost, sourceUrls } from '../../src/format.mjs';
 import { branches } from '../../src/github.mjs';
 import { fetchTicketDetails, resolveCookie } from '../../src/trac.mjs';
 import { applyDeepDetails } from '../../src/aggregate.mjs';
+import { mcpAvailable, mcpTicketDetails } from '../../src/mcp.mjs';
 
 // "Dev notes only": narrow the report to Core changesets flagged in the docs
 // tracker (dev-note / misc-dev-note / field-guide) and drop Gutenberg. Mutates
@@ -43,9 +44,19 @@ async function reportHandler(req, res, url, ctx) {
     });
     if (q.get('deep') === 'true') {
       try {
-        const cookie = resolveCookie();
-        if (!cookie) throw new Error('no Trac cookie saved yet');
-        applyDeepDetails(report, await fetchTicketDetails({ milestone: meta.milestone, cookie }));
+        // Prefer the MCP (authenticated Trac, per-ticket, batched + cached). Fall
+        // back to the direct milestone CSV when the MCP server isn't installed.
+        if (mcpAvailable()) {
+          const details = await mcpTicketDetails(report.core.tickets || []);
+          applyDeepDetails(report, details);
+          meta.deepSource = 'mcp';
+          if (details.capped) meta.deepCapped = true;
+        } else {
+          const cookie = resolveCookie();
+          if (!cookie) throw new Error('no Trac cookie saved yet');
+          applyDeepDetails(report, await fetchTicketDetails({ milestone: meta.milestone, cookie }));
+          meta.deepSource = 'trac';
+        }
       } catch (err) {
         meta.deepError = err.message; // never block the report on a deep failure
       }
