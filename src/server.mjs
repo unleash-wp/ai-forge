@@ -226,16 +226,15 @@ const PAGE = `<!doctype html>
     grid-template-columns: 124px minmax(0, 1fr); gap: var(--s6); align-items: start; }
 
   /* ---- Tool rail (compact sidebar of small Metro tiles; grows downward) ---- */
-  .rail { position: sticky; top: 82px; margin-top: var(--s6); background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--r); box-shadow: var(--shadow-sm); padding: var(--s2); display: flex; flex-direction: column; gap: var(--s2); }
-  .rail-cap { font: 600 9.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: var(--s1) var(--s1) 2px; }
+  .rail { position: sticky; top: 82px; margin-top: var(--s6); display: flex; flex-direction: column; gap: var(--s2); }
+  .rail-cap { font: 600 9.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 2px var(--s1); }
   .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 5px;
     width: 100%; padding: var(--s3) 6px; border-radius: var(--r); border: 1px solid transparent;
     background: var(--sunk); color: var(--text); cursor: pointer; font: inherit;
     transition: transform .12s ease, box-shadow .12s ease, background .14s ease; }
   .tool:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
   .tool-ic { display: grid; place-items: center; }
-  .tool-name { font: 600 10.5px/1.2 var(--font); }
+  .tool-name { font: 500 9.5px/1.25 var(--font); }
   .tool.active { background: var(--navy); color: #fff; box-shadow: var(--shadow-sm); cursor: default; }
   .tool.active:hover { transform: none; }
   .tool.is-more { background: none; border: 1px dashed var(--border); color: var(--muted); cursor: default; }
