@@ -25,18 +25,29 @@ export async function generate(opts, onStep = () => {}) {
     commits(GB_REPO, gbBranch, since, until),
     commits(CORE_REPO, coreBranch, since, until),
   ]);
-  // Keep only substantive changes so the rendered list and the headline count
-  // agree. Gutenberg is 100% PR-merged; its non-PR commits are release plumbing
-  // (version bumps, "Update Changelog", SECURITY.md). Every Core commit on the
-  // SVN mirror carries a changeset; anything without one is a mirror artifact.
-  // Both repos also land release-packaging commits ("WordPress 7.1 Beta 3.", the
-  // "Post ... version bump.") that carry a changeset but are not changes - the
-  // Beta/RC bundles. Drop those so the count reflects real work, not the release.
-  const isPackaging = (c) => /^WordPress\s+\d/i.test(c.subject)
-    || /version bump\.?\s*$/i.test(c.subject)
-    || /^Bump\s+(the\s+)?version\b/i.test(c.subject);
-  const gb = gbRaw.map(parseCommit).filter((c) => c.pr && !isPackaging(c));
-  const core = coreRaw.map(parseCommit).filter((c) => c.changeset && !isPackaging(c));
+  // Drop release plumbing so the count is the EXACT number of real changes, no
+  // more and no less. Plumbing is an explicit allow-list of the versioning /
+  // packaging commits both repos land - version bumps, changelog-file updates,
+  // the "chore(release)" publish, the "WordPress 7.1 Beta 3." bundle tags, and
+  // reverts of those. Everything else counts, including a rare direct-push change
+  // with no PR ref (e.g. a backport onto wp/7.1). Keeping this a deny-list of
+  // known plumbing - rather than "no PR number" - means no real change is ever
+  // silently dropped; an unrecognised commit shows up in the list to be seen.
+  const isPlumbing = (c) => {
+    const s = c.subject;
+    return /^WordPress\s+\d/i.test(s)                                   // "WordPress 7.1 Beta 3."
+      || /version bump\.?\s*$/i.test(s)                                  // "Post WordPress 7.1 Beta 3 version bump."
+      || /^Bump\s+(plugin\s+|the\s+)?version\b/i.test(s)                 // "Bump plugin version to 23.6.0"
+      || /^Update\s+Changelog\b/i.test(s)                               // "Update Changelog for 23.6.0"
+      || /^Update\s+changelog\s+files\b/i.test(s)                       // "Update changelog files"
+      || /^chore\(release\)/i.test(s)                                    // "chore(release): publish"
+      || /^add pr link to changelog/i.test(s)                           // "add pr link to changelog"
+      || /^Revert\s+"?(Bump\s+(plugin\s+|the\s+)?version|Update\s+Changelog|add pr link to changelog)/i.test(s);
+  };
+  // Core commits on the SVN mirror all carry a changeset; anything without one is
+  // a mirror artifact, not a change.
+  const gb = gbRaw.map(parseCommit).filter((c) => !isPlumbing(c));
+  const core = coreRaw.map(parseCommit).filter((c) => c.changeset && !isPlumbing(c));
 
   let gbLabels = null;
   if (wantLabels) {
