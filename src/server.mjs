@@ -227,8 +227,6 @@ const PAGE = `<!doctype html>
     background: var(--sunk); border: 1px solid var(--border); color: var(--text);
     padding: 8px 13px; border-radius: 5px; cursor: pointer; transition: border-color .15s, transform .1s; }
   .pill:hover { border-color: var(--primary); transform: translateY(-1px); }
-  .pill.status { cursor: default; }
-  .pill.status:hover { border-color: var(--border); transform: none; }
   .pill .ic { width: 16px; height: 16px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 10px; font-weight: 700; line-height: 1; }
   .pill.ok .ic { background: var(--good); color: #fff; }
   .pill.ok .ic::after { content: "✓"; }
@@ -540,7 +538,6 @@ const PAGE = `<!doctype html>
     <span class="divider"></span>
     <a href="#" class="product" onclick="window.scrollTo({ top: 0, behavior: 'smooth' }); return false;">Release Helper</a>
     <div class="pills">
-      <span class="pill status" id="pillGh"><span class="ic"></span>GitHub</span>
       <button class="pill" id="pillTrac" onclick="toggleWizard()"><span class="ic"></span>Trac</button>
     </div>
   </div>
@@ -763,16 +760,11 @@ function resetFilters() {
   $('status').textContent = ''; $('out').innerHTML = emptyState();
 }
 function setPill(id, set, source) {
-  var el = $(id); el.className = 'pill ' + (set ? 'ok' : 'off') + (id === 'pillGh' ? ' status' : '');
-  el.innerHTML = '<span class="ic"></span>' + (id === 'pillGh' ? 'GitHub' : 'Trac');
+  var el = $(id); el.className = 'pill ' + (set ? 'ok' : 'off');
+  el.innerHTML = '<span class="ic"></span>Trac';
 }
 function refreshStatus() {
   return fetch('/api/config/status').then(function (r) { return r.json(); }).then(function (d) {
-    // GitHub: no setup, auto-detected — the pill is a passive rate-limit badge.
-    setPill('pillGh', d.github.set, d.github.source);
-    $('pillGh').title = d.github.set
-      ? 'GitHub API: 5000 requests/h (auto-detected' + (d.github.source === 'gh' ? ' from the gh CLI' : '') + ')'
-      : 'GitHub API: 60 requests/h — no token needed, reads public data only';
     setPill('pillTrac', d.trac.set, d.trac.source);
     // Trac step (the only setup step)
     if (d.trac.set) {
