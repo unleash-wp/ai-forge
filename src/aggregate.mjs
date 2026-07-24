@@ -1,5 +1,5 @@
 // Combine parsed Gutenberg + Core commits into counts, groupings and contributor lists.
-export function buildReport(gb, core, gbLabels) {
+export function buildReport(gb, core, gbLabels, tracker = null) {
   const gbPRs = new Set(gb.map((c) => c.pr).filter(Boolean));
   const coreChangesets = new Set(core.map((c) => c.changeset).filter(Boolean));
   const coreTickets = new Set(core.flatMap((c) => c.tickets));
@@ -11,6 +11,7 @@ export function buildReport(gb, core, gbLabels) {
   const allContribs = new Set([...gbContribs, ...coreContribs]);
 
   const byCategory = gbLabels ? groupByLabel(gb, gbLabels) : null;
+  const byComponent = tracker ? groupCoreByComponent(core, tracker.map) : null;
 
   return {
     gutenberg: {
@@ -25,6 +26,8 @@ export function buildReport(gb, core, gbLabels) {
       ticketCount: coreTickets.size,
       tickets: [...coreTickets].sort((a, b) => a - b),
       contributors: [...coreContribs].sort(cmp),
+      byComponent,
+      tracker: tracker ? { slug: tracker.slug, stats: tracker.stats } : null,
     },
     totals: {
       gutenbergCommits: gb.length,
@@ -42,6 +45,20 @@ function groupByLabel(commits, labelMap) {
     const labels = c.pr ? labelMap.get(c.pr) || [] : [];
     const cat = pickCategory(labels);
     (groups[cat] ||= []).push(c);
+  }
+  return groups;
+}
+
+// Assign each Core changeset the component/classification of its first ticket
+// found in the dev-notes tracker; group by component. Mutates commits with the
+// resolved `component` + `classification` for rendering.
+function groupCoreByComponent(core, map) {
+  const groups = {};
+  for (const c of core) {
+    const hit = c.tickets.map((id) => map.get(id)).find(Boolean);
+    c.component = hit?.component || 'Uncategorized';
+    c.classification = hit?.classification || null;
+    (groups[c.component] ||= []).push(c);
   }
   return groups;
 }

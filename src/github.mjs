@@ -37,6 +37,12 @@ async function getJson(url) {
   return { data: await res.json(), link: res.headers.get('link') };
 }
 
+// Single GET against the REST API; returns parsed JSON (throws on non-2xx, e.g. 404).
+export async function apiJson(path) {
+  const { data } = await getJson(`https://api.github.com/${path}`);
+  return data;
+}
+
 // All commits on `branch` of `repo` within [since, until] (ISO 8601), following pagination.
 export async function commits(repo, branch, since, until) {
   const start = new URL(`https://api.github.com/repos/${repo}/commits`);
