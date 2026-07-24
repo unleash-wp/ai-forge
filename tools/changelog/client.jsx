@@ -4,6 +4,7 @@
 // / class names the vanilla UI did, so the existing SCSS styles it unchanged.
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCore } from '../../src/client/core.jsx';
+import { Button, Select, Checkbox } from '../../src/client/ui.jsx';
 
 const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
@@ -221,9 +222,9 @@ function Results({ data, since, until }) {
         <button className={'tab' + (tab === 'changelog' ? ' active' : '')} onClick={() => setTab('changelog')}><Ic html={IC.list} />Changelog<span className="cbadge">{changes}</span></button>
         <button className={'tab' + (tab === 'props' ? ' active' : '')} onClick={() => setTab('props')}><Ic html={IC.users} />Props<span className="cbadge">{all.length}</span></button>
         <div className="tabtools">
-          <button className="ghost sm" onClick={() => copy(data.post, 'Post copied')}><Ic html={IC.post} />Copy post</button>
-          <button className="ghost sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</button>
-          <button className="ghost sm" onClick={downloadMd}><Ic html={IC.down} />Download</button>
+          <Button variant="ghost" size="sm" onClick={() => copy(data.post, 'Post copied')}><Ic html={IC.post} />Copy post</Button>
+          <Button variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</Button>
+          <Button variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />Download</Button>
         </div>
       </div>
 
@@ -244,10 +245,10 @@ function Results({ data, since, until }) {
         <div className="propshead">
           <div className="props-metric"><b className="tnum">{all.length}</b><span>contributors with props this window</span></div>
           <div className="props-actions">
-            <label className="atbox"><input type="checkbox" checked={propsAt} onChange={(e) => setPropsAt(e.target.checked)} /> Add @ before names</label>
-            <button className="ghost sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</button>
-            <button className="ghost sm" onClick={copyCsv}><Ic html={IC.table} />CSV</button>
-            <button className="ghost sm" onClick={copyPhp}><Ic html={IC.md} />PHP array</button>
+            <label className="atbox"><Checkbox checked={propsAt} onChange={(e) => setPropsAt(e.target.checked)} /> Add @ before names</label>
+            <Button variant="ghost" size="sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</Button>
+            <Button variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />CSV</Button>
+            <Button variant="ghost" size="sm" onClick={copyPhp}><Ic html={IC.md} />PHP array</Button>
           </div>
         </div>
         <p className="propslist">{propsLine}</p>
@@ -260,7 +261,7 @@ function SrcRow({ url, text, onCopy }) {
   return (
     <div className="srcrow">
       <a href={url} target="_blank" rel="noopener" dangerouslySetInnerHTML={{ __html: text }} />
-      <button className="ghost sm" onClick={onCopy}><Ic html={IC.link} />Copy link</button>
+      <Button variant="ghost" size="sm" onClick={onCopy}><Ic html={IC.link} />Copy link</Button>
     </div>
   );
 }
@@ -348,23 +349,17 @@ export default function ChangelogTool() {
         <form className="query" onSubmit={submit}>
           <div className="qfields">
             <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-            <label>Milestone<select className="branch-select mile-select" value={milestone} onChange={(e) => onMilestone(e.target.value)}>
-              {milestones.map((v) => <option key={v} value={v}>{v}</option>)}
-            </select></label>
-            <label>Gutenberg branch<select className="branch-select" value={gbBranch} onChange={(e) => setGbBranch(e.target.value)}>
-              {gbBranches.map((b) => <option key={b} value={b}>{b}</option>)}
-            </select></label>
-            <label>Core branch<select className="branch-select" value={coreBranch} onChange={(e) => setCoreBranch(e.target.value)}>
-              {coreBranches.map((b) => <option key={b} value={b}>{b}</option>)}
-            </select></label>
+            <label>Milestone<Select block value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="—" /></label>
+            <label>Gutenberg branch<Select block value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
+            <label>Core branch<Select block value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
           </div>
           <div className="qactions">
             <div className="checks">
-              <label><input type="checkbox" checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <span className="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => e.preventDefault()}>i</span></label>
-              <label><input type="checkbox" checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <span className="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => e.preventDefault()}>i</span></label>
-              <label><input type="checkbox" checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <span className="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => e.preventDefault()}>i</span></label>
+              <label><Checkbox checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <span className="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => e.preventDefault()}>i</span></label>
+              <label><Checkbox checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <span className="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => e.preventDefault()}>i</span></label>
+              <label><Checkbox checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <span className="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => e.preventDefault()}>i</span></label>
             </div>
-            <div className="go"><button className="reset-link" type="button" onClick={reset}>Reset</button><button className="primary" type="submit" disabled={busy}>Generate</button></div>
+            <div className="go"><button className="reset-link" type="button" onClick={reset}>Reset</button><Button variant="primary" type="submit" disabled={busy}>Generate</Button></div>
           </div>
         </form>
       </section>

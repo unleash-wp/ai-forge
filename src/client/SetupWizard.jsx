@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { fetchJSON } from './core.jsx';
 import { currentBrowser, BROWSER_NAMES } from './browser.js';
+import { Button, TextInput, TextArea } from './ui.jsx';
 
 export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const [ghToken, setGhToken] = useState('');
@@ -86,11 +87,11 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                 <p>Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b> - it only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</p>
                 <ol><li>One click if the <code>gh</code> CLI is logged in (detected automatically), or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it below.</li></ol>
                 <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ margin: 0 }}>
-                  <input type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder="ghp_… or github_pat_…" autoComplete="off" spellCheck="false" />
+                  <TextInput type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder="ghp_… or github_pat_…" autoComplete="off" spellCheck="false" />
                 </form>
                 <div className="rowbtns">
-                  <button className="primary sm" type="button" onClick={saveGh}>Save &amp; connect</button>
-                  <button className="ghost sm" type="button" onClick={testGh}>Test</button>
+                  <Button variant="primary" size="sm" onClick={saveGh}>Save &amp; connect</Button>
+                  <Button variant="ghost" size="sm" onClick={testGh}>Test</Button>
                   <span className={'msg' + (ghMsg.kind ? ' ' + ghMsg.kind : '')}>{ghMsg.text}</span>
                 </div>
               </div>
@@ -117,7 +118,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                 {browser && (
                   <div className="quickimport">
                     <span className="qi-label">Quick import <span className="qi-note">(macOS)</span></span>
-                    <div className="qi-btns"><button className="ghost sm" type="button" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</button></div>
+                    <div className="qi-btns"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></div>
                   </div>
                 )}
                 <details className="qi-manual"><summary>Or paste it manually</summary>
@@ -125,11 +126,11 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                     <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
                     <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
                   </ol>
-                  <textarea rows="3" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="wporg_logged_in=…; wporg_sec=…" />
+                  <TextArea rows="3" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="wporg_logged_in=…; wporg_sec=…" />
                 </details>
                 <div className="rowbtns">
-                  <button className="primary sm" type="button" onClick={saveCookie}>Save &amp; connect</button>
-                  <button className="ghost sm" type="button" onClick={testCookie}>Test</button>
+                  <Button variant="primary" size="sm" onClick={saveCookie}>Save &amp; connect</Button>
+                  <Button variant="ghost" size="sm" onClick={testCookie}>Test</Button>
                   <span className={'msg' + (ckMsg.kind ? ' ' + ckMsg.kind : '')}>{ckMsg.text}</span>
                 </div>
               </div>
