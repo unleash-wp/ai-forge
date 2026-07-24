@@ -37,7 +37,7 @@ export function toPost(report, meta) {
   const { since, until, milestone } = meta;
   const t = report.totals;
   const d1 = since.slice(0, 10);
-  const changes = t.gutenbergPRs + t.coreChangesets;
+  const changes = t.gutenbergCommits + t.coreChangesets;
   const out = [];
 
   out.push(`# What's in WordPress ${milestone || '<x.y>'} <!-- Beta/RC N -->?`);
