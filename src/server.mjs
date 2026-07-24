@@ -111,6 +111,7 @@ export function startServer({ port = 4321 } = {}) {
             meta.deepError = err.message; // never block the report on a deep failure
           }
         }
+        if (q.get('devNotesOnly') === 'true') { filterDevNotes(report); meta.devNotesOnly = true; }
         json(res, 200, { meta, report, sources: sourceUrls(meta), markdown: toMarkdown(report, meta), post: toPost(report, meta) });
       } catch (err) {
         json(res, 400, { error: err.message });
@@ -148,6 +149,27 @@ function readBody(req) {
     req.on('data', (c) => { data += c; if (data.length > 1e6) req.destroy(); });
     req.on('end', () => resolve(data));
   });
+}
+
+// "Dev notes only": narrow the report to Core changesets flagged in the docs
+// tracker (dev-note / misc-dev-note / field-guide) and drop Gutenberg. Mutates
+// report in place so the same object feeds the view, counts and Markdown/post.
+function filterDevNotes(report) {
+  const kept = (report.core.commits || []).filter((c) => c.classification);
+  const byComponent = {};
+  for (const c of kept) {
+    const k = c.component || 'Uncategorized';
+    (byComponent[k] = byComponent[k] || []).push(c);
+  }
+  const tickets = [...new Set(kept.flatMap((c) => c.tickets || []))];
+  const contributors = [...new Set(kept.flatMap((c) => c.props || []))]
+    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  report.core = { ...report.core, commits: kept, byComponent, tickets,
+    changesetCount: kept.length, ticketCount: tickets.length, contributors };
+  report.gutenberg = { commits: [], byCategory: null, contributors: [] };
+  report.totals = { gutenbergCommits: 0, gutenbergPRs: 0,
+    coreChangesets: kept.length, coreTickets: tickets.length, contributors: contributors.length };
+  return report;
 }
 
 // UnleashWP light-bulb mark (design system assets/brand/bulb-full.svg).
@@ -432,9 +454,6 @@ const PAGE = `<!doctype html>
   .warn { background: rgba(252,190,0,.12); border: 1px solid rgba(252,190,0,.45);
     color: var(--text); border-radius: var(--r-sm); padding: 11px 15px; font-size: 13.5px; margin-bottom: var(--s5); }
   .panel > section.group:first-child { margin-top: 0; }
-  .cl-filter { display: flex; align-items: center; gap: var(--s4); margin-bottom: var(--s5);
-    padding-bottom: var(--s4); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-  .cl-filter-note { font-size: 13px; color: var(--muted); }
 
   /* ---- Props chips ---- */
   .propshead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s5); }
@@ -573,6 +592,7 @@ const PAGE = `<!doctype html>
         <div class="checks">
           <label><input type="checkbox" id="labels" checked> Group Gutenberg <span class="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onclick="event.preventDefault()">i</span></label>
           <label><input type="checkbox" id="devNotes" checked> Group Core <span class="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." onclick="event.preventDefault()">i</span></label>
+          <label><input type="checkbox" id="devOnly"> Dev notes only <span class="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onclick="event.preventDefault()">i</span></label>
         </div>
         <div class="go"><button type="button" class="reset-link" onclick="resetFilters()">Reset</button><button class="primary" id="go" type="submit">Generate</button></div>
       </div>
@@ -761,7 +781,7 @@ function resetFilters() {
   $('rangelabel').textContent = fmtRange(rangeSince, rangeUntil);
   if ($('milestone').options.length) $('milestone').selectedIndex = 0;
   syncGbToMilestone(); $('coreBranch').value = 'trunk';
-  $('labels').checked = true; $('devNotes').checked = true;
+  $('labels').checked = true; $('devNotes').checked = true; $('devOnly').checked = false;
   $('status').textContent = ''; $('out').innerHTML = emptyState();
 }
 function setPill(id, set, source) {
@@ -838,7 +858,8 @@ $('f').addEventListener('submit', function (e) {
     since: rangeSince, until: rangeUntil,
     milestone: $('milestone').value.trim(), gbBranch: $('gbBranch').value.trim(),
     coreBranch: $('coreBranch').value.trim(),
-    labels: $('labels').checked, devNotes: $('devNotes').checked, deep: 'true',
+    labels: $('labels').checked, devNotes: $('devNotes').checked,
+    devNotesOnly: $('devOnly').checked, deep: 'true',
   });
   fetch('/api/report?' + p).then(function (r) {
     return r.json().then(function (data) { if (!r.ok) throw new Error(data.error || 'request failed'); return data; });
@@ -855,14 +876,16 @@ function render(data) {
   var changes = (t.gutenbergPRs || 0) + (t.coreChangesets || 0);
   var all = uniq((report.gutenberg.contributors || []).concat(report.core.contributors || []))
     .sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+  window._data = data;
   window._props = all;
   window._propsLine = all.join(', ');
 
+  var dn = !!meta.devNotesOnly;
   var h = '<div class="rhead"><div class="lead-metric"><b class="tnum">' + issues +
-    '</b><span>issues addressed, ' + esc(fmtRange(rangeSince, rangeUntil)) + '</span></div>';
+    '</b><span>' + (dn ? 'dev notes / field guide tickets, ' : 'issues addressed, ') + esc(fmtRange(rangeSince, rangeUntil)) + '</span></div>';
   var stat = function (n, l) { return '<div class="stat"><b class="tnum">' + n + '</b><span>' + l + '</span></div>'; };
-  h += '<div class="stats">' + stat(t.gutenbergPRs, 'Gutenberg PRs') + stat(t.gutenbergCommits, 'GB commits') +
-    stat(t.coreChangesets, 'Core changesets') + stat(t.coreTickets, 'Core tickets') +
+  h += '<div class="stats">' + (dn ? '' : stat(t.gutenbergPRs, 'Gutenberg PRs') + stat(t.gutenbergCommits, 'GB commits')) +
+    stat(t.coreChangesets, dn ? 'Dev-note changesets' : 'Core changesets') + stat(t.coreTickets, dn ? 'Dev-note tickets' : 'Core tickets') +
     stat(t.contributors, 'Contributors') + '</div></div>';
 
   if (meta.deepError) h += '<div class="warn">Deep descriptions skipped (' + esc(meta.deepError) +
@@ -879,10 +902,6 @@ function render(data) {
 
   var cl = '';
   var s = data.sources || {};
-  if (report.core && report.core.tracker) {
-    cl += '<div class="cl-filter"><label class="atbox"><input type="checkbox" id="devOnly" onchange="applyDevFilter()"> Dev notes only</label>' +
-      '<span class="cl-filter-note" id="devCount"></span></div>';
-  }
   if (data.sources) {
     var mile = s.milestone ? ' (milestone ' + esc(s.milestone) + ')' : '';
     cl += '<section class="card sources"><h2>Sources <em>link these in the post so anyone can verify</em></h2>' +
@@ -890,10 +909,12 @@ function render(data) {
       srcRow(s.gutenberg, 'Gutenberg commits on ' + esc(s.gbBranch) + ', ' + esc(s.since) + ' to ' + esc(s.until)) +
       '</section>';
   }
-  cl += '<section class="group">' + groupHead('Gutenberg', s.gutenberg, meta.gbBranch);
-  if (report.gutenberg.byCategory) sortGroups(report.gutenberg.byCategory).forEach(function (g) { cl += gbGroup(g[0], g[1]); });
-  else cl += '<ul class="list">' + report.gutenberg.commits.map(gbItem).join('') + '</ul>';
-  cl += '</section>';
+  if (report.gutenberg.byCategory || report.gutenberg.commits.length) {
+    cl += '<section class="group">' + groupHead('Gutenberg', s.gutenberg, meta.gbBranch);
+    if (report.gutenberg.byCategory) sortGroups(report.gutenberg.byCategory).forEach(function (g) { cl += gbGroup(g[0], g[1]); });
+    else cl += '<ul class="list">' + report.gutenberg.commits.map(gbItem).join('') + '</ul>';
+    cl += '</section>';
+  }
   cl += '<section class="group">' + groupHead('Core', s.trac, meta.coreBranch);
   if (report.core.tracker) {
     cl += '<p class="note">Grouped via <code>' + esc(report.core.tracker.slug) + '</code> dev-notes tracker.</p>';
@@ -965,32 +986,6 @@ function applyPropsFormat() {
   window._propsLine = list.join(', ');
   var el = $('propsList'); if (el) el.textContent = window._propsLine;
   var hint = $('propsHint'); if (hint) hint.hidden = !at;
-}
-// "Dev notes only" filter: keep just the Core items carrying a dev-notes-tracker
-// classification (dev-note / misc-dev-note / field-guide = the .tag span). Hides
-// empty component subheadings and the whole Gutenberg section (no dev-note flags).
-function applyDevFilter() {
-  var on = !!($('devOnly') && $('devOnly').checked);
-  var panel = $('p-changelog'); if (!panel) return;
-  var each = function (nl, fn) { [].forEach.call(nl, fn); };
-  each(panel.querySelectorAll('ul.list'), function (ul) {
-    var vis = 0;
-    each(ul.querySelectorAll('li'), function (li) {
-      var keep = !on || !!li.querySelector('.tag');
-      li.style.display = keep ? '' : 'none';
-      if (keep) vis++;
-    });
-    ul.style.display = vis ? '' : 'none';
-    var prev = ul.previousElementSibling;
-    if (prev && prev.className && prev.className.indexOf('grp') !== -1) prev.style.display = vis ? '' : 'none';
-  });
-  each(panel.querySelectorAll('section.group'), function (sec) {
-    var anyVis = false;
-    each(sec.querySelectorAll('ul.list'), function (u) { if (u.style.display !== 'none') anyVis = true; });
-    sec.style.display = (!on || anyVis) ? '' : 'none';
-  });
-  var badge = $('devCount');
-  if (badge) badge.textContent = on ? (panel.querySelectorAll('ul.list li .tag').length + ' flagged for dev notes / field guide') : '';
 }
 function copyProps() { navigator.clipboard.writeText(window._propsLine || ''); }
 function downloadMd() {
