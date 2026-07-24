@@ -221,42 +221,47 @@ const PAGE = `<!doctype html>
   .pill.off .ic { border: 1.5px solid var(--yellow); color: var(--yellow); }
   @media (prefers-color-scheme: dark) { .logo svg { filter: brightness(0) invert(1); } }
 
-  /* ---- Collapse toggle (show / hide the filter bar, tool only) ---- */
-  .collapse-toggle { margin-left: var(--s2); width: 30px; height: 30px; border: 0; background: none; padding: 0;
-    color: var(--muted); cursor: pointer; display: inline-grid; place-items: center; }
-  .collapse-toggle[hidden] { display: none; }
-  .collapse-toggle:hover { color: var(--navy); }
-  .collapse-toggle:focus { outline: none; }
-  .collapse-toggle:focus-visible { border-radius: 5px; box-shadow: 0 0 0 3px var(--ring); }
-  .collapse-toggle .chev { transform: rotate(180deg); transition: transform .44s cubic-bezier(.34,1.56,.64,1); }
-  body.filters-collapsed .collapse-toggle .chev { transform: rotate(0deg); }
+  /* ---- App shell: tool rail (left) + workspace (right) ---- */
+  .shell { max-width: 1120px; margin: 0 auto; padding: 0 var(--s5); display: grid;
+    grid-template-columns: 190px minmax(0, 1fr); gap: var(--s6); align-items: start; }
 
-  /* ---- Tool hero (title of the active tool) ---- */
-  .hero { background: var(--surface); }
-  .hero-inner { max-width: 1120px; margin: 0 auto; padding: var(--s7) var(--s5) var(--s5); }
-  .hero-inner h1 { font-size: 28px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
-  .hero-desc { font-size: 15px; color: var(--muted); margin: 0; max-width: 68ch; line-height: 1.55; }
+  /* ---- Tool rail (Metro tiles: always on the page, grows downward) ---- */
+  .rail { position: sticky; top: 66px; padding: var(--s6) 0; display: flex; flex-direction: column; gap: var(--s3); }
+  .rail-cap { font: 600 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 2px var(--s1); }
+  .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--s2);
+    width: 100%; height: 98px; padding: var(--s3); border-radius: var(--r); border: 1px solid transparent;
+    background: var(--sunk); color: var(--text); cursor: pointer; font: inherit;
+    transition: transform .12s ease, box-shadow .12s ease, background .14s ease; }
+  .tool:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .tool-ic { display: grid; place-items: center; }
+  .tool-name { font: 600 12.5px/1.2 var(--font); }
+  .tool-badge { font: 600 8.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .tool.active { background: var(--navy); color: #fff; box-shadow: var(--shadow-sm); cursor: default; }
+  .tool.active:hover { transform: none; }
+  .tool.is-soon { color: var(--muted); cursor: default; }
+  .tool.is-soon:hover { transform: none; box-shadow: none; }
+  .tool.is-more { background: none; border: 1px dashed var(--border); color: var(--muted); height: 62px; cursor: default; }
+  .tool.is-more:hover { transform: none; box-shadow: none; }
+  .tool.is-more .tool-ic { font: 400 22px/1 var(--font); }
 
-  /* ---- Product tiles (small Windows-8 style: centered icon over label) ---- */
-  .pnav-bar { background: var(--surface); }
-  .pnav-inner { max-width: 1120px; margin: 0 auto; padding: var(--s4) var(--s5) 0; }
-  .metro { display: flex; flex-wrap: wrap; gap: var(--s3); }
-  .tile { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 9px;
-    width: 124px; height: 106px; padding: var(--s3); border-radius: 5px; }
-  .tile-ic { display: grid; place-items: center; }
-  .tile-name { font: 600 13px/1.25 var(--font); }
-  .tile-soon { font: 600 9px/1 var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-  .tile.active { background: var(--navy); color: #fff; }
-  .tile.is-soon { background: var(--sunk); color: var(--text); }
-  .tile.is-more { background: none; border: 1px dashed var(--border); color: var(--muted); }
-  .tile.is-more .tile-ic { font: 700 20px/1 var(--font); }
+  /* ---- Workspace (the active tool) ---- */
+  main { min-width: 0; padding: var(--s6) 0 var(--s8); }
+  .tool-head { margin-bottom: var(--s5); }
+  .tool-head h1 { font-size: 25px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 6px; }
+  .tool-head p { margin: 0; font-size: 14.5px; color: var(--muted); max-width: 68ch; line-height: 1.55; }
 
-  main { max-width: 1120px; margin: 0 auto; padding: var(--s6) var(--s5) var(--s8); }
+  /* ---- Filter panel ---- */
+  .filters { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r);
+    box-shadow: var(--shadow-sm); padding: var(--s5) var(--s6); margin-bottom: var(--s6); }
 
-  /* ---- Controls band (toolbar under header) ---- */
-  .controls { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; z-index: 15; overflow: visible;
-    transition: max-height .44s cubic-bezier(.34,1.56,.64,1); }
-  .cinner { max-width: 1120px; margin: 0 auto; padding: var(--s4) var(--s5); }
+  @media (max-width: 780px) {
+    .shell { grid-template-columns: 1fr; gap: var(--s4); }
+    .rail { position: static; top: auto; flex-direction: row; flex-wrap: wrap; padding: var(--s5) 0 0; gap: var(--s2); }
+    .rail-cap { width: 100%; }
+    .tool { flex: 1 1 130px; height: 82px; }
+    .tool.is-more { height: 82px; flex-basis: 90px; }
+    main { padding-top: var(--s4); }
+  }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); }
 
@@ -477,30 +482,31 @@ const PAGE = `<!doctype html>
       <button class="pill" id="pillGh" onclick="toggleWizard()"><span class="ic"></span>GitHub</button>
       <button class="pill" id="pillTrac" onclick="toggleWizard()"><span class="ic"></span>Trac</button>
     </div>
-    <button class="collapse-toggle" id="collapseToggle" onclick="toggleControls()" aria-label="Show or hide filters" title="Show / hide filters"><svg class="chev" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button>
   </div>
 </header>
-<div class="pnav-bar">
-  <div class="pnav-inner">
-    <div class="metro">
-      <div class="tile active">
-        <span class="tile-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-        <span class="tile-name">Changelog Generator</span>
-      </div>
-      <div class="tile is-soon">
-        <span class="tile-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
-        <span class="tile-name">Props Generator</span>
-        <span class="tile-soon">Soon</span>
-      </div>
-      <div class="tile is-more">
-        <span class="tile-ic">+</span>
-        <span class="tile-name">More</span>
-      </div>
+<div class="shell">
+  <aside class="rail">
+    <span class="rail-cap">Tools</span>
+    <button type="button" class="tool active" aria-current="true">
+      <span class="tool-ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+      <span class="tool-name">Changelog Generator</span>
+    </button>
+    <button type="button" class="tool is-soon" disabled>
+      <span class="tool-ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
+      <span class="tool-name">Props Generator</span>
+      <span class="tool-badge">Soon</span>
+    </button>
+    <button type="button" class="tool is-more" disabled>
+      <span class="tool-ic">+</span>
+      <span class="tool-name">More soon</span>
+    </button>
+  </aside>
+  <main>
+    <div class="tool-head">
+      <h1>Changelog Generator</h1>
+      <p>Turn a date window into a ready release-post changelog for Core and Gutenberg.</p>
     </div>
-  </div>
-</div>
-<div class="controls">
-  <div class="cinner">
+    <section class="filters">
     <form class="query" id="f">
       <div class="qfields">
         <div class="rangewrap">
@@ -529,9 +535,7 @@ const PAGE = `<!doctype html>
         <div class="go"><button type="button" class="reset-link" onclick="resetFilters()">Reset</button><button class="primary" id="go" type="submit">Generate</button></div>
       </div>
     </form>
-  </div>
-</div>
-<main>
+    </section>
   <section class="card wizard" id="wizard">
     <button class="wiz-close" type="button" onclick="closeWizard()" aria-label="Close setup">&times;</button>
     <h2>Setup</h2>
@@ -581,7 +585,8 @@ const PAGE = `<!doctype html>
 
   <div id="status"></div>
   <div id="out" class="results"></div>
-</main>
+  </main>
+</div>
 <footer class="site-footer">
   <div class="finner">
     <div class="fleft">
@@ -925,31 +930,14 @@ function syncGbToMilestone() {
 $('milestone').addEventListener('change', syncGbToMilestone);
 
 (function () { var y = $('year'); if (y) y.textContent = new Date().getFullYear(); })();
-(function () { // the sticky filter bar sits right under the sticky header; shadow on scroll
-  var header = document.querySelector('header'), controls = document.querySelector('.controls');
-  function place() { controls.style.top = header.offsetHeight + 'px'; }
+(function () { // pin the tool rail just under the sticky header; shadow the header on scroll
+  var header = document.querySelector('header'), rail = document.querySelector('.rail');
+  function place() { if (rail) rail.style.top = (header.offsetHeight + 12) + 'px'; }
   function onScroll() { header.classList.toggle('scrolled', window.scrollY > 4); }
   window.addEventListener('resize', place);
   window.addEventListener('scroll', onScroll, { passive: true });
   place(); onScroll();
 })();
-
-// Show/hide the filter bar (tool only)
-function toggleControls() {
-  var c = document.querySelector('.controls');
-  var willCollapse = !document.body.classList.contains('filters-collapsed');
-  if (willCollapse) {
-    c.style.maxHeight = c.scrollHeight + 'px'; c.style.overflow = 'hidden';
-    void c.offsetHeight;
-    document.body.classList.add('filters-collapsed');
-    c.style.maxHeight = '0px';
-  } else {
-    document.body.classList.remove('filters-collapsed');
-    c.style.overflow = 'hidden';
-    c.style.maxHeight = c.scrollHeight + 'px';
-    setTimeout(function () { if (!document.body.classList.contains('filters-collapsed')) { c.style.maxHeight = 'none'; c.style.overflow = 'visible'; } }, 480);
-  }
-}
 
 $('out').innerHTML = emptyState();
 
