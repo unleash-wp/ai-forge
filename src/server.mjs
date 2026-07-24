@@ -6,6 +6,7 @@ import { authenticated, tokenStatus, saveToken, deleteToken, checkToken } from '
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './trac.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
+import { checkUpdates } from './update.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 // Light-bulb mark served at /brand/bulb.svg (favicon + empty-state image). The
@@ -39,6 +40,15 @@ export function startServer({ port = 4321 } = {}) {
     // Tool registry: the rail + tool head render from these manifests.
     if (url.pathname === '/api/plugins') {
       json(res, 200, { plugins: (await pluginsReady).map((p) => p.manifest) });
+      return;
+    }
+    // Free update check: newer GitHub Release than the installed plugin version.
+    if (url.pathname === '/api/updates') {
+      try {
+        json(res, 200, { updates: await checkUpdates(await pluginsReady) });
+      } catch (err) {
+        json(res, 200, { updates: [], error: err.message });
+      }
       return;
     }
     if (url.pathname === '/brand/bulb.svg') {
