@@ -491,11 +491,6 @@ const PAGE = `<!doctype html>
       <span class="tool-ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
       <span class="tool-name">Changelog Generator</span>
     </button>
-    <button type="button" class="tool is-soon" disabled>
-      <span class="tool-ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
-      <span class="tool-name">Props Generator</span>
-      <span class="tool-badge">Soon</span>
-    </button>
     <button type="button" class="tool is-more" disabled>
       <span class="tool-ic">+</span>
       <span class="tool-name">More soon</span>
