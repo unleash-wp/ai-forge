@@ -4,6 +4,7 @@
   "description": "Generate release-post change summaries for WordPress Core & Gutenberg from GitHub (+ Trac via MCP).",
   "type": "module",
   "bin": {
+    "uwp": "bin/wp-release-helper.mjs",
     "wp-release-helper": "bin/wp-release-helper.mjs"
   },
   "engines": {

@@ -69,18 +69,35 @@ CLI prints a notice and leaves Core flat. Then use the Automattic
 Also handy for live ticket detail and bbPress/BuddyPress. Never invent component
 names — if neither source is available, ship the flat Core list.
 
-### 4. Assemble the release post scaffold
+### 4. Write the release post
 
-Produce, in this order:
-1. One-line headline with the milestone + window.
-2. Counts table (verbatim from the CLI).
-3. Gutenberg highlights grouped by label — keep PR links + author handles.
-4. Core changes grouped by component (from step 3) or flat (fallback).
-5. Contributor thanks (the union list).
+Release coordinators publish a "What's in WordPress <x.y> Beta/RC N?" post.
+Match that shape (see `references/example-post.md`):
 
-**Do not** write prose "highlights" that aren't backed by a PR/ticket title.
-Only summarize what the commit/PR/ticket titles actually say. Counts and links
-come straight from the tool — never estimate them.
+1. **Headline** — `What's in WordPress <x.y> <Beta/RC N>?`
+2. **Count line + sources** — e.g. "For technical details on the N issues
+   addressed since <previous build>, see:" then the two links from the CLI's
+   **Sources** block (Trac query + Gutenberg commits for the window). The count
+   is the CLI's `coreTickets` + `gutenbergPRs`, or the Trac/GH totals — never
+   estimated.
+3. **Prose highlights** — 1-3 short paragraphs on the notable changes, grouped
+   loosely (styling, media, editor, developer). Each sentence must trace to a
+   real PR/ticket title from the CLI output; link the PR/ticket inline. Prefer
+   the Gutenberg `[Feature]`-labelled PRs and the Core `dev-note` /
+   `field-guide` tickets — those are what the docs team flagged as noteworthy.
+4. **Notes** — deferrals ("X will not be included…"), security builds, or
+   cross-release context, only if present in the data or given by the user.
+5. **Contributors** — the union list.
+
+**Grounding rules (hard):**
+- Never write a highlight that is not backed by a PR/ticket title in the CLI
+  output. No invented features, no guessed impact.
+- Counts and links come straight from the tool — never estimate or round beyond
+  what the CLI reports (a "more than N" phrasing is fine if N is the real count).
+- If you are unsure what a change does, quote the PR/ticket title rather than
+  paraphrasing speculatively.
+- The `dev-note` / `field-guide` classification tells you what deserves a
+  sentence; `exclude`-class and version-bump changes usually do not.
 
 ## Notes
 

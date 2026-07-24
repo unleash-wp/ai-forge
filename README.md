@@ -37,16 +37,30 @@ under **Uncategorized**.
 ```bash
 git clone https://github.com/unleash-wp/wp-release-helper
 cd wp-release-helper
+npm link        # installs the `uwp` command globally
 gh auth login   # optional but recommended: raises GitHub API limit to 5000/h
 ```
 
-No dependencies — plain Node ≥18 (uses the global `fetch`).
+No dependencies — plain Node ≥18 (uses the global `fetch`). Without `npm link`
+you can still run it as `node bin/wp-release-helper.mjs …`.
 
 ## Usage
 
 ```bash
-node bin/wp-release-helper.mjs --since 2026-07-15 --until 2026-07-22 --milestone 7.1
+uwp --since 2026-07-15 --until 2026-07-22 --milestone 7.1
 ```
+
+### Browser UI
+
+Prefer clicking a date range over typing flags:
+
+```bash
+uwp serve            # -> http://localhost:4321
+```
+
+Pick since/until/milestone, hit **Generate**, and get the summary counts, the
+grouped changelog, and a **Copy Markdown** / **Download .md** button. The server
+uses your local `gh` token, so nothing sensitive touches the browser.
 
 | Option | Meaning |
 | --- | --- |
