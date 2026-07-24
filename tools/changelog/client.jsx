@@ -351,7 +351,7 @@ export default function ChangelogTool() {
         <form className="query" onSubmit={submit}>
           <div className="qfields">
             <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-            <label>Milestone<Select block value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="—" /></label>
+            <label>Milestone<Select block searchable value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="—" /></label>
             <label>Gutenberg branch<Select block searchable value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
             <label>Core branch<Select block searchable value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
           </div>
