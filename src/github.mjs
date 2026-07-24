@@ -96,7 +96,11 @@ async function getJson(url) {
   const res = await fetch(url, { headers: headers() });
   if (!res.ok) {
     let hint = '';
-    if (res.status === 403) hint = ' (rate limit - run `gh auth login` for 5000/h)';
+    if (res.status === 403) {
+      hint = resolveToken().token
+        ? ' (GitHub rate limit reached even at 5000/h - resets within the hour, try again shortly)'
+        : ' (rate limit - run `gh auth login` for 5000/h)';
+    }
     if (res.status === 404) hint = ' (repo or branch not found)';
     throw new Error(`GitHub ${res.status} ${res.statusText}${hint}: ${url}`);
   }

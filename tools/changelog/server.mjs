@@ -57,11 +57,20 @@ async function reportHandler(req, res, url, ctx) {
   }
 }
 
+// Cache the last good branch list per repo so a transient GitHub rate limit
+// (403) doesn't blank the milestone/branch pickers. Kept in memory for the
+// server's lifetime; refreshed on every successful fetch.
+const branchCache = new Map();
+
 async function branchesHandler(req, res, url, ctx) {
   const repo = url.searchParams.get('repo') === 'core' ? 'WordPress/wordpress-develop' : 'WordPress/gutenberg';
   try {
-    ctx.json(res, 200, { branches: await branches(repo) });
+    const list = await branches(repo);
+    branchCache.set(repo, list);
+    ctx.json(res, 200, { branches: list });
   } catch (err) {
+    const cached = branchCache.get(repo);
+    if (cached) { ctx.json(res, 200, { branches: cached, stale: true }); return; }
     ctx.json(res, 200, { branches: [], error: err.message });
   }
 }
