@@ -9,6 +9,7 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { resolveCookie } from './trac.mjs';
+import { resolveToken } from './github.mjs';
 
 // Where the built server lives: FORGE_WPORG_MCP, else the default clone path.
 export function mcpServerPath() {
@@ -23,9 +24,13 @@ export function mcpSession(calls, { timeout = 30000 } = {}) {
   const path = mcpServerPath();
   if (!path) return Promise.reject(new Error('mcp-context-wporg is not installed (clone + build it, or set FORGE_WPORG_MCP)'));
   return new Promise((resolve, reject) => {
+    // Pass the tool's credentials through so the MCP's providers are not rate-
+    // limited: the Trac cookie (auth, avoids 403) + a GitHub token (60 -> 5000/h).
     const cookie = resolveCookie();
+    const { token } = resolveToken();
     const env = { ...process.env };
     if (cookie) env.WPORG_TRAC_COOKIE = cookie;
+    if (token) env.GITHUB_TOKEN = token;
     const proc = spawn('node', [path], { env, stdio: ['pipe', 'pipe', 'pipe'] });
     let buf = '', err = '', done = false, id = 0;
     const pending = new Map();
@@ -87,4 +92,33 @@ export async function mcpExecute(provider, tool, params) {
 export function mcpText(result) {
   const txt = (result && result.content || []).map((c) => c.text || '').join('\n');
   try { return JSON.parse(txt); } catch { return txt; }
+}
+
+// Trac ticket details via the MCP, batched + cached + capped so we stay fast and
+// don't hammer WordPress.org. One session fetches every uncached id (load the
+// trac provider once, then get-ticket sequentially - gentle on the upstream);
+// results are cached for the server's lifetime so repeat reports are free.
+// Returns Map<id, { summary, description, component, type, owner, priority }>,
+// the same shape applyDeepDetails() consumes. `capped` is set on the map when
+// the request exceeded `cap`.
+const ticketCache = new Map();
+export async function mcpTicketDetails(ids, { cap = 40 } = {}) {
+  const want = [...new Set((ids || []).filter((id) => id != null))];
+  const missing = want.filter((id) => !ticketCache.has(id));
+  const need = missing.slice(0, cap);
+  if (need.length) {
+    const calls = [{ method: 'tools/call', params: { name: 'wporg-load-provider', arguments: { provider: 'trac' } } }];
+    for (const id of need) calls.push({ method: 'tools/call', params: { name: 'wporg-execute-tool', arguments: { provider: 'trac', tool: 'get-ticket', params: { id } } } });
+    const results = await mcpSession(calls, { timeout: 120000 });
+    for (let i = 0; i < need.length; i++) {
+      const d = mcpText(results[i + 1]);
+      if (d && typeof d === 'object' && d.id != null) {
+        ticketCache.set(d.id, { summary: d.summary, description: d.description, component: d.component, type: d.type, owner: d.owner, priority: d.priority });
+      }
+    }
+  }
+  const out = new Map();
+  for (const id of want) if (ticketCache.has(id)) out.set(id, ticketCache.get(id));
+  out.capped = missing.length > cap;
+  return out;
 }
