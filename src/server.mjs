@@ -223,13 +223,13 @@ const PAGE = `<!doctype html>
 
   /* ---- App shell: tool rail (left) + workspace (right) ---- */
   .shell { max-width: 1120px; margin: 0 auto; padding: 0 var(--s5); display: grid;
-    grid-template-columns: 190px minmax(0, 1fr); gap: var(--s6); align-items: start; }
+    grid-template-columns: 150px minmax(0, 1fr); gap: var(--s6); align-items: start; }
 
   /* ---- Tool rail (Metro tiles: always on the page, grows downward) ---- */
   .rail { position: sticky; top: 66px; padding: var(--s6) 0; display: flex; flex-direction: column; gap: var(--s3); }
   .rail-cap { font: 600 10.5px/1 var(--font); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 2px var(--s1); }
   .tool { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: var(--s2);
-    width: 100%; height: 98px; padding: var(--s3); border-radius: var(--r); border: 1px solid transparent;
+    width: 100%; height: 88px; padding: var(--s3); border-radius: var(--r); border: 1px solid transparent;
     background: var(--sunk); color: var(--text); cursor: pointer; font: inherit;
     transition: transform .12s ease, box-shadow .12s ease, background .14s ease; }
   .tool:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
