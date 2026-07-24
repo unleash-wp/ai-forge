@@ -222,13 +222,14 @@ const PAGE = `<!doctype html>
   @media (prefers-color-scheme: dark) { .logo svg { filter: brightness(0) invert(1); } }
 
   /* ---- Hero (product hub: pick a tool, see the active one) ---- */
-  .hero { background: var(--surface); border-bottom: 1px solid var(--border); }
-  .hero-inner { max-width: 1120px; margin: 0 auto; padding: var(--s7) var(--s5) var(--s6); }
-  .prod-tabs { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s5); }
-  .prod-tab { display: inline-flex; align-items: center; gap: 8px; font: 600 14px/1 var(--font); color: var(--muted);
-    background: var(--sunk); border: 1px solid var(--border); border-radius: 5px; padding: 10px 16px; }
-  .prod-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
-  .prod-tab.is-soon em { font-style: normal; font: 600 11px/1 var(--font); background: var(--border); color: var(--muted); border-radius: 4px; padding: 3px 6px; }
+  .hero { background: var(--surface); }
+  .hero-inner { max-width: 1120px; margin: 0 auto; padding: var(--s7) var(--s5) var(--s5); }
+  .prod-tabs { display: flex; align-items: flex-end; gap: var(--s6); border-bottom: 1px solid var(--border); margin-bottom: var(--s5); }
+  .prod-tab { position: relative; background: none; border: 0; padding: 0 0 var(--s3); margin-bottom: -1px;
+    font: 600 15px/1 var(--font); color: var(--muted); display: inline-flex; align-items: center; gap: 7px; }
+  .prod-tab.active { color: var(--heading); }
+  .prod-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--navy); }
+  .prod-tab.is-soon em { font-style: italic; font-weight: 400; font-size: 12.5px; color: var(--muted); }
   .hero-inner h1 { font-size: 28px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
   .hero-desc { font-size: 15px; color: var(--muted); margin: 0; max-width: 68ch; line-height: 1.55; }
 
@@ -463,7 +464,7 @@ const PAGE = `<!doctype html>
   <div class="hero-inner">
     <div class="prod-tabs">
       <span class="prod-tab active">Changelog Generator</span>
-      <span class="prod-tab is-soon">Props Generator <em>soon</em></span>
+      <span class="prod-tab is-soon">Props Generator <em>(soon)</em></span>
     </div>
     <h1>Changelog Generator</h1>
     <p class="hero-desc">Turn a date window into a release changelog across Core and Gutenberg, grounded in real PRs and tickets.</p>
