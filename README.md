@@ -88,17 +88,18 @@ into the post so anyone can verify), and the changelog under two tabs —
 contributor list) — plus **Copy post** / **Copy Markdown** / **Download** buttons.
 The server binds to `127.0.0.1`, so nothing sensitive touches the browser.
 
-**Setup (one time).** A **Setup** panel wires up two keys, stored locally in
-owner-only files (mode `600`) and sent only to the official GitHub / WordPress.org
-APIs — the same keys `uwp --deep` reads on the CLI:
+**Setup.** There is nothing to set up for GitHub. It reads only public repos, so
+any account works — you never need access to the WordPress org and no token
+scopes. If the `gh` CLI is logged in it is auto-detected (60 → 5000 req/h);
+otherwise the tool just runs at 60 req/h. The header's GitHub badge shows which
+tier you're on.
 
-- **GitHub** — one click: if the `gh` CLI is logged in, it's detected
-  automatically (60 → 5000 req/h). Otherwise paste a token (no scopes needed);
-  saved to `~/.config/wp-trac/github-token`.
-- **WordPress.org** — only for **deep** (full ticket descriptions). Paste your
-  `wporg_logged_in` + `wporg_sec` cookie once; it auto-saves and tests the moment
-  you paste. Saved to `~/.config/wp-trac/cookie`. A web page can't read that
-  cookie for you (it's HttpOnly), so the one paste is the simplest safe path.
+The one optional key is the **WordPress.org** cookie, and only for **deep** (full
+ticket descriptions). Open the **Setup** panel and paste your `wporg_logged_in` +
+`wporg_sec` cookie once; it auto-saves and tests the moment you paste, and a
+**Disconnect** button removes it again. Saved to `~/.config/wp-trac/cookie`
+(owner-only, mode `600`), sent only to WordPress.org. A web page can't read that
+cookie for you (it's HttpOnly), so the one paste is the simplest safe path.
 
 | Option | Meaning |
 | --- | --- |

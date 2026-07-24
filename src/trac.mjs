@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
@@ -19,6 +19,11 @@ export function saveCookie(value) {
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, value.trim() + '\n', { mode: 0o600 });
   return p;
+}
+
+// Remove the saved cookie file (the setup wizard's Disconnect). No-op if absent.
+export function deleteCookie() {
+  try { unlinkSync(cookiePath()); return true; } catch { return false; }
 }
 
 // Trac's CSV export (unlike its HTML query) needs a logged-in WordPress.org
