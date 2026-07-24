@@ -181,7 +181,13 @@ function Results({ data, since, until }) {
   const core = useCore();
   const [tab, setTab] = useState('changelog');
   const [propsAt, setPropsAt] = useState(false);
+  const [devNotes, setDevNotes] = useState(null);
   const meta = data.meta, report = data.report, t = report.totals;
+  useEffect(() => {
+    if (!meta.milestone) { setDevNotes([]); return; }
+    fetch('/api/devnotes?milestone=' + encodeURIComponent(meta.milestone))
+      .then((r) => r.json()).then((d) => setDevNotes(d.notes || [])).catch(() => setDevNotes([]));
+  }, [meta.milestone]);
   const issues = (t.coreTickets || 0) + (t.gutenbergPRs || 0);
   const changes = (t.gutenbergPRs || 0) + (t.coreChangesets || 0);
   const all = uniq((report.gutenberg.contributors || []).concat(report.core.contributors || []))
@@ -223,6 +229,7 @@ function Results({ data, since, until }) {
       <div className="tabs" role="tablist">
         <button className={'tab' + (tab === 'changelog' ? ' active' : '')} onClick={() => setTab('changelog')}><Ic html={IC.list} />Changelog<span className="cbadge">{changes}</span></button>
         <button className={'tab' + (tab === 'props' ? ' active' : '')} onClick={() => setTab('props')}><Ic html={IC.users} />Props<span className="cbadge">{all.length}</span></button>
+        <button className={'tab' + (tab === 'devnotes' ? ' active' : '')} onClick={() => setTab('devnotes')}><Ic html={IC.post} />Dev Notes{devNotes ? <span className="cbadge">{devNotes.length}</span> : null}</button>
         <div className="tabtools">
           <Button variant="ghost" size="sm" onClick={() => copy(data.post, 'Post copied')}><Ic html={IC.post} />Copy post</Button>
           <Button variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</Button>
@@ -255,6 +262,19 @@ function Results({ data, since, until }) {
         </div>
         <p className="propslist">{propsLine}</p>
         {propsAt && <p className="note props-hint">Slack handles usually match the wp.org username, but not always. Double-check before pinging.</p>}
+      </div>
+
+      <div className={'panel' + (tab === 'devnotes' ? '' : ' hidden')}>
+        <p className="note">Published dev notes for {meta.milestone ? <b>{meta.milestone}</b> : 'this milestone'}, from <a href={'https://make.wordpress.org/core/tag/dev-notes-' + String(meta.milestone || '').replace(/\./g, '-') + '/'} target="_blank" rel="noopener">make.wordpress.org/core</a> (the tagged Field Guide source).</p>
+        {devNotes === null ? <p className="note"><span className="spin" /> Loading dev notes…</p>
+          : devNotes.length === 0 ? <div className="empty"><h3>No dev notes yet</h3><p>make.wordpress.org has no <code>dev-notes-{String(meta.milestone || '').replace(/\./g, '-')}</code> posts yet - they land as the release nears.</p></div>
+          : <ul className="devnotes-list">{devNotes.map((n, i) => (
+              <li key={i}>
+                <a href={n.url} target="_blank" rel="noopener">{n.title}</a>
+                <span className="dn-date">{n.date}</span>
+                {n.excerpt && <p className="dn-excerpt">{n.excerpt}…</p>}
+              </li>
+            ))}</ul>}
       </div>
     </div>
   );
