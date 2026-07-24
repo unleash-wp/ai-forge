@@ -650,12 +650,7 @@ const PAGE = `<!doctype html>
         <p>Needed for <b>deep</b> — full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
         <div class="quickimport">
           <span class="qi-label">Quick import from your browser <span class="qi-note">(you must be logged in there)</span></span>
-          <div class="qi-btns">
-            <button class="ghost sm" type="button" onclick="importCookie('chrome','inst')">Chrome</button>
-            <button class="ghost sm" type="button" onclick="importCookie('safari','inst')">Safari</button>
-            <button class="ghost sm" type="button" onclick="importCookie('firefox','inst')">Firefox</button>
-            <button class="ghost sm" type="button" onclick="importCookie('edge','inst')">Edge</button>
-          </div>
+          <div class="qi-btns" id="instQiBtns"></div>
         </div>
         <details class="qi-manual"><summary>Or paste it manually</summary>
           <ol>
@@ -766,12 +761,7 @@ const PAGE = `<!doctype html>
             <p>A web page can't read this cookie for you (it's HttpOnly). Quickest is to import it straight from the browser you're logged into:</p>
             <div class="quickimport">
               <span class="qi-label">Quick import <span class="qi-note">(macOS)</span></span>
-              <div class="qi-btns">
-                <button class="ghost sm" type="button" onclick="importCookie('chrome','wiz')">Chrome</button>
-                <button class="ghost sm" type="button" onclick="importCookie('safari','wiz')">Safari</button>
-                <button class="ghost sm" type="button" onclick="importCookie('firefox','wiz')">Firefox</button>
-                <button class="ghost sm" type="button" onclick="importCookie('edge','wiz')">Edge</button>
-              </div>
+              <div class="qi-btns" id="wizQiBtns"></div>
             </div>
             <details class="qi-manual"><summary>Or paste it manually</summary>
               <ol>
@@ -977,6 +967,33 @@ function instContinueAnyway() { instFinishDone(); }
 function instFinishDone() {
   fetch('/api/installed', { method: 'POST' }).then(function () {
     $('installer').hidden = true; document.body.classList.remove('installing'); refreshStatus();
+  });
+}
+// Detect the browser this page is running in — the import only makes sense for
+// the browser the user is actually logged into wordpress.org with.
+function currentBrowser() {
+  var ua = navigator.userAgent;
+  if (ua.indexOf('Edg/') !== -1) return 'edge';
+  if (ua.indexOf('Firefox/') !== -1) return 'firefox';
+  if (ua.indexOf('Chrome/') !== -1 && ua.indexOf('OPR/') === -1) return 'chrome';
+  if (ua.indexOf('Safari/') !== -1) return 'safari';
+  return null;
+}
+// Render a single "Import from <this browser>" button into both quick-import
+// slots, or hide the block when the browser isn't one we can read.
+function setupQuickImport() {
+  var b = currentBrowser();
+  var names = { chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', safari: 'Safari' };
+  var slots = [['instQiBtns', 'inst'], ['wizQiBtns', 'wiz']];
+  slots.forEach(function (pair) {
+    var box = $(pair[0]); if (!box) return;
+    var block = box.closest ? box.closest('.quickimport') : null;
+    if (!b) { if (block) block.style.display = 'none'; return; }
+    var btn = document.createElement('button');
+    btn.className = 'ghost sm'; btn.type = 'button';
+    btn.textContent = 'Import from ' + names[b];
+    btn.onclick = function () { importCookie(b, pair[1]); };
+    box.innerHTML = ''; box.appendChild(btn);
   });
 }
 // One-click cookie import from a local browser store (server reads it, we never
@@ -1297,6 +1314,7 @@ $('milestone').addEventListener('change', syncGbToMilestone);
 
 $('out').innerHTML = emptyState();
 
+setupQuickImport();
 refreshStatus();
 </script>
 </body>

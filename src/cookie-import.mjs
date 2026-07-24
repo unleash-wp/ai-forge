@@ -77,17 +77,25 @@ function fromFirefox() {
 
 // --- Chromium (Chrome / Edge): AES-128-CBC, key from the macOS Keychain ------
 function fromChromium(which) {
-  const base = which === 'edge'
-    ? join(HOME, 'Library/Application Support/Microsoft Edge')
-    : join(HOME, 'Library/Application Support/Google/Chrome');
+  // Chrome / Edge can live under a few different install folders, and users have
+  // arbitrary profile names — so scan every profile dir that holds a Cookies db.
+  const roots = which === 'edge'
+    ? ['Library/Application Support/Microsoft Edge']
+    : ['Library/Application Support/Google/Chrome', 'Library/Application Support/Chromium'];
   const dbs = [];
-  for (const prof of ['Default', 'Profile 1', 'Profile 2', 'Profile 3']) {
-    for (const sub of ['Network/Cookies', 'Cookies']) {
-      const p = join(base, prof, sub);
-      if (existsSync(p)) dbs.push(p);
+  for (const rel of roots) {
+    const base = join(HOME, rel);
+    if (!existsSync(base)) continue;
+    let entries = [];
+    try { entries = readdirSync(base); } catch { /* unreadable */ }
+    for (const name of entries) {
+      for (const sub of ['Network/Cookies', 'Cookies']) {
+        const p = join(base, name, sub);
+        if (existsSync(p)) dbs.push(p);
+      }
     }
   }
-  if (!dbs.length) throw new Error(`${cap(which)} cookies database not found.`);
+  if (!dbs.length) throw new Error(`${cap(which)} cookies database not found. Is ${cap(which)} installed and have you opened it at least once?`);
 
   const service = which === 'edge' ? 'Microsoft Edge Safe Storage' : 'Chrome Safe Storage';
   const account = which === 'edge' ? 'Microsoft Edge' : 'Chrome';
