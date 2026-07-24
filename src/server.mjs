@@ -6,6 +6,7 @@ import { generate } from './report.mjs';
 import { toMarkdown, toPost, sourceUrls } from './format.mjs';
 import { authenticated, tokenStatus, saveToken, deleteToken, checkToken, branches } from './github.mjs';
 import { fetchTicketDetails, resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './trac.mjs';
+import { importWporgCookie } from './cookie-import.mjs';
 import { applyDeepDetails } from './aggregate.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -96,6 +97,22 @@ export function startServer({ port = 4321 } = {}) {
       if (process.env.WPORG_TRAC_COOKIE) { json(res, 400, { error: 'WPORG_TRAC_COOKIE env is set; unset it in your shell to disconnect.' }); return; }
       deleteCookie();
       json(res, 200, { ok: true });
+      return;
+    }
+
+    if (url.pathname === '/api/cookie/import' && req.method === 'POST') {
+      if (process.env.WPORG_TRAC_COOKIE) { json(res, 200, { ok: false, message: 'WPORG_TRAC_COOKIE env is set and overrides the file. Unset it to import.' }); return; }
+      const browser = (JSON.parse(await readBody(req) || '{}').browser || '').trim();
+      try {
+        const cookie = importWporgCookie(browser); // read from the local browser store
+        saveCookie(cookie);                          // persist (owner-only); value never returned
+        const ok = await validateCookie(cookie);
+        json(res, 200, { ok, saved: true, message: ok
+          ? `Imported from ${browser} and verified — Trac reachable.`
+          : `Imported from ${browser}, but Trac rejected it (expired session or bot wall). Saved anyway; the tool runs cookie-free.` });
+      } catch (err) {
+        json(res, 200, { ok: false, message: err.message });
+      }
       return;
     }
 
@@ -379,6 +396,15 @@ const PAGE = `<!doctype html>
   .inst-foot .back { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: 500 13px/1 var(--font); }
   .inst-foot .back[hidden] { display: none; }
 
+  /* ---- Quick cookie import (browser buttons) ---- */
+  .quickimport { margin: 0 0 var(--s3); }
+  .qi-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .qi-note { font-weight: 400; color: var(--muted); }
+  .qi-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .qi-manual { margin: 0 0 var(--s3); }
+  .qi-manual summary { font-size: 12.5px; color: var(--muted); cursor: pointer; }
+  .qi-manual > ol { margin-top: var(--s2); }
+
   input, textarea { font: inherit; width: 100%; background: var(--sunk); color: var(--text);
     border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 14px; transition: border-color .12s, box-shadow .12s, background .12s; }
   input::placeholder, textarea::placeholder { color: var(--muted); opacity: .8; }
@@ -622,11 +648,22 @@ const PAGE = `<!doctype html>
         <span class="inst-kicker">Step 2 of 2</span>
         <h2>Connect WordPress.org</h2>
         <p>Needed for <b>deep</b> — full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
-        <ol>
-          <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
-          <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
-        </ol>
-        <textarea id="instCookie" rows="3" placeholder="wporg_logged_in=…; wporg_sec=…"></textarea>
+        <div class="quickimport">
+          <span class="qi-label">Quick import from your browser <span class="qi-note">(you must be logged in there)</span></span>
+          <div class="qi-btns">
+            <button class="ghost sm" type="button" onclick="importCookie('chrome','inst')">Chrome</button>
+            <button class="ghost sm" type="button" onclick="importCookie('safari','inst')">Safari</button>
+            <button class="ghost sm" type="button" onclick="importCookie('firefox','inst')">Firefox</button>
+            <button class="ghost sm" type="button" onclick="importCookie('edge','inst')">Edge</button>
+          </div>
+        </div>
+        <details class="qi-manual"><summary>Or paste it manually</summary>
+          <ol>
+            <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
+            <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
+          </ol>
+          <textarea id="instCookie" rows="3" placeholder="wporg_logged_in=…; wporg_sec=…"></textarea>
+        </details>
         <span class="msg" id="instCookieMsg"></span>
         <div class="inst-escape" id="instEscape" hidden>Trac isn't reachable right now (bot wall or expired cookie). You can <button class="back" type="button" onclick="instContinueAnyway()">continue anyway</button> — the tool runs cookie-free and you can add the cookie later in Setup.</div>
       </div>
@@ -726,12 +763,23 @@ const PAGE = `<!doctype html>
           <h3>WordPress.org <em>only needed for “deep” (full ticket descriptions)</em></h3>
           <div id="tracConnected" class="connected" hidden></div>
           <div id="tracSetup">
-            <p>Skip this for Beta-post counts. A web page can't read this cookie for you (it's HttpOnly), so paste it once and it auto-saves and tests the moment you paste.</p>
-            <ol>
-              <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
-              <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
-            </ol>
-            <textarea id="cookieVal" rows="3" placeholder="wporg_logged_in=…; wporg_sec=…"></textarea>
+            <p>A web page can't read this cookie for you (it's HttpOnly). Quickest is to import it straight from the browser you're logged into:</p>
+            <div class="quickimport">
+              <span class="qi-label">Quick import <span class="qi-note">(macOS)</span></span>
+              <div class="qi-btns">
+                <button class="ghost sm" type="button" onclick="importCookie('chrome','wiz')">Chrome</button>
+                <button class="ghost sm" type="button" onclick="importCookie('safari','wiz')">Safari</button>
+                <button class="ghost sm" type="button" onclick="importCookie('firefox','wiz')">Firefox</button>
+                <button class="ghost sm" type="button" onclick="importCookie('edge','wiz')">Edge</button>
+              </div>
+            </div>
+            <details class="qi-manual"><summary>Or paste it manually</summary>
+              <ol>
+                <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
+                <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
+              </ol>
+              <textarea id="cookieVal" rows="3" placeholder="wporg_logged_in=…; wporg_sec=…"></textarea>
+            </details>
             <div class="rowbtns">
               <button class="primary sm" type="button" onclick="saveCookie()">Save &amp; connect</button>
               <button class="ghost sm" type="button" onclick="testCookie()">Test</button>
@@ -930,6 +978,24 @@ function instFinishDone() {
   fetch('/api/installed', { method: 'POST' }).then(function () {
     $('installer').hidden = true; document.body.classList.remove('installing'); refreshStatus();
   });
+}
+// One-click cookie import from a local browser store (server reads it, we never
+// see the value). ctx: 'inst' (installer) or 'wiz' (setup panel).
+function importCookie(browser, ctx) {
+  var inst = ctx === 'inst';
+  var mid = inst ? 'instCookieMsg' : 'cookieMsg';
+  (inst ? instMsg : msg)(mid, 'Importing from ' + browser + '… (approve any Keychain prompt)');
+  fetch('/api/cookie/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ browser: browser }) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (inst) {
+        if (d.saved) { instFinishDone(); }
+        else { instMsg(mid, d.message, 'bad'); $('instEscape').hidden = false; }
+      } else {
+        msg(mid, d.message, d.ok ? 'good' : 'bad'); refreshStatus();
+      }
+    })
+    .catch(function () { (inst ? instMsg : msg)(mid, 'Import failed.', 'bad'); });
 }
 function refreshStatus() {
   return fetch('/api/config/status').then(function (r) { return r.json(); }).then(function (d) {

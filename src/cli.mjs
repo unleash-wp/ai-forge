@@ -10,6 +10,8 @@ Usage:
   uwp --since <date> --until <date> [options]
   uwp <since> <until> [options]
   uwp serve [--port <n>]            Open the browser UI.
+  uwp cookie-import <browser>       Import the wordpress.org cookie from a local
+                                    browser (chrome|safari|firefox|edge, macOS).
 
 Options:
   --since <date>        Start of window (YYYY-MM-DD or ISO 8601). Required.
@@ -45,6 +47,21 @@ export async function run(argv) {
   if (args._[0] === 'serve') {
     const { startServer } = await import('./server.mjs');
     return startServer({ port: Number(args.port) || 4321 });
+  }
+
+  if (args._[0] === 'cookie-import') {
+    const { importWporgCookie } = await import('./cookie-import.mjs');
+    const { saveCookie, validateCookie } = await import('./trac.mjs');
+    const browser = args.browser ?? args._[1];
+    if (!browser) throw new Error('usage: uwp cookie-import <chrome|safari|firefox|edge>');
+    const cookie = importWporgCookie(browser); // value stays local; never printed
+    const path = saveCookie(cookie);
+    console.log(`Imported wporg_logged_in + wporg_sec from ${browser}, saved to ${path}.`);
+    const ok = await validateCookie(cookie);
+    console.log(ok
+      ? 'Verified — Trac reachable.'
+      : 'Saved, but Trac rejected it (expired session or bot wall). The tool still runs cookie-free.');
+    return;
   }
 
   if (args.help) {

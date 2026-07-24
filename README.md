@@ -99,10 +99,13 @@ shared), stored locally in owner-only files (mode `600`) and sent only to GitHub
   paste it once — it auto-saves and tests on paste. Saved to
   `~/.config/wp-trac/github-token`. Skip it entirely and the tool still runs at
   60 req/h.
-- **WordPress.org** — only for **deep** (full ticket descriptions). Paste your
-  `wporg_logged_in` + `wporg_sec` cookie once; it auto-saves and tests the moment
-  you paste. Saved to `~/.config/wp-trac/cookie`. A web page can't read that
-  cookie for you (it's HttpOnly), so the one paste is the simplest safe path.
+- **WordPress.org** — only for **deep** (full ticket descriptions). Quickest is
+  the one-click **import from your browser** (Chrome / Safari / Firefox / Edge,
+  macOS) — the local server reads `wporg_logged_in` + `wporg_sec` straight from
+  the browser's cookie store (Chrome/Edge prompt the Keychain to decrypt). Same
+  thing on the CLI: `uwp cookie-import <browser>`. Or paste the cookie manually.
+  A web page can't read it for you (it's HttpOnly), which is why the import runs
+  locally. Saved to `~/.config/wp-trac/cookie`.
 
 | Option | Meaning |
 | --- | --- |
