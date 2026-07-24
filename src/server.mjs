@@ -201,16 +201,8 @@ const PAGE = `<!doctype html>
   .tnum { font-variant-numeric: tabular-nums; }
 
   /* ---- Header (white brand bar) ---- */
-  .topbar { position: sticky; top: 0; z-index: 20; transition: box-shadow .18s ease; }
-  .topbar.scrolled { box-shadow: var(--shadow); }
-  header { background: var(--surface); border-bottom: 1px solid var(--border); }
-  .collapse-toggle { margin-left: var(--s2); width: 30px; height: 30px; border: 0; background: none; padding: 0;
-    color: var(--muted); cursor: pointer; display: inline-grid; place-items: center; }
-  .collapse-toggle:hover { color: var(--navy); }
-  .collapse-toggle:focus { outline: none; }
-  .collapse-toggle:focus-visible { border-radius: 5px; box-shadow: 0 0 0 3px var(--ring); }
-  .collapse-toggle .chev { transform: rotate(180deg); transition: transform .44s cubic-bezier(.34,1.56,.64,1); }
-  .topbar.filters-collapsed .collapse-toggle .chev { transform: rotate(0deg); }
+  header { position: sticky; top: 0; z-index: 20; background: var(--surface); border-bottom: 1px solid var(--border); transition: box-shadow .18s ease; }
+  header.scrolled { box-shadow: var(--shadow); }
   .bar { max-width: 1120px; margin: 0 auto; padding: 14px var(--s5); display: flex; align-items: center; gap: var(--s4); }
   .logo { display: inline-flex; align-items: center; flex: none; transition: opacity .15s; }
   .logo:hover { opacity: .78; }
@@ -218,22 +210,6 @@ const PAGE = `<!doctype html>
   .divider { width: 1px; height: 20px; background: var(--border); flex: none; }
   .product { font-size: 14.5px; font-weight: 500; color: var(--heading); letter-spacing: .005em; text-decoration: none; }
   .product:hover { color: var(--heading); opacity: .7; }
-  .toolswitch { display: none; align-items: center; gap: var(--s2); position: relative; }
-  .toolswitch.on { display: inline-flex; }
-  .crumb-sep { color: var(--border); font-size: 16px; }
-  .toolswitch-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer;
-    font: 500 14.5px/1 var(--font); color: var(--heading); padding: 5px 7px; border-radius: 5px; }
-  .toolswitch-btn:hover { background: var(--sunk); }
-  .toolswitch-btn .chev { color: var(--muted); }
-  .toolmenu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 224px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-lg); padding: 6px; z-index: 60; }
-  .toolmenu[hidden] { display: none; }
-  .toolmenu-item { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding: 9px 11px;
-    border-radius: 5px; font: 500 14px/1.2 var(--font); color: var(--text); text-decoration: none; }
-  a.toolmenu-item:hover { background: var(--sunk); color: var(--navy); }
-  .toolmenu-item.is-soon { color: var(--muted); cursor: default; }
-  .soon-tag { font: 600 11px/1 var(--font); color: var(--muted); background: var(--sunk); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; }
-  .toolmenu-item.home { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 11px; color: var(--muted); }
   .pills { margin-left: auto; display: flex; gap: var(--s2); }
   .pill { display: inline-flex; align-items: center; gap: 7px; font: 500 12.5px/1 var(--font);
     background: var(--sunk); border: 1px solid var(--border); color: var(--text);
@@ -245,11 +221,21 @@ const PAGE = `<!doctype html>
   .pill.off .ic { border: 1.5px solid var(--yellow); color: var(--yellow); }
   @media (prefers-color-scheme: dark) { .logo svg { filter: brightness(0) invert(1); } }
 
+  /* ---- Hero (product hub: pick a tool, see the active one) ---- */
+  .hero { background: var(--surface); border-bottom: 1px solid var(--border); }
+  .hero-inner { max-width: 1120px; margin: 0 auto; padding: var(--s7) var(--s5) var(--s6); }
+  .prod-tabs { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s5); }
+  .prod-tab { display: inline-flex; align-items: center; gap: 8px; font: 600 14px/1 var(--font); color: var(--muted);
+    background: var(--sunk); border: 1px solid var(--border); border-radius: 5px; padding: 10px 16px; }
+  .prod-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .prod-tab.is-soon em { font-style: normal; font: 600 11px/1 var(--font); background: var(--border); color: var(--muted); border-radius: 4px; padding: 3px 6px; }
+  .hero-inner h1 { font-size: 28px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
+  .hero-desc { font-size: 15px; color: var(--muted); margin: 0; max-width: 68ch; line-height: 1.55; }
+
   main { max-width: 1120px; margin: 0 auto; padding: var(--s6) var(--s5) var(--s8); }
 
   /* ---- Controls band (toolbar under header) ---- */
-  .controls { background: var(--surface); border-bottom: 1px solid var(--border); overflow: visible;
-    transition: max-height .44s cubic-bezier(.34,1.56,.64,1); }
+  .controls { background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; z-index: 15; overflow: visible; }
   .cinner { max-width: 1120px; margin: 0 auto; padding: var(--s4) var(--s5); }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow); }
@@ -411,24 +397,6 @@ const PAGE = `<!doctype html>
   .empty h3 { margin: 0 0 var(--s2); font-size: 18px; color: var(--heading); font-weight: 700; }
   .empty p { margin: 0 auto; max-width: 48ch; font-size: 14.5px; color: var(--muted); line-height: 1.6; }
 
-  /* ---- Home (suite of tools) ---- */
-  .home { display: none; }
-  .home.active { display: block; }
-  .home-inner { max-width: 1120px; margin: 0 auto; padding: var(--s8) var(--s5); }
-  .home-inner h1 { font-size: 30px; font-weight: 700; color: var(--heading); letter-spacing: -.02em; margin: 0 0 var(--s2); }
-  .home-sub { font-size: 16px; color: var(--muted); margin: 0 0 var(--s7); }
-  .tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--s5); }
-  .tool-card { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s3); padding: var(--s6);
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); box-shadow: var(--shadow-sm);
-    text-decoration: none; color: inherit; transition: transform .12s, box-shadow .12s, border-color .12s; }
-  a.tool-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--navy); }
-  .tool-card.is-soon { opacity: .72; }
-  .tool-ic { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 10px; background: var(--sunk); color: var(--navy); }
-  .tool-card h3 { font-size: 17px; font-weight: 700; color: var(--heading); margin: 0; }
-  .tool-card p { font-size: 14px; line-height: 1.55; color: var(--muted); margin: 0; }
-  .tool-cta { margin-top: var(--s1); font-size: 14px; font-weight: 600; color: var(--navy); }
-  .tool-badge { margin-top: var(--s1); font-size: 12px; font-weight: 600; color: var(--muted); background: var(--sunk);
-    border: 1px solid var(--border); border-radius: 5px; padding: 4px 9px; }
 
   .sources { padding: var(--s5) var(--s6); margin: 0 0 var(--s6); }
   .sources h2 { font-size: 15px; font-weight: 700; color: var(--heading); margin: 0 0 var(--s2); }
@@ -480,28 +448,27 @@ const PAGE = `<!doctype html>
 </style>
 </head>
 <body>
-<div class="topbar">
 <header>
   <div class="bar">
     <a class="logo" href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP">${LOGO}</a>
     <span class="divider"></span>
-    <a href="#/" class="product">Release Helper</a>
-    <div class="toolswitch" id="toolswitch" hidden>
-      <span class="crumb-sep">/</span>
-      <button class="toolswitch-btn" type="button" id="toolBtn" onclick="toggleToolMenu(event)"><span id="toolName">Changelog Generator</span><svg class="chev" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button>
-      <div class="toolmenu" id="toolMenu" hidden>
-        <a class="toolmenu-item" href="#/changelog">Changelog Generator</a>
-        <span class="toolmenu-item is-soon">Props Generator<span class="soon-tag">soon</span></span>
-        <a class="toolmenu-item home" href="#/">All tools</a>
-      </div>
-    </div>
+    <a href="/" class="product">Release Helper</a>
     <div class="pills">
       <button class="pill" id="pillGh" onclick="toggleWizard()"><span class="ic"></span>GitHub</button>
       <button class="pill" id="pillTrac" onclick="toggleWizard()"><span class="ic"></span>Trac</button>
     </div>
-    <button class="collapse-toggle" id="collapseToggle" onclick="toggleControls()" aria-label="Toggle filters" title="Show / hide filters"><svg class="chev" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button>
   </div>
 </header>
+<section class="hero">
+  <div class="hero-inner">
+    <div class="prod-tabs">
+      <span class="prod-tab active">Changelog Generator</span>
+      <span class="prod-tab is-soon">Props Generator <em>soon</em></span>
+    </div>
+    <h1>Changelog Generator</h1>
+    <p class="hero-desc">Turn a date window into a release changelog across Core and Gutenberg, grounded in real PRs and tickets.</p>
+  </div>
+</section>
 <div class="controls">
   <div class="cinner">
     <form class="query" id="f">
@@ -534,27 +501,6 @@ const PAGE = `<!doctype html>
     </form>
   </div>
 </div>
-</div>
-<section id="home" class="home">
-  <div class="home-inner">
-    <h1>Release Helper</h1>
-    <p class="home-sub">A growing toolkit for WordPress release coordinators.</p>
-    <div class="tools">
-      <a class="tool-card" href="#/changelog">
-        <span class="tool-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>
-        <h3>Changelog Generator</h3>
-        <p>Turn a date window into a release changelog across Core and Gutenberg, grounded in real PRs and tickets.</p>
-        <span class="tool-cta">Open</span>
-      </a>
-      <div class="tool-card is-soon">
-        <span class="tool-ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M6 4h12v4a6 6 0 0 1-12 0z"/><path d="M18 5h3v2a3 3 0 0 1-3 3M6 5H3v2a3 3 0 0 0 3 3"/></svg></span>
-        <h3>Props Generator</h3>
-        <p>Build the props and contributors section for a release post from a schema and a WordPress Slack chat.</p>
-        <span class="tool-badge">Coming soon</span>
-      </div>
-    </div>
-  </div>
-</section>
 <main>
   <section class="card wizard" id="wizard">
     <button class="wiz-close" type="button" onclick="closeWizard()" aria-label="Close setup">&times;</button>
@@ -712,24 +658,6 @@ function closeWizard() { $('wizard').classList.remove('open'); }
 function toggleWizard() { if ($('wizard').classList.contains('open')) closeWizard(); else openWizard(); }
 document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeWizard(); });
 
-function toggleControls() {
-  var tb = document.querySelector('.topbar'), c = document.querySelector('.controls');
-  var willCollapse = !tb.classList.contains('filters-collapsed');
-  if (willCollapse) {
-    c.style.maxHeight = c.scrollHeight + 'px'; c.style.overflow = 'hidden';
-    void c.offsetHeight; // force reflow so the transition runs from the real height
-    tb.classList.add('filters-collapsed');
-    c.style.maxHeight = '0px';
-  } else {
-    tb.classList.remove('filters-collapsed');
-    c.style.overflow = 'hidden';
-    c.style.maxHeight = c.scrollHeight + 'px';
-    setTimeout(function () { // after the spring settles, free the height so dropdowns can overflow
-      if (!tb.classList.contains('filters-collapsed')) { c.style.maxHeight = 'none'; c.style.overflow = 'visible'; }
-    }, 480);
-  }
-  try { localStorage.setItem('uwp-filters', willCollapse ? 'off' : 'on'); } catch (e) {}
-}
 function resetFilters() {
   var pad = function (n) { return (n < 10 ? '0' : '') + n; };
   var isoD = function (x) { return x.getFullYear() + '-' + pad(x.getMonth() + 1) + '-' + pad(x.getDate()); };
@@ -967,33 +895,15 @@ function syncGbToMilestone() {
 $('milestone').addEventListener('change', syncGbToMilestone);
 
 (function () { var y = $('year'); if (y) y.textContent = new Date().getFullYear(); })();
-(function () { try { if (localStorage.getItem('uwp-filters') === 'off') {
-  document.querySelector('.topbar').classList.add('filters-collapsed');
-  var c = document.querySelector('.controls'); c.style.maxHeight = '0px'; c.style.overflow = 'hidden';
-} } catch (e) {} })();
-(function () { // elevation shadow when the sticky bar floats over content
-  var tb = document.querySelector('.topbar');
-  var onScroll = function () { tb.classList.toggle('scrolled', window.scrollY > 4); };
+(function () { // the sticky filter bar sits right under the sticky header; shadow on scroll
+  var header = document.querySelector('header'), controls = document.querySelector('.controls');
+  function place() { controls.style.top = header.offsetHeight + 'px'; }
+  function onScroll() { header.classList.toggle('scrolled', window.scrollY > 4); }
+  window.addEventListener('resize', place);
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+  place(); onScroll();
 })();
 $('out').innerHTML = emptyState();
-// Suite routing: #/changelog shows the tool, everything else shows the home cards.
-function route() {
-  var isTool = location.hash === '#/changelog';
-  $('home').classList.toggle('active', !isTool);
-  document.querySelector('.controls').style.display = isTool ? '' : 'none';
-  document.querySelector('main').style.display = isTool ? '' : 'none';
-  var ct = document.getElementById('collapseToggle'); if (ct) ct.style.display = isTool ? '' : 'none';
-  $('toolswitch').classList.toggle('on', isTool);
-  if (isTool) $('toolName').textContent = 'Changelog Generator';
-  $('toolMenu').hidden = true;
-  window.scrollTo(0, 0);
-}
-function toggleToolMenu(e) { e.stopPropagation(); $('toolMenu').hidden = !$('toolMenu').hidden; }
-document.addEventListener('click', function () { if (!$('toolMenu').hidden) $('toolMenu').hidden = true; });
-window.addEventListener('hashchange', route);
-route();
 
 refreshStatus();
 </script>
