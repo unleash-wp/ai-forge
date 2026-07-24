@@ -218,6 +218,22 @@ const PAGE = `<!doctype html>
   .divider { width: 1px; height: 20px; background: var(--border); flex: none; }
   .product { font-size: 14.5px; font-weight: 500; color: var(--heading); letter-spacing: .005em; text-decoration: none; }
   .product:hover { color: var(--heading); opacity: .7; }
+  .toolswitch { display: none; align-items: center; gap: var(--s2); position: relative; }
+  .toolswitch.on { display: inline-flex; }
+  .crumb-sep { color: var(--border); font-size: 16px; }
+  .toolswitch-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; cursor: pointer;
+    font: 500 14.5px/1 var(--font); color: var(--heading); padding: 5px 7px; border-radius: 5px; }
+  .toolswitch-btn:hover { background: var(--sunk); }
+  .toolswitch-btn .chev { color: var(--muted); }
+  .toolmenu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 224px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-lg); padding: 6px; z-index: 60; }
+  .toolmenu[hidden] { display: none; }
+  .toolmenu-item { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding: 9px 11px;
+    border-radius: 5px; font: 500 14px/1.2 var(--font); color: var(--text); text-decoration: none; }
+  a.toolmenu-item:hover { background: var(--sunk); color: var(--navy); }
+  .toolmenu-item.is-soon { color: var(--muted); cursor: default; }
+  .soon-tag { font: 600 11px/1 var(--font); color: var(--muted); background: var(--sunk); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; }
+  .toolmenu-item.home { border-top: 1px solid var(--border); margin-top: 4px; padding-top: 11px; color: var(--muted); }
   .pills { margin-left: auto; display: flex; gap: var(--s2); }
   .pill { display: inline-flex; align-items: center; gap: 7px; font: 500 12.5px/1 var(--font);
     background: var(--sunk); border: 1px solid var(--border); color: var(--text);
@@ -470,6 +486,15 @@ const PAGE = `<!doctype html>
     <a class="logo" href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP">${LOGO}</a>
     <span class="divider"></span>
     <a href="#/" class="product">Release Helper</a>
+    <div class="toolswitch" id="toolswitch" hidden>
+      <span class="crumb-sep">/</span>
+      <button class="toolswitch-btn" type="button" id="toolBtn" onclick="toggleToolMenu(event)"><span id="toolName">Changelog Generator</span><svg class="chev" viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg></button>
+      <div class="toolmenu" id="toolMenu" hidden>
+        <a class="toolmenu-item" href="#/changelog">Changelog Generator</a>
+        <span class="toolmenu-item is-soon">Props Generator<span class="soon-tag">soon</span></span>
+        <a class="toolmenu-item home" href="#/">All tools</a>
+      </div>
+    </div>
     <div class="pills">
       <button class="pill" id="pillGh" onclick="toggleWizard()"><span class="ic"></span>GitHub</button>
       <button class="pill" id="pillTrac" onclick="toggleWizard()"><span class="ic"></span>Trac</button>
@@ -960,8 +985,13 @@ function route() {
   document.querySelector('.controls').style.display = isTool ? '' : 'none';
   document.querySelector('main').style.display = isTool ? '' : 'none';
   var ct = document.getElementById('collapseToggle'); if (ct) ct.style.display = isTool ? '' : 'none';
+  $('toolswitch').classList.toggle('on', isTool);
+  if (isTool) $('toolName').textContent = 'Changelog Generator';
+  $('toolMenu').hidden = true;
   window.scrollTo(0, 0);
 }
+function toggleToolMenu(e) { e.stopPropagation(); $('toolMenu').hidden = !$('toolMenu').hidden; }
+document.addEventListener('click', function () { if (!$('toolMenu').hidden) $('toolMenu').hidden = true; });
 window.addEventListener('hashchange', route);
 route();
 
