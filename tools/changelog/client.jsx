@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCore } from '../../src/client/core.jsx';
 import { Button, Select, Checkbox } from '../../src/client/ui.jsx';
+import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
 
 const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
@@ -153,6 +154,7 @@ function DateRangePicker({ since, until, onChange }) {
       <button type="button" className="rangebtn" aria-haspopup="true" aria-expanded={open}
         onClick={(ev) => { ev.stopPropagation(); setOpen((o) => !o); }}>
         <span>{since && until ? fmtRange(since, until) : 'Pick dates'}</span>
+        <CalendarIcon size={16} className="range-cal" />
       </button>
       {open && (
         <div className="cal" onClick={(ev) => ev.stopPropagation()}>
@@ -162,9 +164,9 @@ function DateRangePicker({ since, until, onChange }) {
             ))}
           </div>
           <div className="cal-head">
-            <button type="button" className="cal-nav" aria-label="Previous month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} />
+            <button type="button" className="cal-nav" aria-label="Previous month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}><ArrowLeft size={18} /></button>
             <div className="cal-title">{MON[view.getMonth()] + ' ' + view.getFullYear()}</div>
-            <button type="button" className="cal-nav" aria-label="Next month" disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} />
+            <button type="button" className="cal-nav" aria-label="Next month" disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}><ArrowRight size={18} /></button>
           </div>
           <div className="cal-dow"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
           <div className="cal-grid" onMouseLeave={() => { if (pendStart && hoverDay !== pendStart) setHoverDay(pendStart); }}>{cells}</div>
