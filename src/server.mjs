@@ -389,8 +389,11 @@ const PAGE = `<!doctype html>
 
   /* ---- Results ---- */
   .results { margin-top: var(--s6); }
-  .lead-metric { display: flex; align-items: baseline; gap: var(--s3); margin: 0 0 var(--s5); flex-wrap: wrap; }
-  .lead-metric b { font-size: 40px; font-weight: 700; color: var(--heading); line-height: 1; letter-spacing: -.02em; }
+  .lead-metric { display: flex; align-items: baseline; gap: var(--s4); margin: 0 0 var(--s6); flex-wrap: wrap; }
+  .lead-metric b { position: relative; font-size: 56px; font-weight: 700; color: var(--heading); line-height: 1;
+    letter-spacing: -.03em; padding-bottom: 7px; }
+  .lead-metric b::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 6px;
+    background: var(--yellow); border-radius: 3px; }
   .lead-metric span { font-size: 15px; color: var(--muted); }
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: var(--s3); margin: 0 0 var(--s6); }
   .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: var(--s4) var(--s5);
