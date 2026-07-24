@@ -1,29 +1,11 @@
-// Global UI components (the Forge design-system primitives). Use these instead
-// of raw <button>/<input>/<select> so every tool + the shell stay consistent.
-// Styling lives in the SCSS (.primary/.ghost, input, .ui-select, …).
+// Select - a custom, accessible dropdown/combobox (native <select> can't be styled
+// cross-browser). options: [{ value, label }]; value '' shows the placeholder.
+// `searchable` adds a filter box; keyboard: Up/Down/Home/End/Enter/Escape with
+// aria-activedescendant. Rendered options are capped for very long lists.
 import { useState, useRef, useEffect, useId } from 'react';
 
-export function Button({ variant = 'ghost', size, danger, className, children, type = 'button', ...rest }) {
-  const cls = [variant, size, danger && 'danger', className].filter(Boolean).join(' ');
-  return <button type={type} className={cls} {...rest}>{children}</button>;
-}
-
-export function TextInput({ type = 'text', className, ...rest }) {
-  return <input type={type} className={className} {...rest} />;
-}
-
-export function TextArea({ className, ...rest }) {
-  return <textarea className={className} {...rest} />;
-}
-
-export function Checkbox({ className, ...rest }) {
-  return <input type="checkbox" className={className} {...rest} />;
-}
-
-// Custom dropdown so it matches the design system (native <select> can't be
-// styled cross-browser). options: [{ value, label }]. value '' shows placeholder.
-// searchable adds a filter box + caps how many options render (for long lists).
 const OPT_CAP = 100;
+
 export function Select({ value, onChange, options, placeholder = 'Select', disabled, block, searchable, ariaLabel }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
