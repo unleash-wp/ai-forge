@@ -417,9 +417,24 @@
   /* bulk management bar */
   .bulk-bar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: 0 0 var(--s3); }
   .bulk-all { display: inline-flex; align-items: center; gap: var(--s2); font-size: 0.8125rem; color: var(--muted); }
-  .bulk-bar select { width: auto; min-width: 9.5rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border);
-    border-radius: 0.4375rem; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
   .bulk-n { font-size: 0.8125rem; color: var(--muted); }
+  /* global Select (custom dropdown, matches the design system) */
+  .ui-select { position: relative; display: inline-block; min-width: 10rem; }
+  .ui-select-btn { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--s2); width: 100%;
+    padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 0.4375rem; background: var(--surface);
+    color: var(--text); font: inherit; cursor: pointer; transition: border-color .12s, box-shadow .12s; }
+  .ui-select-btn:hover { border-color: var(--primary); }
+  .ui-select.open .ui-select-btn { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+  .ui-select.disabled .ui-select-btn { opacity: .55; cursor: default; }
+  .ui-select-caret { color: var(--muted); flex: none; transition: transform .14s ease; }
+  .ui-select.open .ui-select-caret { transform: rotate(180deg); }
+  .ui-select-menu { position: absolute; z-index: 30; top: calc(100% + 0.375rem); left: 0; min-width: 100%;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; box-shadow: var(--shadow-lg);
+    padding: 0.3125rem; display: flex; flex-direction: column; gap: 0.125rem; }
+  .ui-select-opt { text-align: left; background: none; border: none; cursor: pointer; font: inherit; color: var(--text);
+    padding: 0.5rem 0.625rem; border-radius: 0.375rem; white-space: nowrap; }
+  .ui-select-opt:hover { background: var(--sunk); }
+  .ui-select-opt.sel { color: var(--primary); font-weight: 600; }
   .list-bar-right { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; justify-content: flex-end; }
   .upd-msg { font-size: 0.8125rem; color: var(--muted); }
   .tr-cbx { flex: none; }

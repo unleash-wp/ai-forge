@@ -1,13 +1,20 @@
 // The visible plugin system: a polished vertical list with WordPress-style bulk
-// management (checkboxes + select-all + a Bulk actions dropdown + Apply) and an
-// updater (Check for updates + per-tool Update). Lifecycle: install (GitHub URL
-// / .zip), activate/deactivate (instant), update (reinstall latest from source),
-// remove. Installing/updating runs the tool's code after a server rebuild, gated
-// behind the user's own action + a trust note.
+// management (checkboxes + select-all + Bulk actions + Apply, only when there is
+// a non-core tool to manage) and an updater (Check for updates + per-tool
+// Update). Built from the global UI components in ./ui.jsx so it stays
+// consistent with the rest of Forge. Installing/updating runs the tool's code
+// after a server rebuild, gated behind the user's own action + a trust note.
 import { useState, useEffect, useRef } from 'react';
 import { ToolIcon } from './icons.jsx';
+import { Button, Select, TextInput, Checkbox } from './ui.jsx';
 
 const VERB = { activate: 'Activating', deactivate: 'Deactivating', update: 'Updating', remove: 'Removing' };
+const BULK_OPTIONS = [
+  { value: 'activate', label: 'Activate' },
+  { value: 'deactivate', label: 'Deactivate' },
+  { value: 'update', label: 'Update' },
+  { value: 'remove', label: 'Remove' },
+];
 
 export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [updates, setUpdates] = useState([]);
@@ -79,9 +86,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   function toggleOne(id) {
     setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   }
-  function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(selectableIds));
-  }
+  function toggleAll() { setSelected(allSelected ? new Set() : new Set(selectableIds)); }
   function applyBulk() {
     const ids = [...selected];
     if (!bulk || !ids.length) return;
@@ -106,9 +111,9 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
       <div className="install-bar">
         <span className="ib-label">Add a tool</span>
         <form onSubmit={(e) => { e.preventDefault(); installUrl(); }}>
-          <input type="text" value={source} onChange={(e) => setSource(e.target.value)} placeholder="github:owner/repo or https://github.com/owner/repo" spellCheck="false" disabled={!!busy} />
-          <button className="primary sm" type="submit" disabled={!!busy}>Install</button>
-          <button className="ghost sm" type="button" disabled={!!busy} onClick={() => fileRef.current && fileRef.current.click()}>Upload .zip</button>
+          <TextInput value={source} onChange={(e) => setSource(e.target.value)} placeholder="github:owner/repo or https://github.com/owner/repo" spellCheck="false" disabled={!!busy} />
+          <Button variant="primary" size="sm" type="submit" disabled={!!busy}>Install</Button>
+          <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => fileRef.current && fileRef.current.click()}>Upload .zip</Button>
           <input ref={fileRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={(e) => uploadZip(e.target.files[0])} />
         </form>
       </div>
@@ -121,22 +126,16 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
         </div>
         <div className="list-bar-right">
           {updMsg && <span className="upd-msg">{updMsg}</span>}
-          <button className="ghost sm" type="button" onClick={checkUpdates}>Check for updates</button>
-          <input className="list-search" type="text" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
+          <Button variant="ghost" size="sm" onClick={checkUpdates}>Check for updates</Button>
+          <TextInput className="list-search" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
         </div>
       </div>
 
       {selectableIds.length > 0 && (
         <div className="bulk-bar">
-          <label className="bulk-all"><input type="checkbox" checked={allSelected} onChange={toggleAll} /> Select all</label>
-          <select value={bulk} onChange={(e) => setBulk(e.target.value)} disabled={!!busy}>
-            <option value="">Bulk actions</option>
-            <option value="activate">Activate</option>
-            <option value="deactivate">Deactivate</option>
-            <option value="update">Update</option>
-            <option value="remove">Remove</option>
-          </select>
-          <button className="ghost sm" type="button" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</button>
+          <label className="bulk-all"><Checkbox checked={allSelected} onChange={toggleAll} /> Select all</label>
+          <Select value={bulk} onChange={setBulk} options={BULK_OPTIONS} placeholder="Bulk actions" disabled={!!busy} />
+          <Button variant="ghost" size="sm" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</Button>
           {selected.size > 0 && <span className="bulk-n">{selected.size} selected</span>}
         </div>
       )}
@@ -150,7 +149,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
             <div className={'tool-row' + (active ? '' : ' is-inactive')} key={p.id}>
               {selectableIds.length > 0 && (core
                 ? <span className="tr-cbx tr-cbx-spacer" aria-hidden="true" />
-                : <input type="checkbox" className="tr-cbx" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
+                : <Checkbox className="tr-cbx" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
               <span className="tr-ic"><ToolIcon name={p.icon} size={20} /></span>
               <div className="tr-info">
                 <div className="tr-title">
@@ -163,10 +162,10 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
                 <div className="tr-sub">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</div>
               </div>
               <div className="tr-actions">
-                {up && !core && <button className="primary sm" type="button" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>Update to {up.latest}</button>}
-                {active && <button className="ghost sm" type="button" onClick={() => onOpen(p.id)}>Open</button>}
-                {!core && <button className="ghost sm" type="button" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</button>}
-                {!core && <button className="ghost sm danger" type="button" disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</button>}
+                {up && !core && <Button variant="primary" size="sm" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>Update to {up.latest}</Button>}
+                {active && <Button variant="ghost" size="sm" onClick={() => onOpen(p.id)}>Open</Button>}
+                {!core && <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</Button>}
+                {!core && <Button variant="ghost" size="sm" danger disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</Button>}
               </div>
             </div>
           );
