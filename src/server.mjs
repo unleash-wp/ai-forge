@@ -1039,7 +1039,15 @@ $('f').addEventListener('submit', function (e) {
   }).then(function (data) {
     lastMarkdown = data.markdown; lastPost = data.post; render(data); $('status').textContent = '';
   }).catch(function (err) {
-    $('status').textContent = 'Error: ' + err.message; if (/cookie/i.test(err.message)) openWizard();
+    var m = err.message || 'request failed';
+    if (/rate limit|\b403\b/i.test(m)) {
+      $('status').innerHTML = 'GitHub rate limit reached — that is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.';
+      openWizard();
+    } else if (/cookie/i.test(m)) {
+      $('status').textContent = 'Error: ' + m; openWizard();
+    } else {
+      $('status').textContent = 'Error: ' + m;
+    }
   }).finally(function () { $('go').disabled = false; });
 });
 
