@@ -11,7 +11,18 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node bin/wp-release-helper.mjs"
+    "start": "node bin/wp-release-helper.mjs",
+    "build": "webpack --mode production",
+    "watch": "webpack --mode development --watch",
+    "prepare": "webpack --mode production"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "mini-css-extract-plugin": "^2.9.2",
+    "sass": "^1.83.4",
+    "sass-loader": "^16.0.4",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
   },
   "repository": {
     "type": "git",
