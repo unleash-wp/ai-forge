@@ -29,8 +29,14 @@ export async function generate(opts, onStep = () => {}) {
   // agree. Gutenberg is 100% PR-merged; its non-PR commits are release plumbing
   // (version bumps, "Update Changelog", SECURITY.md). Every Core commit on the
   // SVN mirror carries a changeset; anything without one is a mirror artifact.
-  const gb = gbRaw.map(parseCommit).filter((c) => c.pr);
-  const core = coreRaw.map(parseCommit).filter((c) => c.changeset);
+  // Both repos also land release-packaging commits ("WordPress 7.1 Beta 3.", the
+  // "Post ... version bump.") that carry a changeset but are not changes - the
+  // Beta/RC bundles. Drop those so the count reflects real work, not the release.
+  const isPackaging = (c) => /^WordPress\s+\d/i.test(c.subject)
+    || /version bump\.?\s*$/i.test(c.subject)
+    || /^Bump\s+(the\s+)?version\b/i.test(c.subject);
+  const gb = gbRaw.map(parseCommit).filter((c) => c.pr && !isPackaging(c));
+  const core = coreRaw.map(parseCommit).filter((c) => c.changeset && !isPackaging(c));
 
   let gbLabels = null;
   if (wantLabels) {
