@@ -131,12 +131,23 @@ export async function commits(repo, branch, since, until) {
   return out;
 }
 
-// Branch names for a repo (up to a few pages), trunk first, then wp/x.y and
-// version branches surfaced ahead of the long tail so the picker is useful.
-export async function branches(repo) {
+// Branch names via the git protocol (git ls-remote). This is NOT subject to the
+// REST API rate limit, so the milestone/branch pickers keep working even when the
+// token is throttled. Returns every head; ranking below floats trunk + wp/*.
+function gitLsRemote(repo) {
+  const out = execFileSync('git', ['ls-remote', '--heads', `https://github.com/${repo}.git`],
+    { encoding: 'utf8', timeout: 20000, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
+  const names = [];
+  for (const line of out.split('\n')) {
+    const m = /\srefs\/heads\/(.+)$/.exec(line);
+    if (m) names.push(m[1]);
+  }
+  return names;
+}
+
+// REST fallback (used only if git is unavailable / ls-remote fails).
+async function branchesViaRest(repo) {
   const names = new Set();
-  // Guarantee the release-relevant Gutenberg branches (wp/*) even though the repo
-  // has hundreds of branches - the plain listing could page them out.
   if (repo.endsWith('/gutenberg')) {
     try {
       const refs = await apiJson(`repos/${repo}/git/matching-refs/heads/wp/`);
@@ -152,6 +163,18 @@ export async function branches(repo) {
     url = nextLink(link);
     pages++;
   }
+  return names;
+}
+
+// Branch names for a repo, trunk first, then wp/x.y and version branches ahead of
+// the long tail so the picker is useful. git ls-remote first (no rate limit).
+export async function branches(repo) {
+  let names;
+  try {
+    const list = gitLsRemote(repo);
+    if (list.length) names = new Set(list);
+  } catch { /* fall back to REST */ }
+  if (!names) names = await branchesViaRest(repo);
   const rank = (n) => (n === 'trunk' ? 0 : /^(wp\/|\d+\.\d)/.test(n) ? 1 : 2);
   return [...names].sort((a, b) => rank(a) - rank(b) || b.localeCompare(a));
 }
