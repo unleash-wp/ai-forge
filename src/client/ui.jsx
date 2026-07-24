@@ -8,8 +8,12 @@ export function Button({ variant = 'ghost', size, danger, className, children, t
   return <button type={type} className={cls} {...rest}>{children}</button>;
 }
 
-export function TextInput({ className, ...rest }) {
-  return <input type="text" className={className} {...rest} />;
+export function TextInput({ type = 'text', className, ...rest }) {
+  return <input type={type} className={className} {...rest} />;
+}
+
+export function TextArea({ className, ...rest }) {
+  return <textarea className={className} {...rest} />;
 }
 
 export function Checkbox({ className, ...rest }) {
@@ -18,7 +22,7 @@ export function Checkbox({ className, ...rest }) {
 
 // Custom dropdown so it matches the design system (native <select> can't be
 // styled cross-browser). options: [{ value, label }]. value '' shows placeholder.
-export function Select({ value, onChange, options, placeholder = 'Select', disabled, minWidth }) {
+export function Select({ value, onChange, options, placeholder = 'Select', disabled, block }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -33,7 +37,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
 
   const sel = options.find((o) => o.value === value);
   return (
-    <div className={'ui-select' + (open ? ' open' : '') + (disabled ? ' disabled' : '')} ref={ref} style={minWidth ? { minWidth } : undefined}>
+    <div className={'ui-select' + (block ? ' block' : '') + (open ? ' open' : '') + (disabled ? ' disabled' : '')} ref={ref}>
       <button type="button" className="ui-select-btn" disabled={disabled} aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         <span>{sel ? sel.label : placeholder}</span>
         <svg className="ui-select-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
