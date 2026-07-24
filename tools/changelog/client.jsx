@@ -207,17 +207,17 @@ function Results({ data, since, until }) {
     const arr = all.map((n) => "\t'" + String(n).replace(/'/g, "\\'") + "',");
     copy('array(\n' + arr.join('\n') + '\n)', 'PHP array copied');
   }
-  const stat = (n, l) => <div className="stat" key={l}><b className="tnum">{n}</b><span>{l}</span></div>;
+  const stat = (n, l, counted) => <div className={'stat' + (counted ? ' counted' : '')} key={l}><b className="tnum">{n}</b><span>{l}</span>{counted && <span className="stat-tag">in total</span>}</div>;
 
   return (
     <div className="results">
       <div className="rhead">
         <div className="lead-metric"><b className="tnum">{dn ? issues : changes}</b><span>{(dn ? 'dev notes / field guide tickets, ' : 'changes landed across Core and Gutenberg, ') + fmtRange(since, until)}{!dn && <button type="button" className="info" data-tip={t.gutenbergPRs + ' Gutenberg PRs + ' + t.coreChangesets + ' Core changesets'} aria-label={t.gutenbergPRs + ' Gutenberg PRs plus ' + t.coreChangesets + ' Core changesets'} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button>}</span></div>
         <div className="stats">
-          {!dn && stat(t.gutenbergPRs, 'Gutenberg PRs')}
+          {!dn && stat(t.gutenbergPRs, 'Gutenberg PRs', true)}
           {!dn && stat(t.gutenbergCommits, 'GB commits')}
-          {stat(t.coreChangesets, dn ? 'Dev-note changesets' : 'Core changesets')}
-          {stat(t.coreTickets, dn ? 'Dev-note tickets' : 'Core tickets')}
+          {stat(t.coreChangesets, dn ? 'Dev-note changesets' : 'Core changesets', !dn)}
+          {stat(t.coreTickets, dn ? 'Dev-note tickets' : 'Core tickets', dn)}
           {stat(t.contributors, 'Contributors')}
         </div>
       </div>

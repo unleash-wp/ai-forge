@@ -301,6 +301,11 @@
   .stat:hover { transform: translateY(-0.125rem); box-shadow: var(--shadow); }
   .stat b { display: block; font-size: clamp(1.6rem, 1.4rem + 0.9vw, 2.1875rem); font-weight: 700; color: var(--heading); line-height: 1.05; }
   .stat span { color: var(--muted); font-size: 0.7813rem; }
+  /* cards summed into the headline total */
+  .stat.counted { box-shadow: inset 0 2.5px 0 var(--accent), var(--shadow-sm); }
+  .stat.counted:hover { box-shadow: inset 0 2.5px 0 var(--accent), var(--shadow); }
+  .stat-tag { display: inline-block; margin-top: 0.4375rem; font: 600 0.625rem/1 var(--font); text-transform: uppercase;
+    letter-spacing: .05em; color: var(--primary); background: var(--ghost-hover); padding: 0.1875rem 0.4375rem; border-radius: 999px; }
 
   /* ---- Tabs ---- */
   .rhead { margin-bottom: var(--s2); }
