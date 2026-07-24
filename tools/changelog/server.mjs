@@ -8,6 +8,7 @@ import { branches } from '../../src/github.mjs';
 import { fetchTicketDetails, resolveCookie } from '../../src/trac.mjs';
 import { applyDeepDetails } from '../../src/aggregate.mjs';
 import { mcpAvailable, mcpTicketDetails } from '../../src/mcp.mjs';
+import { fetchDevNotes } from '../../src/makenotes.mjs';
 
 // "Dev notes only": narrow the report to Core changesets flagged in the docs
 // tracker (dev-note / misc-dev-note / field-guide) and drop Gutenberg. Mutates
@@ -86,7 +87,18 @@ async function branchesHandler(req, res, url, ctx) {
   }
 }
 
+// Published dev notes for a milestone, from make.wordpress.org (tag-precise).
+async function devNotesHandler(req, res, url, ctx) {
+  const milestone = url.searchParams.get('milestone') || '';
+  try {
+    ctx.json(res, 200, { milestone, notes: await fetchDevNotes(milestone) });
+  } catch (err) {
+    ctx.json(res, 200, { milestone, notes: [], error: err.message });
+  }
+}
+
 export const routes = [
   { method: 'GET', path: '/api/report', handler: reportHandler },
   { method: 'GET', path: '/api/branches', handler: branchesHandler },
+  { method: 'GET', path: '/api/devnotes', handler: devNotesHandler },
 ];
