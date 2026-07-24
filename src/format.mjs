@@ -59,16 +59,25 @@ export function toPost(report, meta) {
   return out.join('\n');
 }
 
-function sourcesLines(meta) {
+// The two canonical "trace it yourself" links, with the window + milestone baked
+// into the query string. Single source of truth for the Markdown, the post, and
+// the browser UI's Sources block.
+export function sourceUrls(meta) {
   const { since, until, milestone, gbBranch } = meta;
   const d1 = since.slice(0, 10);
   const d2 = until.slice(0, 10);
-  const tracUrl = `${TRAC}/query?status=closed&changetime=${tracDate(d1)}..${tracDate(d2)}` +
+  const trac = `${TRAC}/query?status=closed&changetime=${tracDate(d1)}..${tracDate(d2)}` +
     (milestone ? `&milestone=${milestone}` : '') +
     '&group=component&col=id&col=summary&col=component&col=owner&col=type&col=priority&order=id';
+  const gutenberg = `${GB}/commits/${gbBranch}?since=${d1}&until=${d2}`;
+  return { trac, gutenberg, since: d1, until: d2, milestone, gbBranch };
+}
+
+function sourcesLines(meta) {
+  const s = sourceUrls(meta);
   return [
-    `- [Closed Core Trac tickets](${tracUrl})${milestone ? ` (milestone ${milestone})` : ''} — ${d1} to ${d2}`,
-    `- [Gutenberg commits](${GB}/commits/${gbBranch}?since=${d1}&until=${d2}) on \`${gbBranch}\` — ${d1} to ${d2}`,
+    `- [Closed Core Trac tickets](${s.trac})${s.milestone ? ` (milestone ${s.milestone})` : ''} — ${s.since} to ${s.until}`,
+    `- [Gutenberg commits](${s.gutenberg}) on \`${s.gbBranch}\` — ${s.since} to ${s.until}`,
   ];
 }
 
