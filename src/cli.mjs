@@ -59,7 +59,7 @@ export async function run(argv) {
     throw new Error('--since and --until are required');
   }
 
-  if (!authenticated) {
+  if (!authenticated()) {
     console.error('uwp: no GitHub token (gh not logged in) — using 60 req/h anonymous limit.');
   }
 

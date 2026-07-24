@@ -1,21 +1,82 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join, dirname } from 'node:path';
 
-// Resolve a GitHub token: env first, then `gh auth token`. Null = unauthenticated.
-function resolveToken() {
-  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+// Local config file for a saved GitHub token — same owner-only dir as the Trac
+// cookie, outside any repo so it is never committed by accident.
+export function tokenPath() {
+  const base = process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
+  return join(base, 'wp-trac', 'github-token');
+}
+
+// Persist a token pasted in the setup wizard (owner-only). Returns the path.
+export function saveToken(value) {
+  const p = tokenPath();
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, value.trim() + '\n', { mode: 0o600 });
+  return p;
+}
+
+function readSavedToken() {
   try {
-    return execFileSync('gh', ['auth', 'token'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const v = readFileSync(tokenPath(), 'utf8').trim();
+    return v || null;
   } catch {
     return null;
   }
 }
 
-const TOKEN = resolveToken();
-export const authenticated = !!TOKEN;
+// Shelling out to `gh` is slow, so resolve it at most once per process.
+let ghCliToken;
+function ghCli() {
+  if (ghCliToken === undefined) {
+    try {
+      ghCliToken = execFileSync('gh', ['auth', 'token'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null;
+    } catch {
+      ghCliToken = null;
+    }
+  }
+  return ghCliToken;
+}
+
+// Resolution order: GITHUB_TOKEN env, then the saved token file, then `gh auth
+// token`. Read live so the setup wizard takes effect without a restart.
+export function resolveToken() {
+  if (process.env.GITHUB_TOKEN) return { token: process.env.GITHUB_TOKEN.trim(), source: 'env' };
+  const f = readSavedToken();
+  if (f) return { token: f, source: 'file' };
+  const gh = ghCli();
+  if (gh) return { token: gh, source: 'gh' };
+  return { token: null, source: 'none' };
+}
+
+export function tokenStatus() {
+  const { token, source } = resolveToken();
+  return { set: !!token, source, path: tokenPath(), envLocked: !!process.env.GITHUB_TOKEN };
+}
+
+export function authenticated() {
+  return !!resolveToken().token;
+}
+
+// Cheap auth probe for the wizard's Test button: hit the rate_limit endpoint
+// (never counts against the limit) and report the ceiling it gives back.
+export async function checkToken() {
+  const { token, source } = resolveToken();
+  if (!token) return { ok: false, message: 'No token — GitHub API limited to 60 req/h.' };
+  const res = await fetch('https://api.github.com/rate_limit', { headers: headers() });
+  if (res.status === 401) return { ok: false, message: 'GitHub rejected the token (401 — expired or wrong value).' };
+  if (!res.ok) return { ok: false, message: `GitHub ${res.status} ${res.statusText}.` };
+  const d = await res.json();
+  const core = (d.resources && d.resources.core) || d.rate || {};
+  return { ok: true, source, message: `Token works — ${core.limit}/h limit (${core.remaining} left).` };
+}
 
 function headers() {
   const h = { Accept: 'application/vnd.github+json', 'User-Agent': 'wp-release-helper' };
-  if (TOKEN) h.Authorization = `Bearer ${TOKEN}`;
+  const { token } = resolveToken();
+  if (token) h.Authorization = `Bearer ${token}`;
   return h;
 }
 
