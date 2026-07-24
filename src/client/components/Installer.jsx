@@ -1,9 +1,9 @@
 // First-run install wizard (blocking, 2 steps). Shown until /api/installed is set.
 import { useState } from 'react';
-import { fetchJSON } from './core.jsx';
-import { currentBrowser, BROWSER_NAMES } from './browser.js';
-import { LOGO_FULL } from './brand.js';
-import { Button, TextInput, TextArea } from './ui';
+import { fetchJSON } from '../core.jsx';
+import { currentBrowser, BROWSER_NAMES } from '../browser.js';
+import { LOGO_FULL } from '../brand.js';
+import { Button, TextInput, TextArea } from '../ui';
 
 export default function Installer({ status, onDone }) {
   const [step, setStep] = useState(1);
