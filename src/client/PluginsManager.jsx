@@ -1,18 +1,22 @@
-// The visible plugin system as a polished vertical list (rows, not cards): each
-// installed tool is a row with an icon, name + description, meta, and right-
-// aligned action buttons. WP-style lifecycle: install (GitHub URL / .zip),
-// activate/deactivate (instant, no rebuild), remove; an All/Inactive filter +
-// search. Installing runs the tool's code after a server-side rebuild (gated
-// behind the user's own action + trust note).
+// The visible plugin system: a polished vertical list with WordPress-style bulk
+// management (checkboxes + select-all + a Bulk actions dropdown + Apply) and an
+// updater (Check for updates + per-tool Update). Lifecycle: install (GitHub URL
+// / .zip), activate/deactivate (instant), update (reinstall latest from source),
+// remove. Installing/updating runs the tool's code after a server rebuild, gated
+// behind the user's own action + a trust note.
 import { useState, useEffect, useRef } from 'react';
 
 const CODE_IC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+const VERB = { activate: 'Activating', deactivate: 'Deactivating', update: 'Updating', remove: 'Removing' };
 
 export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [updates, setUpdates] = useState([]);
   const [source, setSource] = useState('');
   const [iq, setIq] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selected, setSelected] = useState(new Set());
+  const [bulk, setBulk] = useState('');
+  const [updMsg, setUpdMsg] = useState('');
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
@@ -53,10 +57,46 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
       .then((d) => { if (d.ok) { if (onChanged) onChanged(); } else setErr(d.error || 'failed'); })
       .catch(() => setErr('request failed'));
   }
+  function updateOne(id, name) {
+    afterInstall('Updating ' + name + '… downloading + rebuilding.',
+      fetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', ids: [id] }) }));
+  }
+  function checkUpdates() {
+    setUpdMsg('Checking…');
+    fetch('/api/updates').then((r) => r.json()).then((d) => {
+      const list = d.updates || [];
+      setUpdates(list);
+      setUpdMsg(list.length ? list.length + ' update' + (list.length > 1 ? 's' : '') + ' available' : 'All tools are up to date.');
+    }).catch(() => setUpdMsg('Update check failed.'));
+  }
 
   const shown = plugins
     .filter((p) => (filter === 'inactive' ? p.enabled === false : true))
     .filter((p) => (p.name + ' ' + (p.description || '')).toLowerCase().includes(iq.trim().toLowerCase()));
+  const selectableIds = shown.filter((p) => p.id !== 'changelog').map((p) => p.id);
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
+
+  function toggleOne(id) {
+    setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  }
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(selectableIds));
+  }
+  function applyBulk() {
+    const ids = [...selected];
+    if (!bulk || !ids.length) return;
+    if (bulk === 'remove' && !window.confirm('Remove ' + ids.length + ' tool(s)? This deletes them and rebuilds.')) return;
+    setErr(''); setBusy(VERB[bulk] + ' ' + ids.length + ' tool(s)…');
+    fetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: bulk, ids }) })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.ok) { setBusy(''); setErr(d.error || 'failed'); return; }
+        if (d.errors && d.errors.length) setErr(d.errors.join(' · '));
+        if (d.rebuilt) { setBusy('Done. Reloading…'); window.location.reload(); }
+        else { setBusy(''); setSelected(new Set()); setBulk(''); if (onChanged) onChanged(); }
+      })
+      .catch(() => { setBusy(''); setErr('request failed'); });
+  }
 
   return (
     <>
@@ -82,6 +122,23 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
         <input className="list-search" type="text" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
       </div>
 
+      <div className="bulk-bar">
+        <label className="bulk-all"><input type="checkbox" checked={allSelected} onChange={toggleAll} /> Select all</label>
+        <select value={bulk} onChange={(e) => setBulk(e.target.value)} disabled={!!busy}>
+          <option value="">Bulk actions</option>
+          <option value="activate">Activate</option>
+          <option value="deactivate">Deactivate</option>
+          <option value="update">Update</option>
+          <option value="remove">Remove</option>
+        </select>
+        <button className="ghost sm" type="button" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</button>
+        {selected.size > 0 && <span className="bulk-n">{selected.size} selected</span>}
+        <div className="bulk-check">
+          {updMsg && <span className="upd-msg">{updMsg}</span>}
+          <button className="ghost sm" type="button" onClick={checkUpdates}>Check for updates</button>
+        </div>
+      </div>
+
       <div className="tool-list">
         {shown.map((p) => {
           const up = upFor(p.id);
@@ -89,18 +146,20 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
           const core = p.id === 'changelog';
           return (
             <div className={'tool-row' + (active ? '' : ' is-inactive')} key={p.id}>
+              <input type="checkbox" className="tr-cbx" checked={selected.has(p.id)} disabled={core} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />
               <span className="tr-ic" dangerouslySetInnerHTML={{ __html: CODE_IC }} />
               <div className="tr-info">
                 <div className="tr-title">
                   <h3>{p.name}</h3>
                   {core && <span className="chip">Core</span>}
                   {!active && <span className="chip chip-off">Inactive</span>}
-                  {up && <a className="chip chip-up" href={up.url} target="_blank" rel="noopener">Update {up.latest}</a>}
+                  {up && <span className="chip chip-up">Update available</span>}
                 </div>
                 <p className="tr-desc">{p.description}</p>
                 <div className="tr-sub">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</div>
               </div>
               <div className="tr-actions">
+                {up && !core && <button className="primary sm" type="button" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>Update to {up.latest}</button>}
                 {active && <button className="ghost sm" type="button" onClick={() => onOpen(p.id)}>Open</button>}
                 {!core && <button className="ghost sm" type="button" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</button>}
                 {!core && <button className="ghost sm danger" type="button" disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</button>}
