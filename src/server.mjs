@@ -261,7 +261,7 @@ const PAGE = `<!doctype html>
     }
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; font-size: 106.25%; }
   body { margin: 0; font: 400 clamp(0.95rem, 0.9rem + 0.25vw, 1.0625rem)/1.6 var(--font); background: var(--bg); color: var(--text);
     -webkit-font-smoothing: antialiased; font-feature-settings: "kern" 1; }
   a { color: var(--link); text-decoration: none; }
