@@ -64,6 +64,39 @@ export function startServer({ port = 4321 } = {}) {
       }
       return;
     }
+    // Bulk management: apply one action (activate/deactivate/update/remove) to
+    // many tools, then rebuild once at the end. Skips the core Changelog tool.
+    if (url.pathname === '/api/plugins/bulk' && req.method === 'POST') {
+      try {
+        const { action, ids } = JSON.parse(await readBody(req) || '{}');
+        const list = Array.isArray(ids) ? ids : [];
+        const plugins = await pluginsReady;
+        const errors = [];
+        let needBuild = false;
+        for (const id of list) {
+          if (id === 'changelog') { errors.push('changelog: core tool skipped'); continue; }
+          try {
+            if (action === 'activate' || action === 'deactivate') {
+              const set = readDisabled();
+              if (action === 'deactivate') set.add(id); else set.delete(id);
+              writeDisabled(set);
+            } else if (action === 'remove') {
+              uninstall(id); clearDisabled(id); needBuild = true;
+            } else if (action === 'update') {
+              const p = plugins.find((x) => x.manifest.id === id);
+              if (p && p.manifest.updateSource) { await installFromSource(p.manifest.updateSource); needBuild = true; }
+              else errors.push(id + ': no updateSource');
+            } else throw new Error('unknown action');
+          } catch (e) { errors.push(id + ': ' + e.message); }
+        }
+        if (needBuild) await rebuild();
+        await reloadPlugins();
+        json(res, 200, { ok: true, rebuilt: needBuild, errors });
+      } catch (err) {
+        json(res, 200, { ok: false, error: err.message });
+      }
+      return;
+    }
     // Free update check: newer GitHub Release than the installed plugin version.
     if (url.pathname === '/api/updates') {
       try {
@@ -111,6 +144,7 @@ export function startServer({ port = 4321 } = {}) {
         const id = (JSON.parse(await readBody(req) || '{}').id || '').trim();
         if (id === 'changelog') throw new Error('the core Changelog tool cannot be removed');
         uninstall(id);
+        clearDisabled(id); // a fresh reinstall should come back active
         await rebuild();
         await reloadPlugins();
         json(res, 200, { ok: true });
@@ -273,6 +307,7 @@ function writeDisabled(set) {
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, JSON.stringify({ disabled: [...set] }), { mode: 0o600 });
 }
+function clearDisabled(id) { const s = readDisabled(); if (s.delete(id)) writeDisabled(s); }
 
 function readBody(req) {
   return new Promise((resolve) => {

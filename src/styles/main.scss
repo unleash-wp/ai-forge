@@ -414,6 +414,15 @@
   .seg button span { font-size: 0.6875rem; font-weight: 600; color: var(--muted); background: var(--tagbg); padding: 0.0625rem 0.4375rem; border-radius: 999px; }
   .seg button.on span { color: var(--primary); background: var(--ghost-hover); }
   .list-search { max-width: 18rem; }
+  /* bulk management bar */
+  .bulk-bar { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: 0 0 var(--s3); }
+  .bulk-all { display: inline-flex; align-items: center; gap: var(--s2); font-size: 0.8125rem; color: var(--muted); }
+  .bulk-bar select { width: auto; min-width: 9.5rem; padding: 0.5rem 0.75rem; border: 1px solid var(--border);
+    border-radius: 0.4375rem; background: var(--surface); color: var(--text); font: inherit; cursor: pointer; }
+  .bulk-n { font-size: 0.8125rem; color: var(--muted); }
+  .bulk-check { margin-left: auto; display: flex; align-items: center; gap: var(--s3); }
+  .upd-msg { font-size: 0.8125rem; color: var(--muted); }
+  .tr-cbx { flex: none; }
   /* the list */
   .tool-list { border: 1px solid var(--border); border-radius: 0.875rem; background: var(--surface); box-shadow: var(--shadow); overflow: hidden; }
   .tool-row { display: flex; align-items: center; gap: var(--s4); padding: 1.125rem var(--s5); transition: background .14s ease; }
