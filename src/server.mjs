@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { generate } from './report.mjs';
@@ -42,6 +42,7 @@ export function startServer({ port = 4321 } = {}) {
     if (url.pathname === '/api/config/status') {
       const c = resolveCookie();
       json(res, 200, {
+        installed: isInstalled(),
         github: tokenStatus(),
         trac: {
           set: !!c,
@@ -50,6 +51,12 @@ export function startServer({ port = 4321 } = {}) {
           envLocked: !!process.env.WPORG_TRAC_COOKIE,
         },
       });
+      return;
+    }
+
+    if (url.pathname === '/api/installed' && req.method === 'POST') {
+      markInstalled();
+      json(res, 200, { ok: true });
       return;
     }
 
@@ -155,6 +162,16 @@ export function startServer({ port = 4321 } = {}) {
 function json(res, code, obj) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(obj));
+}
+
+// First-run marker: the install wizard writes this once it's finished, so it
+// only blocks the very first launch. Lives beside the cookie/token files.
+function installedPath() { return join(dirname(cookiePath()), 'installed'); }
+function isInstalled() { return existsSync(installedPath()); }
+function markInstalled() {
+  const p = installedPath();
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, '1\n', { mode: 0o600 });
 }
 
 function readBody(req) {
@@ -334,6 +351,33 @@ const PAGE = `<!doctype html>
     font-size: 12.5px; text-decoration: underline; cursor: pointer; }
   .disc-btn:hover { color: var(--bad); }
   .disc-note { margin-left: 6px; color: var(--muted); font-weight: 400; font-size: 12.5px; }
+
+  /* ---- First-run install wizard (blocking overlay, stepwise) ---- */
+  body.installing { overflow: hidden; }
+  .installer { position: fixed; inset: 0; z-index: 200; background: rgba(15,19,31,.55); backdrop-filter: blur(4px);
+    display: grid; place-items: center; padding: var(--s5); }
+  .installer[hidden] { display: none; }
+  .inst-card { width: 100%; max-width: 560px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); box-shadow: var(--shadow-lg); overflow: hidden; }
+  .inst-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
+    padding: var(--s4) var(--s6); border-bottom: 1px solid var(--border); }
+  .inst-head .logo svg { height: 20px; width: auto; display: block; }
+  .inst-kicker { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .inst-dots { display: flex; gap: 8px; }
+  .inst-dots .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background .2s; }
+  .inst-dots .dot.active { background: var(--navy); }
+  .inst-body { padding: var(--s6); }
+  .inst-step h2 { font-size: 19px; font-weight: 700; color: var(--heading); margin: 0 0 var(--s2); letter-spacing: -.01em; }
+  .inst-step > p { font-size: 14px; color: var(--muted); margin: 0 0 var(--s4); line-height: 1.55; }
+  .inst-step ol { margin: 0 0 var(--s3) 18px; padding: 0; font-size: 13px; color: var(--muted); }
+  .inst-step li { margin: var(--s1) 0; }
+  .inst-ok { display: flex; align-items: center; gap: 8px; color: var(--good); font-weight: 500; font-size: 14px; margin-bottom: var(--s3); }
+  .inst-escape { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); }
+  .inst-escape[hidden] { display: none; }
+  .inst-foot { display: flex; align-items: center; gap: var(--s3); padding: var(--s4) var(--s6); border-top: 1px solid var(--border); }
+  .inst-foot .primary { margin-left: auto; }
+  .inst-foot .back { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: 500 13px/1 var(--font); }
+  .inst-foot .back[hidden] { display: none; }
 
   input, textarea { font: inherit; width: 100%; background: var(--sunk); color: var(--text);
     border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 14px; transition: border-color .12s, box-shadow .12s, background .12s; }
@@ -556,6 +600,43 @@ const PAGE = `<!doctype html>
 </style>
 </head>
 <body>
+<div class="installer" id="installer" hidden>
+  <div class="inst-card">
+    <div class="inst-head">
+      <span class="logo" aria-label="UnleashWP">${LOGO}</span>
+      <div class="inst-dots"><span class="dot" data-s="1"></span><span class="dot" data-s="2"></span></div>
+    </div>
+    <div class="inst-body">
+      <div class="inst-step" id="inst1">
+        <span class="inst-kicker">Step 1 of 2</span>
+        <h2>Connect GitHub</h2>
+        <p>Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account — no access to the WordPress org, no token scopes. It only reads public repos.</p>
+        <div class="inst-ok" id="inst1Detected" hidden></div>
+        <div id="inst1Paste">
+          <ol><li>Detected automatically if the <code>gh</code> CLI is logged in, or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it:</li></ol>
+          <input type="password" id="instGh" placeholder="ghp_… or github_pat_…  (optional — skip for 60/h)" autocomplete="off" spellcheck="false">
+          <span class="msg" id="instGhMsg"></span>
+        </div>
+      </div>
+      <div class="inst-step" id="inst2" hidden>
+        <span class="inst-kicker">Step 2 of 2</span>
+        <h2>Connect WordPress.org</h2>
+        <p>Needed for <b>deep</b> — full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
+        <ol>
+          <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
+          <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
+        </ol>
+        <textarea id="instCookie" rows="3" placeholder="wporg_logged_in=…; wporg_sec=…"></textarea>
+        <span class="msg" id="instCookieMsg"></span>
+        <div class="inst-escape" id="instEscape" hidden>Trac isn't reachable right now (bot wall or expired cookie). You can <button class="back" type="button" onclick="instContinueAnyway()">continue anyway</button> — the tool runs cookie-free and you can add the cookie later in Setup.</div>
+      </div>
+    </div>
+    <div class="inst-foot">
+      <button class="back" type="button" id="instBack" hidden onclick="instBack()">Back</button>
+      <button class="primary" type="button" id="instPrimary" onclick="instPrimary()">Continue</button>
+    </div>
+  </div>
+</div>
 <header>
   <div class="bar">
     <a class="logo" href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP">${LOGO}</a>
@@ -806,8 +887,64 @@ function setPill(id, set, source) {
   var el = $(id); el.className = 'pill ' + (set ? 'ok' : 'off');
   el.innerHTML = '<span class="ic"></span>' + (id === 'pillGh' ? 'GitHub' : 'Trac');
 }
+// First-run install wizard (blocking, stepwise). Shown until /api/installed is set.
+var installerStep = 1;
+function instGoto(s) {
+  installerStep = s;
+  $('inst1').hidden = (s !== 1);
+  $('inst2').hidden = (s !== 2);
+  var dots = document.querySelectorAll('.inst-dots .dot');
+  for (var i = 0; i < dots.length; i++) dots[i].className = 'dot' + (i < s ? ' active' : '');
+  $('instBack').hidden = (s === 1);
+  $('instPrimary').textContent = (s === 1) ? 'Continue' : 'Finish setup';
+  $('instEscape').hidden = true;
+}
+function instBack() { instGoto(1); }
+function instMsg(id, t, k) { var e = $(id); e.className = 'msg' + (k ? ' ' + k : ''); e.textContent = t; }
+function instPrimary() {
+  if (installerStep === 1) {
+    var t = $('instGh').value.trim();
+    if (t) {
+      instMsg('instGhMsg', 'saving…');
+      fetch('/api/github-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t }) })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d && d.error) { instMsg('instGhMsg', d.error, 'bad'); } else { $('instGh').value = ''; instGoto(2); } });
+    } else { instGoto(2); }
+  } else {
+    var c = $('instCookie').value.trim();
+    if (!c) { instMsg('instCookieMsg', 'Paste your cookie to finish — or continue anyway below.', 'bad'); $('instEscape').hidden = false; return; }
+    instMsg('instCookieMsg', 'saving and testing…');
+    fetch('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie: c }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (x) {
+        if (!x.ok) { instMsg('instCookieMsg', x.d.error || 'could not save', 'bad'); $('instEscape').hidden = false; return; }
+        return fetch('/api/cookie/test', { method: 'POST' }).then(function (r) { return r.json(); }).then(function (d) {
+          if (d.ok) { instFinishDone(); }
+          else { instMsg('instCookieMsg', d.message || 'Trac could not validate the cookie.', 'bad'); $('instEscape').hidden = false; }
+        });
+      });
+  }
+}
+function instContinueAnyway() { instFinishDone(); }
+function instFinishDone() {
+  fetch('/api/installed', { method: 'POST' }).then(function () {
+    $('installer').hidden = true; document.body.classList.remove('installing'); refreshStatus();
+  });
+}
 function refreshStatus() {
   return fetch('/api/config/status').then(function (r) { return r.json(); }).then(function (d) {
+    if (!d.installed) {
+      document.body.classList.add('installing');
+      $('installer').hidden = false;
+      if (d.github.set) {
+        $('inst1Detected').hidden = false;
+        $('inst1Detected').innerHTML = '<span>✓</span> GitHub ready — ' + (d.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token') + ' · 5000/h';
+        $('inst1Paste').hidden = true;
+      } else { $('inst1Detected').hidden = true; $('inst1Paste').hidden = false; }
+      instGoto(installerStep);
+    } else {
+      $('installer').hidden = true; document.body.classList.remove('installing');
+    }
     setPill('pillGh', d.github.set, d.github.source);
     setPill('pillTrac', d.trac.set, d.trac.source);
     // GitHub step
