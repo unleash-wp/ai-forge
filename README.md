@@ -80,11 +80,12 @@ Prefer clicking a date range over typing flags:
 uwp serve            # -> http://localhost:4321
 ```
 
-Pick the **date range** (a FlexiDatepicker range picker), milestone and branches,
-hit **Generate**, and get: a big count of issues addressed, the summary stat
-cards, a **Sources** block with the exact Trac-query and Gutenberg-commits links
-(the parameter links to drop into the post so anyone can verify), the grouped
-changelog, and **Copy post template** / **Copy Markdown** / **Download** buttons.
+Pick the **since/until** dates, milestone and branches, hit **Generate**, and
+get: a big count of issues addressed, the summary stat cards, a **Sources** block
+with the exact Trac-query and Gutenberg-commits links (the parameter links to drop
+into the post so anyone can verify), and the changelog under two tabs —
+**Changelog** (Gutenberg + Core, every commit linked) and **Props** (the merged
+contributor list) — plus **Copy post** / **Copy Markdown** / **Download** buttons.
 The server binds to `127.0.0.1`, so nothing sensitive touches the browser.
 
 **Setup (one time).** A **Setup** panel wires up two keys, stored locally in

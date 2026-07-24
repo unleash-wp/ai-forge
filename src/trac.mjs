@@ -62,7 +62,7 @@ export async function fetchTicketDetails({ milestone, cookie }) {
   const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' } });
   const body = await res.text();
   if (!res.ok || /Checking your browser|__challenge|Javascript required/.test(body.slice(0, 600))) {
-    throw new Error(`Trac blocked the request (HTTP ${res.status}) — cookie missing/expired or bot wall.`);
+    throw new Error(`Trac blocked the request (HTTP ${res.status}). Cookie expired, or the bot wall is up.`);
   }
 
   const rows = parseCsv(body);
