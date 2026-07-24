@@ -52,6 +52,24 @@ function groupByLabel(commits, labelMap) {
 // Assign each Core changeset the component/classification of its first ticket
 // found in the dev-notes tracker; group by component. Mutates commits with the
 // resolved `component` + `classification` for rendering.
+// Merge full Trac ticket details (from `uwp --deep`) into the report: attach the
+// summary/description to each changeset, upgrade Uncategorized changesets to their
+// real Trac component, and rebuild the component grouping.
+export function applyDeepDetails(report, details) {
+  report.core.ticketDetails = Object.fromEntries(details);
+  for (const c of report.core.commits) {
+    const hit = c.tickets.map((id) => details.get(id)).find(Boolean);
+    if (!hit) continue;
+    c.trSummary = hit.summary;
+    c.description = hit.description;
+    if (!c.component || c.component === 'Uncategorized') c.component = hit.component || 'Uncategorized';
+  }
+  const groups = {};
+  for (const c of report.core.commits) (groups[c.component || 'Uncategorized'] ||= []).push(c);
+  report.core.byComponent = groups;
+  report.core.deep = true;
+}
+
 function groupCoreByComponent(core, map) {
   const groups = {};
   for (const c of core) {

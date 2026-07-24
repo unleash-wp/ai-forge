@@ -16,10 +16,22 @@ Gutenberg. **Zero dependencies, plain Node ≥18** — nothing to install or bui
      the grouped changelog as raw material).
    - no flag → full technical report (summary table + grouped changelog).
    - `--json` → structured data for further processing.
-3. Fill the highlights: **1–3 short paragraphs, each sentence backed by a real
-   PR or Trac ticket from the tool output.** Link them inline. Do not invent
-   features, do not estimate counts or dates — the tool's numbers and links are
-   the source of truth.
+3. **Read the tickets in full** before writing. The CLI gives ticket numbers,
+   summaries and metadata cookie-free, but not the ticket descriptions. To read
+   them, add `--deep` (works in any environment, including Codex):
+   ```bash
+   WPORG_TRAC_COOKIE='<wp.org cookie>' node bin/wp-release-helper.mjs \
+     --since <start> --until <end> --milestone <x.y> --deep --json
+   ```
+   Descriptions land in `core.ticketDetails` and Uncategorized changesets get
+   their real component. For ticket *comments*, use the `wporg-context` MCP
+   `get-ticket {id}` if available. No cookie → descriptions can't be read (Trac
+   blocks cookieless scripts); ground the prose in the summaries + full Core
+   changeset commit messages instead, and say descriptions were not read.
+4. Fill the highlights: **1–3 short paragraphs, each sentence backed by a real
+   PR or Trac ticket you read.** Link them inline. Do not invent features, do not
+   estimate counts or dates — the tool's numbers and links are the source of
+   truth.
 
 ## Optional
 

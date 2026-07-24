@@ -69,6 +69,28 @@ CLI prints a notice and leaves Core flat. Then use the Automattic
 Also handy for live ticket detail and bbPress/BuddyPress. Never invent component
 names — if neither source is available, ship the flat Core list.
 
+### 3b. Read the tickets in full (grounding — do this before writing)
+
+The CLI gives ticket **numbers, summaries and metadata** cookie-free, but not the
+ticket **description or discussion**. To ground the prose in what each ticket
+actually says:
+
+1. **Descriptions (deterministic, preferred):** re-run with `--deep --json`. One
+   cookie-gated request pulls every milestone ticket's description into
+   `core.ticketDetails`, and upgrades Uncategorized changesets to their real Trac
+   component. Needs `WPORG_TRAC_COOKIE` (env) or `--trac-cookie <file>`.
+   ```bash
+   WPORG_TRAC_COOKIE='…' node bin/wp-release-helper.mjs --since <s> --until <e> --milestone <x.y> --deep --json
+   ```
+2. **Comments / live detail (optional):** for a specific ticket's discussion, use
+   the `wporg-context` MCP `get-ticket {id}` (run `validate-auth` first).
+3. **Gutenberg:** PR title + `[Type]`/`[Feature]` label is usually enough; open a
+   PR (`gh pr view <n> -R WordPress/gutenberg`) only for the ones you feature.
+
+No cookie → descriptions can't be read (Trac blocks cookieless scripts); say so
+and ground the prose in the CLI summaries + the full Core changeset commit
+messages (still substantial), and leave Uncategorized as-is.
+
 ### 4. Write the release post
 
 Release coordinators publish a "What's in WordPress <x.y> Beta/RC N?" post.
