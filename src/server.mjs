@@ -423,9 +423,16 @@ const PAGE = `<!doctype html>
   .panel > section.group:first-child { margin-top: 0; }
 
   /* ---- Props chips ---- */
-  .propshead { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s5); }
-  .propshead p { margin: 0; font-size: 14.5px; color: var(--text); }
-  .propshead b { color: var(--heading); }
+  .propshead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4); flex-wrap: wrap; margin-bottom: var(--s5); }
+  .props-metric { display: flex; align-items: baseline; gap: var(--s3); flex-wrap: wrap; }
+  .props-metric b { position: relative; font-size: 40px; font-weight: 700; color: var(--heading); line-height: 1;
+    letter-spacing: -.02em; padding-bottom: 6px; }
+  .props-metric b::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 5px;
+    background: var(--yellow); border-radius: 3px; }
+  .props-metric span { font-size: 14px; color: var(--muted); }
+  .props-actions { display: flex; align-items: center; gap: var(--s4); }
+  .atbox { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text); cursor: pointer; white-space: nowrap; }
+  .atbox input { width: 17px; height: 17px; accent-color: var(--navy); cursor: pointer; }
   .propslist { margin: 0; font-size: 14.5px; line-height: 1.85; color: var(--text); }
 
   /* ---- Empty state ---- */
@@ -832,6 +839,7 @@ function render(data) {
   var changes = (t.gutenbergPRs || 0) + (t.coreChangesets || 0);
   var all = uniq((report.gutenberg.contributors || []).concat(report.core.contributors || []))
     .sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+  window._props = all;
   window._propsLine = all.join(', ');
 
   var h = '<div class="rhead"><div class="lead-metric"><b class="tnum">' + issues +
@@ -879,9 +887,13 @@ function render(data) {
   cl += '<details><summary>Raw Markdown</summary><pre>' + esc(lastMarkdown) + '</pre></details>';
   h += '<div class="panel" id="p-changelog">' + cl + '</div>';
 
-  var pv = '<div class="propshead"><p>Props to <b>' + all.length + '</b> contributors for this window.</p>' +
-    '<button class="ghost sm" onclick="copyProps()">' + IC.clip + 'Copy props line</button></div>';
-  pv += '<p class="propslist">' + all.map(esc).join(', ') + '</p>';
+  var pv = '<div class="propshead">' +
+    '<div class="props-metric"><b class="tnum">' + all.length + '</b><span>contributors with props this window</span></div>' +
+    '<div class="props-actions">' +
+      '<label class="atbox"><input type="checkbox" id="propsAt" onchange="applyPropsFormat()"> Add @ before names</label>' +
+      '<button class="ghost sm" onclick="copyProps()">' + IC.clip + 'Copy props line</button>' +
+    '</div></div>';
+  pv += '<p class="propslist" id="propsList">' + all.map(esc).join(', ') + '</p>';
   h += '<div class="panel hidden" id="p-props">' + pv + '</div>';
 
   $('out').innerHTML = h;
@@ -924,6 +936,14 @@ function coreItem(c) {
 function copyText(s) { navigator.clipboard.writeText(s); }
 function copyPost() { navigator.clipboard.writeText(lastPost); }
 function copyMd() { navigator.clipboard.writeText(lastMarkdown); }
+// Rewrite the props list + copy line when the "@ before names" toggle changes.
+// Usernames are wp.org handles (alnum / _ / -), so textContent is safe and enough.
+function applyPropsFormat() {
+  var at = $('propsAt') && $('propsAt').checked;
+  var list = (window._props || []).map(function (n) { return (at ? '@' : '') + n; });
+  window._propsLine = list.join(', ');
+  var el = $('propsList'); if (el) el.textContent = window._propsLine;
+}
 function copyProps() { navigator.clipboard.writeText(window._propsLine || ''); }
 function downloadMd() {
   var a = document.createElement('a');
