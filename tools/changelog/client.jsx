@@ -212,7 +212,7 @@ function Results({ data, since, until }) {
   return (
     <div className="results">
       <div className="rhead">
-        <div className="lead-metric"><b className="tnum">{issues}</b><span>{(dn ? 'dev notes / field guide tickets, ' : 'issues addressed, ') + fmtRange(since, until)}</span></div>
+        <div className="lead-metric"><b className="tnum">{dn ? issues : changes}</b><span>{(dn ? 'dev notes / field guide tickets, ' : 'changes landed across Core and Gutenberg, ') + fmtRange(since, until)}{!dn && <button type="button" className="info" data-tip={t.gutenbergPRs + ' Gutenberg PRs + ' + t.coreChangesets + ' Core changesets'} aria-label={t.gutenbergPRs + ' Gutenberg PRs plus ' + t.coreChangesets + ' Core changesets'} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button>}</span></div>
         <div className="stats">
           {!dn && stat(t.gutenbergPRs, 'Gutenberg PRs')}
           {!dn && stat(t.gutenbergCommits, 'GB commits')}

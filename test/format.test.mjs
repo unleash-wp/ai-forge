@@ -39,5 +39,5 @@ test('toMarkdown renders the summary table and both sections', () => {
 test('toPost renders the fill-in release-post template', () => {
   const post = toPost(report, meta);
   assert.match(post, /What's in WordPress 7\.1/);
-  assert.match(post, /issues addressed/);
+  assert.match(post, /changes that landed/);
 });
