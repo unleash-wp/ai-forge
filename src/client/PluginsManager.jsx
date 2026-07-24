@@ -5,8 +5,8 @@
 // remove. Installing/updating runs the tool's code after a server rebuild, gated
 // behind the user's own action + a trust note.
 import { useState, useEffect, useRef } from 'react';
+import { ToolIcon } from './icons.jsx';
 
-const CODE_IC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
 const VERB = { activate: 'Activating', deactivate: 'Deactivating', update: 'Updating', remove: 'Removing' };
 
 export default function PluginsManager({ plugins, onOpen, onChanged }) {
@@ -147,7 +147,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
           return (
             <div className={'tool-row' + (active ? '' : ' is-inactive')} key={p.id}>
               <input type="checkbox" className="tr-cbx" checked={selected.has(p.id)} disabled={core} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />
-              <span className="tr-ic" dangerouslySetInnerHTML={{ __html: CODE_IC }} />
+              <span className="tr-ic"><ToolIcon name={p.icon} size={20} /></span>
               <div className="tr-info">
                 <div className="tr-title">
                   <h3>{p.name}</h3>
