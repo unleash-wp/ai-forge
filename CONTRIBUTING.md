@@ -71,9 +71,23 @@ export default function MyTool() {
 }
 ```
 
-Reuse the existing class names (`filters`, `primary`, `ghost sm`, `stat`,
-`tabs`, …) so your tool matches the design system. The shell owns the header,
-rail, setup wizard and toast - don't re-render those.
+**Shared component library.** Import the design-system primitives from
+`../../src/client/ui` instead of styling raw elements, so every tool looks and
+behaves the same:
+
+```jsx
+import { Button, TextInput, TextArea, Checkbox, Select } from '../../src/client/ui';
+import { ToolIcon } from '../../src/client/icons.jsx';
+```
+
+- `Button` - `variant` (`primary` | `ghost`), `size` (`sm`), `danger`.
+- `TextInput` / `TextArea` / `Checkbox` - styled inputs.
+- `Select` - a custom dropdown that matches the design system; add `searchable`
+  for long lists, `block` for full width. Keyboard + screen-reader accessible.
+
+You can also reuse the existing class names (`filters`, `stat`, `tabs`, …). The
+shell owns the header, rail, setup wizard and toast - don't re-render those.
+`tools/_template/client.jsx` is a working example that uses these.
 
 ### 3. `server.mjs` - optional backend
 
