@@ -610,6 +610,12 @@ const PAGE = `<!doctype html>
 var $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) {
   return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+// Render inline code spans in changelog summaries: escape HTML first, then turn
+// backtick pairs into <code>. Build the backtick char via charCode so no literal
+// backtick appears in the PAGE template literal (it would close the string).
+var BT = String.fromCharCode(96);
+var CODE_RE = new RegExp(BT + '([^' + BT + ']+)' + BT, 'g');
+var codefmt = function (s) { return esc(s).replace(CODE_RE, '<code>$1</code>'); };
 var GB = 'https://github.com/WordPress/gutenberg';
 var TRAC = 'https://core.trac.wordpress.org';
 var CORE_GH = 'https://github.com/WordPress/wordpress-develop';
@@ -886,7 +892,7 @@ function gbItem(c) {
   var ref = c.pr
     ? '<a class="ref" href="' + GB + '/pull/' + c.pr + '" target="_blank" rel="noopener">#' + c.pr + '</a>'
     : (c.sha ? '<a class="ref" href="' + GB + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : '');
-  return '<li>' + esc(c.subject) + (ref ? ' ' + ref : '') + ' <span class="who">' + esc(c.author) + '</span></li>';
+  return '<li>' + codefmt(c.subject) + (ref ? ' ' + ref : '') + ' <span class="who">' + esc(c.author) + '</span></li>';
 }
 function coreGroup(comp, items) { return '<h3 class="grp">' + esc(comp) + ' <span class="n">(' + items.length + ')</span></h3><ul class="list">' + items.map(coreItem).join('') + '</ul>'; }
 function coreItem(c) {
@@ -896,7 +902,7 @@ function coreItem(c) {
   var tix = (c.tickets || []).map(function (n) { return '<a class="ref" href="' + TRAC + '/ticket/' + n + '" target="_blank" rel="noopener">#' + n + '</a>'; }).join(' ');
   var cls = c.classification ? ' <span class="tag">' + esc(c.classification) + '</span>' : '';
   var props = c.props && c.props.length ? ' <span class="who">props ' + esc(c.props.join(', ')) + '</span>' : '';
-  return '<li>' + ref + ': ' + esc(c.subject) + cls + (tix ? ' ' + tix : '') + props + '</li>';
+  return '<li>' + ref + ': ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + '</li>';
 }
 function copyText(s) { navigator.clipboard.writeText(s); }
 function copyPost() { navigator.clipboard.writeText(lastPost); }
