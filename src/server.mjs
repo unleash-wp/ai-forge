@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { authenticated, tokenStatus, saveToken, deleteToken, checkToken } from './github.mjs';
@@ -7,6 +7,8 @@ import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } f
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 import { checkUpdates } from './update.mjs';
+import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
+import { tmpdir } from 'node:os';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 // Light-bulb mark served at /brand/bulb.svg (favicon + empty-state image). The
@@ -14,8 +16,10 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 
 export function startServer({ port = 4321 } = {}) {
-  // Load tool plugins once; every request awaits the same promise.
-  const pluginsReady = loadPlugins();
+  // Load tool plugins; reloadable so install/uninstall picks up changes without
+  // a server restart (the client rebuild + reload picks up the new bundle).
+  let pluginsReady = loadPlugins();
+  const reloadPlugins = () => { pluginsReady = loadPlugins(); return pluginsReady; };
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`);
 
@@ -48,6 +52,52 @@ export function startServer({ port = 4321 } = {}) {
         json(res, 200, { updates: await checkUpdates(await pluginsReady) });
       } catch (err) {
         json(res, 200, { updates: [], error: err.message });
+      }
+      return;
+    }
+
+    // Install a tool from a GitHub repo the user typed. Runs third-party code
+    // after the rebuild - only ever triggered by the user's own action here.
+    if (url.pathname === '/api/plugins/install' && req.method === 'POST') {
+      try {
+        const source = (JSON.parse(await readBody(req) || '{}').source || '').trim();
+        const manifest = await installFromSource(source);
+        await rebuild();
+        await reloadPlugins();
+        json(res, 200, { ok: true, id: manifest.id, name: manifest.name });
+      } catch (err) {
+        json(res, 200, { ok: false, error: err.message });
+      }
+      return;
+    }
+
+    // Upload a tool as a .zip (raw body). Same install path as above.
+    if (url.pathname === '/api/plugins/upload' && req.method === 'POST') {
+      try {
+        const buf = await readBodyBuffer(req);
+        if (!buf.length) throw new Error('empty upload');
+        const zip = join(mkdtempSync(join(tmpdir(), 'forge-up-')), 'upload.zip');
+        writeFileSync(zip, buf);
+        const manifest = installArchive(zip, 'zip');
+        await rebuild();
+        await reloadPlugins();
+        json(res, 200, { ok: true, id: manifest.id, name: manifest.name });
+      } catch (err) {
+        json(res, 200, { ok: false, error: err.message });
+      }
+      return;
+    }
+
+    if (url.pathname === '/api/plugins/uninstall' && req.method === 'POST') {
+      try {
+        const id = (JSON.parse(await readBody(req) || '{}').id || '').trim();
+        if (id === 'changelog') throw new Error('the core Changelog tool cannot be removed');
+        uninstall(id);
+        await rebuild();
+        await reloadPlugins();
+        json(res, 200, { ok: true });
+      } catch (err) {
+        json(res, 200, { ok: false, error: err.message });
       }
       return;
     }
@@ -196,6 +246,17 @@ function readBody(req) {
     let data = '';
     req.on('data', (c) => { data += c; if (data.length > 1e6) req.destroy(); });
     req.on('end', () => resolve(data));
+  });
+}
+
+// Binary body reader for the .zip upload (up to 25 MB).
+function readBodyBuffer(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (c) => { size += c.length; if (size > 25e6) { req.destroy(); reject(new Error('upload too large (max 25 MB)')); } else chunks.push(c); });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
   });
 }
 

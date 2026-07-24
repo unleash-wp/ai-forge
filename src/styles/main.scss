@@ -420,3 +420,6 @@
   a.pc-add h3 { color: var(--heading); }
   a.pc-add p { color: var(--muted); }
   .pc-cta { font-size: 0.8125rem; font-weight: 500; color: var(--primary); }
+  .pc-install .pc-actions { display: flex; gap: var(--s2); margin-top: var(--s2); align-items: center; }
+  .pc-trust { font-size: 0.75rem; color: var(--muted); margin: var(--s3) 0 0; }
+  .warn.bad-note { color: var(--bad); border-color: var(--bad); }
