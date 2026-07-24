@@ -12,8 +12,18 @@ export function parseCommit(c) {
   const prMatch = subject.match(/\(#(\d+)\)\s*$/);
   const pr = prMatch ? Number(prMatch[1]) : null;
 
-  const tickets = [...msg.matchAll(/\b(?:Fix|Fixes|Fixed|Close|Closes|Closed)\s+#(\d+)/gi)].map((m) => Number(m[1]));
-  const seeTickets = [...msg.matchAll(/\bSee\s+#(\d+)/gi)].map((m) => Number(m[1]));
+  // A single commit can close several tickets in one clause: "Fixes #100, #101
+  // and #102." Capture the whole comma/and-separated list after the keyword, then
+  // pull every number - the old "keyword + one #id" regex dropped all but the
+  // first, undercounting tickets.
+  const idList = (keyword) => {
+    const out = [];
+    const clause = new RegExp('\\b(?:' + keyword + ')\\s+(#\\d+(?:\\s*(?:,|and|&)\\s*#\\d+)*)', 'gi');
+    for (const m of msg.matchAll(clause)) for (const n of m[1].matchAll(/#(\d+)/g)) out.push(Number(n[1]));
+    return out;
+  };
+  const tickets = idList('Fix|Fixes|Fixed|Close|Closes|Closed');
+  const seeTickets = idList('See');
 
   const csMatch = msg.match(/git-svn-id:\s*\S+@(\d+)/) || msg.match(/(?:trunk|branches\/[\d.]+)@(\d+)/);
   const changeset = csMatch ? Number(csMatch[1]) : null;
