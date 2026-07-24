@@ -396,6 +396,13 @@ const PAGE = `<!doctype html>
   .inst-foot .back { background: none; border: 0; color: var(--muted); text-decoration: underline; cursor: pointer; font: 500 13px/1 var(--font); }
   .inst-foot .back[hidden] { display: none; }
 
+  /* ---- Copy / download confirmation toast ---- */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translate(-50%, 16px); z-index: 300;
+    background: var(--navy); color: #fff; padding: 11px 18px; border-radius: 8px; box-shadow: var(--shadow-lg);
+    font: 600 13.5px/1 var(--font); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: opacity .2s ease; } }
+
   /* ---- Quick cookie import (browser buttons) ---- */
   .quickimport { margin: 0 0 var(--s3); }
   .qi-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
@@ -795,6 +802,7 @@ const PAGE = `<!doctype html>
     <a class="ficon" href="https://github.com/unleash-wp/wp-release-helper" target="_blank" rel="noopener" aria-label="Contribute on GitHub" title="Contribute on GitHub"><svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 012-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
   </div>
 </footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 var $ = function (id) { return document.getElementById(id); };
 var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) {
@@ -1242,9 +1250,16 @@ function coreItem(c) {
   var props = c.props && c.props.length ? ' <span class="who">props ' + esc(c.props.join(', ')) + '</span>' : '';
   return '<li>' + ref + ': ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + '</li>';
 }
-function copyText(s) { navigator.clipboard.writeText(s); }
-function copyPost() { navigator.clipboard.writeText(lastPost); }
-function copyMd() { navigator.clipboard.writeText(lastMarkdown); }
+// Small confirmation toast, shown after any copy / download.
+function toast(msg) {
+  var t = $('toast'); if (!t) return;
+  t.textContent = '✓ ' + msg; t.className = 'toast show';
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(function () { t.className = 'toast'; }, 1800);
+}
+function copyText(s) { navigator.clipboard.writeText(s); toast('Link copied'); }
+function copyPost() { navigator.clipboard.writeText(lastPost); toast('Post copied'); }
+function copyMd() { navigator.clipboard.writeText(lastMarkdown); toast('Markdown copied'); }
 // Rewrite the props list + copy line when the "@ before names" toggle changes.
 // Usernames are wp.org handles (alnum / _ / -), so textContent is safe and enough.
 function applyPropsFormat() {
@@ -1254,20 +1269,22 @@ function applyPropsFormat() {
   var el = $('propsList'); if (el) el.textContent = window._propsLine;
   var hint = $('propsHint'); if (hint) hint.hidden = !at;
 }
-function copyProps() { navigator.clipboard.writeText(window._propsLine || ''); }
+function copyProps() { navigator.clipboard.writeText(window._propsLine || ''); toast('Props copied'); }
 // CSV + PHP array use the raw usernames (the @ toggle is only for the props line).
 // Build newline/tab via charCode: escape sequences in this inlined script get
 // interpreted by the outer PAGE template literal, which would break the strings.
 var NL = String.fromCharCode(10), TAB = String.fromCharCode(9);
-function copyCsv() { navigator.clipboard.writeText((window._props || []).join(NL)); }
+function copyCsv() { navigator.clipboard.writeText((window._props || []).join(NL)); toast('CSV copied'); }
 function copyPhp() {
   var arr = (window._props || []).map(function (n) { return TAB + "'" + String(n).replace(/'/g, "\\'") + "',"; });
   navigator.clipboard.writeText('array(' + NL + arr.join(NL) + NL + ')');
+  toast('PHP array copied');
 }
 function downloadMd() {
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lastMarkdown], { type: 'text/markdown' }));
   a.download = 'changelog.md'; a.click();
+  toast('Downloaded changelog.md');
 }
 
 // Tab switching (delegated, survives re-render)
