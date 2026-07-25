@@ -1,29 +1,26 @@
-# Automated release. Push a version tag (e.g. `git tag v0.1.1 && git push --tags`)
-# and this builds, tests, publishes @unleashwp/ai-forge to npm, and attaches the
-# Claude Desktop .mcpb bundle to a GitHub Release.
+# Automated release. Push a version tag (`npm version patch && git push --tags`)
+# and this publishes @unleashwp/ai-forge to npm, attaches the .mcpb to a GitHub
+# Release, and mirrors the same version to GitHub Packages as @unleash-wp/ai-forge
+# — all in one workflow, so no step depends on a token-triggered event.
 #
-# One-time setup on npmjs.com (pick ONE auth path):
-#   A) Trusted publishing (recommended, tokenless): on the @unleashwp/ai-forge
-#      package settings, add a GitHub Actions trusted publisher for repo
-#      unleash-wp/ai-forge + workflow "release.yml". Nothing else needed — OIDC
-#      below authenticates and signs provenance automatically.
-#   B) Token: create an npm automation token and add it as the repo secret
-#      NPM_TOKEN. It is used below if present.
-# The very first publish of a brand-new scoped package usually has to be done once
-# by hand (`npm publish`) to create it; automated releases take over after that.
+# One-time npm auth (pick ONE): (A) Trusted Publishing (tokenless OIDC) configured
+# on the package, or (B) an npm automation token as repo secret NPM_TOKEN. The very
+# first publish of a new scoped name is done once by hand; this takes over after.
+#
+# Every step is idempotent: re-pushing an existing tag skips the already-published
+# version instead of failing.
 name: Release
 
 on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write   # create the GitHub Release
-  id-token: write   # npm OIDC trusted publishing + provenance
-
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create the GitHub Release
+      id-token: write   # npm OIDC trusted publishing + provenance
     steps:
       - uses: actions/checkout@v4
 
@@ -56,15 +53,62 @@ jobs:
       - name: Unit tests
         run: node --test
 
-      - name: Publish to npm (provenance)
-        run: npm publish --provenance --access public
+      - name: Publish to npm (provenance, skip if already published)
+        run: |
+          V="$(node -p "require('./package.json').version")"
+          if npm view "@unleashwp/ai-forge@$V" version >/dev/null 2>&1; then
+            echo "@unleashwp/ai-forge@$V already on npm — skipping publish"
+          else
+            npm publish --provenance --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Pack the Claude Desktop bundle
         run: npm run mcpb:pack
 
-      - name: Create the GitHub Release with the .mcpb attached
+      - name: Create or update the GitHub Release with the .mcpb
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" unleashwp-ai-forge.mcpb --title "$GITHUB_REF_NAME" --generate-notes
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" unleashwp-ai-forge.mcpb --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" unleashwp-ai-forge.mcpb --title "$GITHUB_REF_NAME" --generate-notes
+          fi
+
+  # Mirror the same version to GitHub Packages (as @unleash-wp/ai-forge — GitHub
+  # Packages scopes to the org name). Runs in the same workflow so it's automatic.
+  mirror:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Build the browser UI bundle
+        run: npm run build
+
+      - name: Scope the package to the GitHub org
+        run: npm pkg set name=@unleash-wp/ai-forge
+
+      - name: Publish to GitHub Packages (skip if already there)
+        run: |
+          V="$(node -p "require('./package.json').version")"
+          if npm view "@unleash-wp/ai-forge@$V" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "@unleash-wp/ai-forge@$V already on GitHub Packages — skipping"
+          else
+            npm publish --registry=https://npm.pkg.github.com
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
