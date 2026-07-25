@@ -1,5 +1,5 @@
-// Soft yellow notice (updates, busy state). --bad turns it into an error tone.
-.warn {
+// Block-level notice (updates, busy state). --error is the red variant.
+.c-warn {
   background: rgba(252, 190, 0, .12);
   border: 1px solid rgba(252, 190, 0, .45);
   color: var(--text);
@@ -8,5 +8,5 @@
   font-size: 0.875rem;
   margin-bottom: var(--s5);
 
-  &--bad { color: var(--bad); border-color: var(--bad); }
+  &--error { color: var(--bad); border-color: var(--bad); }
 }

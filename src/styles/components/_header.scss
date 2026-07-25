@@ -1,7 +1,7 @@
 // White brand bar: wordmark + "Forge" + credential pills. Sticks to the top.
 @use '../tools/mixins' as *;
 
-.header {
+.c-header {
   position: sticky;
   top: 0;
   z-index: 20;
@@ -9,7 +9,7 @@
   border-bottom: 1px solid var(--border);
   transition: box-shadow .18s ease;
 
-  &--scrolled { box-shadow: var(--shadow); }
+  &.is-scrolled { box-shadow: var(--shadow); }
 
   &__bar {
     max-width: 72.5rem;

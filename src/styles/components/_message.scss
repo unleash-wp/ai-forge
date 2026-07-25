@@ -1,8 +1,8 @@
-// Inline save/test feedback next to a form action.
-.msg {
+// Inline save/test feedback next to a form action. is-good / is-bad = result.
+.c-message {
   font-size: 0.7813rem;
   color: var(--muted);
 
-  &--good { color: var(--good-ink); }
-  &--bad { color: var(--bad); }
+  &.is-good { color: var(--good-ink); }
+  &.is-bad { color: var(--bad); }
 }

@@ -1,0 +1,66 @@
+// Changelog / Props / Dev Notes tab strip + the tool buttons on the right.
+@use '../../../src/styles/tools/mixins' as *;
+
+.c-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s5);
+  border-bottom: 1px solid var(--border);
+  margin: var(--s6) 0 var(--s5);
+
+  @include mq('sm') { flex-wrap: wrap; gap: var(--s4); }
+
+  &__tools {
+    margin-left: auto;
+    display: flex;
+    gap: var(--s2);
+    padding-bottom: var(--s2);
+
+    @include mq('sm') { width: 100%; margin-left: 0; flex-wrap: wrap; }
+  }
+}
+
+.c-tab {
+  position: relative;
+  background: none;
+  border: 0;
+  padding: 0 0.125rem var(--s3);
+  font: 600 1rem/1 var(--font);
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: -0.0625rem;
+
+  &:hover { color: var(--heading); }
+
+  &.is-active {
+    color: var(--heading);
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 0.125rem;
+      background: var(--navy);
+    }
+
+    .c-tab__badge { color: #fff; background: var(--navy); border-color: var(--navy); }
+  }
+
+  &__badge {
+    font: 600 0.6875rem/1 var(--font);
+    color: var(--muted);
+    background: var(--sunk);
+    border: 1px solid var(--border);
+    border-radius: 0.3125rem;
+    padding: 0.1875rem 0.5rem;
+  }
+}
+
+.c-panel {
+  &.is-hidden { display: none; }
+}

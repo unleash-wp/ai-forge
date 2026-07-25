@@ -1,11 +1,10 @@
 // The changelog query form: a row of fields, then options + actions.
 @use '../tools/mixins' as *;
 
-.query {
+.c-query {
   display: block;
 
-  // Field labels sit above their control, uppercase.
-  label {
+  &__field {
     display: flex;
     flex-direction: column;
     gap: 0.4375rem;
@@ -16,16 +15,14 @@
     color: var(--muted);
   }
 
-  input[type="text"] { width: auto; }
-
   &__fields {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s5);
     align-items: flex-end;
 
-    > .daterange { flex: 1.3 1 14rem; }
-    > label { flex: 1 1 10rem; }
+    > .c-daterange { flex: 1.3 1 14rem; }
+    > .c-query__field { flex: 1 1 10rem; }
 
     @include mq('lg') { gap: var(--s4); }
   }
@@ -47,22 +44,18 @@
     gap: var(--s5);
     align-items: center;
 
-    label {
-      flex-direction: row;
-      align-items: center;
-      gap: 0.5rem;
-      text-transform: none;
-      letter-spacing: 0;
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: var(--text);
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    input { cursor: pointer; }
-
     @include mq('lg') { gap: var(--s4); flex-wrap: wrap; }
+  }
+
+  &__check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
   }
 
   &__go {
@@ -70,10 +63,10 @@
     align-items: center;
     gap: var(--s4);
 
-    .button--primary { padding: 0.8125rem 1.875rem; font-size: 1rem; font-weight: 700; }
+    .c-button--primary { padding: 0.8125rem 1.875rem; font-size: 1rem; font-weight: 700; }
 
     @include mq('lg') { width: 100%; justify-content: flex-end; gap: var(--s4); }
-    @include mq('sm') { .button--primary { flex: 1; } }
+    @include mq('sm') { .c-button--primary { flex: 1; } }
   }
 
   &__reset {

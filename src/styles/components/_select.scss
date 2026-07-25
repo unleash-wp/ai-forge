@@ -1,18 +1,18 @@
-// Custom accessible dropdown/combobox (native <select> can't be styled
-// cross-browser). --block stretches it; --open/--disabled are interaction state.
-.select {
+// Custom accessible dropdown/combobox. --block is a layout variant; is-open /
+// is-disabled and the option is-selected / is-active are interaction state.
+.c-select {
   position: relative;
   display: inline-block;
   min-width: 10rem;
 
   &--block { display: block; width: 100%; min-width: 0; }
 
-  &--open {
-    .select__button { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
-    .select__caret { transform: rotate(180deg); }
+  &.is-open {
+    .c-select__button { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    .c-select__caret { transform: rotate(180deg); }
   }
 
-  &--disabled .select__button { opacity: .55; cursor: default; }
+  &.is-disabled .c-select__button { opacity: .55; cursor: default; }
 
   &__button {
     display: inline-flex;
@@ -29,10 +29,10 @@
     cursor: pointer;
     transition: border-color .12s, box-shadow .12s;
 
-    > span { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     &:hover { border-color: var(--primary); }
   }
 
+  &__value { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   &__caret { color: var(--muted); flex: none; transition: transform .14s ease; }
 
   &__menu {
@@ -52,11 +52,10 @@
     gap: 0.125rem;
     max-height: 18rem;
     overflow-y: auto;
-
-    > * { flex: none; }
   }
 
   &__option {
+    flex: none;
     text-align: left;
     background: none;
     border: none;
@@ -69,11 +68,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
 
-    &:hover, &--active { background: var(--sunk); }
-    &--selected { color: var(--primary); font-weight: 600; }
+    &:hover, &.is-active { background: var(--sunk); }
+    &.is-selected { color: var(--primary); font-weight: 600; }
   }
 
   &__search {
+    flex: none;
     position: sticky;
     top: 0;
     width: 100%;
@@ -88,5 +88,5 @@
     &:focus { outline: none; border-color: var(--primary); background: var(--surface); }
   }
 
-  &__note { padding: 0.5rem 0.625rem; font-size: 0.75rem; color: var(--muted); }
+  &__note { flex: none; padding: 0.5rem 0.625rem; font-size: 0.75rem; color: var(--muted); }
 }

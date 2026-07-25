@@ -1,5 +1,5 @@
 // Small status chip on a plugin row (Core / Inactive / Update available).
-.chip {
+.c-chip {
   font: 600 0.625rem/1 var(--font);
   text-transform: uppercase;
   letter-spacing: .05em;
@@ -13,7 +13,7 @@
 }
 
 // The "update available" chip is a link variant (navy fill) when rendered as <a>.
-a.chip--up {
+a.c-chip--up {
   text-transform: none;
   letter-spacing: 0;
   color: #fff;

@@ -46,7 +46,7 @@ export default function App() {
   useEffect(() => { loadPluginList(); refreshStatus(); }, [loadPluginList, refreshStatus]);
 
   const installing = status && !status.installed;
-  useEffect(() => { document.body.classList.toggle('installing', !!installing); }, [installing]);
+  useEffect(() => { document.body.classList.toggle('is-installing', !!installing); }, [installing]);
 
   // pin the rail under the sticky header + shadow the header on scroll
   useEffect(() => {
@@ -78,13 +78,13 @@ export default function App() {
 
       <Header headerRef={headerRef} scrolled={scrolled} ghSet={!!(gh && gh.set)} tracSet={!!(trac && trac.set)} onToggleSetup={() => setWizardOpen((o) => !o)} />
 
-      <div className="shell">
+      <div className="o-shell">
         <Rail railRef={railRef} plugins={plugins} activeId={activeId} inPlugins={inPlugins} onSelect={setActiveId} onPlugins={() => setActiveId(PLUGINS_VIEW)} />
-        <main>
+        <main className="o-workspace">
           <UpdateNote />
-          <div className="workspace-head">
-            <h1>{inPlugins ? 'Plugins' : (active ? active.name : 'WP Changelog')}</h1>
-            <p>{inPlugins ? 'Tools installed on this Forge. Every tool is a plugin. Add your own.' : (active ? active.description : '')}</p>
+          <div className="c-workspace-head">
+            <h1 className="c-workspace-head__title">{inPlugins ? 'Plugins' : (active ? active.name : 'WP Changelog')}</h1>
+            <p className="c-workspace-head__desc">{inPlugins ? 'Tools installed on this Forge. Every tool is a plugin. Add your own.' : (active ? active.description : '')}</p>
           </div>
           {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}
           <div ref={wizardRef}>

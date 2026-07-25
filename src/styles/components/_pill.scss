@@ -1,8 +1,8 @@
-// Credential status pill (GitHub / Trac) in the header. --ok / --off drive the
-// little status dot.
+// Credential status pill (GitHub / Trac). is-ok / is-off reflect live
+// connection state and drive the status dot.
 @use '../tools/mixins' as *;
 
-.pill {
+.c-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4375rem;
@@ -28,14 +28,14 @@
     line-height: 1;
   }
 
-  &--ok .pill__ic {
+  &.is-ok .c-pill__ic {
     background: var(--good);
     color: #fff;
 
     &::after { content: "✓"; }
   }
 
-  &--off .pill__ic {
+  &.is-off .c-pill__ic {
     border: 1.5px solid var(--yellow);
     color: var(--yellow);
   }
