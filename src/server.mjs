@@ -293,7 +293,11 @@ export function startServer({ port = 4321 } = {}) {
       if (disabledNow.has(p.manifest.id)) continue; // deactivated tools serve nothing
       for (const r of p.routes) {
         if (req.method === r.method && url.pathname === r.path) {
-          await r.handler(req, res, url, { json });
+          await r.handler(req, res, url, {
+            json,
+            query: url.searchParams,
+            body: async () => JSON.parse((await readBody(req)) || '{}'),
+          });
           return;
         }
       }

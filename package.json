@@ -14,6 +14,7 @@
     "start": "node bin/wp-release-helper.mjs",
     "build": "webpack --mode production",
     "watch": "webpack --mode development --watch",
+    "new-tool": "node scripts/new-tool.mjs",
     "test": "node --test",
     "prepare": "webpack --mode production"
   },
