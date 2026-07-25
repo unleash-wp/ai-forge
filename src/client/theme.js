@@ -12,6 +12,11 @@ const config = defineConfig({
   preflight: false,
   globalCss: {
     'html, body': { fontFamily: 'body', background: 'ui.bg', color: 'ui.text' },
+    // preflight is off, so add just the border reset Chakra components rely on
+    // (makes `borderWidth` render without an explicit border-style). Low
+    // specificity, so the SCSS components' own borders still win during the
+    // migration.
+    '*, *::before, *::after': { borderWidth: '0', borderStyle: 'solid', borderColor: 'ui.border' },
   },
   theme: {
     tokens: {
