@@ -34,7 +34,7 @@ async function latestRelease(owner, repo, token) {
 // plugins: [{ manifest }]. Returns [{ id, name, current, latest, url }] for the
 // ones whose source has a newer release. Fetches each source once.
 export async function checkUpdates(plugins) {
-  const token = resolveToken();
+  const { token } = resolveToken();
   const cache = new Map();
   const out = [];
   for (const p of plugins) {

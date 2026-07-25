@@ -29,10 +29,10 @@ export default function Installer({ status, onDone }) {
 
   function primary() {
     if (step === 1) {
-      const t = gh.trim();
-      if (t) {
+      const token = gh.trim();
+      if (token) {
         setGhMsg({ text: t('saving…'), kind: '' });
-        fetchJSON('/api/github-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t }) })
+        fetchJSON('/api/github-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
           .then(({ data }) => {
             if (data && data.error) setGhMsg({ text: data.error, kind: 'bad' });
             else { setGh(''); setStep(2); }
