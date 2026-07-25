@@ -24,7 +24,6 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const railRef = useRef(null);
   const headerRef = useRef(null);
-  const wizardRef = useRef(null);
 
   const refreshStatus = useCallback(() => {
     return fetch('/api/config/status').then((r) => r.json()).then(setStatus).catch(() => {});
@@ -60,12 +59,6 @@ export default function App() {
   }, []);
 
   const openSetup = useCallback(() => setWizardOpen(true), []);
-  useEffect(() => {
-    if (wizardOpen && wizardRef.current) wizardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    function onKey(e) { if (e.key === 'Escape') setWizardOpen(false); }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [wizardOpen]);
 
   const gh = status && status.github, trac = status && status.trac;
   const inPlugins = activeId === PLUGINS_VIEW;
@@ -94,11 +87,10 @@ export default function App() {
             </Text>
           </Box>
           {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}
-          <Box ref={wizardRef}>
-            <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
-          </Box>
         </Box>
       </Grid>
+
+      <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
 
       <Footer />
     </CoreContext.Provider>
