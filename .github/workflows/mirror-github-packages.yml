@@ -1,0 +1,44 @@
+# Mirror the published package to GitHub Packages (npm.pkg.github.com), in
+# addition to the public npm registry. GitHub Packages requires the scope to match
+# the org, so it is published as @unleash-wp/ai-forge (the npm public package stays
+# @unleashwp/ai-forge). Runs automatically after every GitHub Release, and can be
+# run by hand (workflow_dispatch) to mirror the current version now.
+#
+# Note: installing from GitHub Packages needs a GitHub token + .npmrc, even for
+# public packages — the npm public registry stays the easy, auth-free way to install.
+name: Mirror to GitHub Packages
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Build the browser UI bundle
+        run: npm run build
+
+      # GitHub Packages scopes to the org name, so publish under @unleash-wp.
+      - name: Scope the package to the GitHub org
+        run: npm pkg set name=@unleash-wp/ai-forge
+
+      - name: Publish to GitHub Packages
+        run: npm publish --registry=https://npm.pkg.github.com
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
