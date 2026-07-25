@@ -130,6 +130,25 @@ The core Changelog tool does this: `uwp changelog --since <date> --until <date>
 [--milestone x.y] [--post|--json]` (the bare `uwp --since …` form is a
 back-compat alias for it).
 
+**MCP tools.** Export `mcpTools` and `uwp mcp` serves them over stdio (the MCP
+transport), so Claude Code and Codex register Forge once and call your tool
+live. Each tool has a JSON-Schema `inputSchema`; `run(args)` returns a string
+(or any value, JSON-stringified). `uwp mcp` aggregates the tools from every
+installed plugin.
+
+```js
+export const mcpTools = [
+  { name: 'my_tool_echo', description: 'Echo text back.',
+    inputSchema: { type: 'object', properties: { text: { type: 'string' } }, required: ['text'] },
+    run: async (args) => `you said: ${args.text}` },
+];
+```
+
+Register the server: Claude Code `claude mcp add uwp -- uwp mcp`; Codex adds an
+MCP server with `command = "uwp"`, `args = ["mcp"]`. Keep `stdout` for JSON-RPC
+only — send any logging to `stderr`. The Changelog tool ships `get_changelog`,
+`list_milestones` and `list_branches`.
+
 ### Register + run
 
 Scaffold from the template with `npm run new-tool -- <id> [Display Name]` (copies

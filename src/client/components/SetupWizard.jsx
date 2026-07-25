@@ -31,9 +31,11 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 const ICON_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
-// Copyable one-liner an assistant (Claude Code / Codex, running in this repo)
-// can run to drive Forge from the CLI.
-const FORGE_CMD = 'uwp --since <start> --until <end> --milestone <x.y> --post';
+// Register Forge as an MCP server so Claude Code / Codex can query its tools
+// (get_changelog, list_milestones, list_branches) live. Claude Code has a CLI
+// for it; Codex points its MCP config at the same `uwp mcp` command.
+const MCP_CMD_CLAUDE = 'claude mcp add uwp -- uwp mcp';
+const MCP_CMD_CODEX = 'uwp mcp';
 
 // Flag emoji from a 2-letter country code (regional indicator letters).
 const flagOf = (cc) => cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
@@ -207,10 +209,10 @@ function ConnectorCard({ icon, name, desc, status, required, open, onToggle, chi
   );
 }
 
-function CmdPanel({ id, copiedId, onCopy }) {
+function CmdPanel({ id, cmd, copiedId, onCopy }) {
   return (
     <Stack gap="3">
-      <chakra.code display="block" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{FORGE_CMD}</chakra.code>
+      <chakra.code display="block" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{cmd}</chakra.code>
       <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={onCopy} alignSelf="flex-start">{copiedId === id ? __('Copied') : __('Copy command')}</Button>
     </Stack>
   );
@@ -279,7 +281,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .then(() => { setCopiedId(id); core.toast('Copied', 'success'); setTimeout(() => setCopiedId(null), 1600); })
       .catch(() => core.toast('Copy failed'));
   }
-  function copyCmd(id) { copyStr(FORGE_CMD, id); }
+  function copyCmd(id, cmd) { copyStr(cmd, id); }
 
   function testGh() {
     setGhMsg({ text: 'Checking…', kind: '' });
@@ -400,7 +402,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="connectors" mt="0">
                     <TabTitle>{t('Connectors')}</TabTitle>
-                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex just copy a command to run Forge.')}</TabIntro>
+                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex register Forge as an MCP server to query it live.')}</TabIntro>
                     <Stack gap="3">
 
                       <ConnectorCard icon={ICON_GITHUB} name="GitHub" required desc={t('Raises the API limit to 5,000 requests per hour.')} status={gh.set} open={openId === 'gh'} onToggle={() => toggle('gh')}>
@@ -446,12 +448,12 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                         )}
                       </ConnectorCard>
 
-                      <ConnectorCard icon={ICON_CLAUDE} name="Claude Code" desc={t('Run UnleashWP Forge from %s.', 'Claude Code')} open={openId === 'claude'} onToggle={() => toggle('claude')}>
-                        <CmdPanel id="claude" copiedId={copiedId} onCopy={() => copyCmd('claude')} />
+                      <ConnectorCard icon={ICON_CLAUDE} name="Claude Code" desc={t('Register Forge as an MCP server in %s.', 'Claude Code')} open={openId === 'claude'} onToggle={() => toggle('claude')}>
+                        <CmdPanel id="claude" cmd={MCP_CMD_CLAUDE} copiedId={copiedId} onCopy={() => copyCmd('claude', MCP_CMD_CLAUDE)} />
                       </ConnectorCard>
 
-                      <ConnectorCard icon={ICON_CODEX} name="Codex" desc={t('Run UnleashWP Forge from %s.', 'Codex')} open={openId === 'codex'} onToggle={() => toggle('codex')}>
-                        <CmdPanel id="codex" copiedId={copiedId} onCopy={() => copyCmd('codex')} />
+                      <ConnectorCard icon={ICON_CODEX} name="Codex" desc={t('Add Forge as an MCP server (command uwp, args mcp) in %s.', 'Codex')} open={openId === 'codex'} onToggle={() => toggle('codex')}>
+                        <CmdPanel id="codex" cmd={MCP_CMD_CODEX} copiedId={copiedId} onCopy={() => copyCmd('codex', MCP_CMD_CODEX)} />
                       </ConnectorCard>
 
                     </Stack>

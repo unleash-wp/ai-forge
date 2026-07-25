@@ -6,6 +6,8 @@ Usage:
   uwp --since <date> --until <date> [options]
   uwp <since> <until> [options]
   uwp serve [--port <n>]            Open the browser UI.
+  uwp mcp                          Run as an MCP server (stdio) for Claude Code
+                                    / Codex: claude mcp add uwp -- uwp mcp
   uwp cookie-import <browser>       Import the wordpress.org cookie from a local
                                     browser (chrome|safari|firefox|edge, macOS).
   uwp <tool> [options]             Run a tool's own command (listed under -h).
@@ -44,6 +46,11 @@ export async function run(argv) {
   if (args._[0] === 'serve') {
     const { startServer } = await import('./server.mjs');
     return startServer({ port: Number(args.port) || 4321 });
+  }
+
+  if (args._[0] === 'mcp') {
+    const { startMcpServer } = await import('./mcp-server.mjs');
+    return startMcpServer();
   }
 
   if (args._[0] === 'cookie-import') {
