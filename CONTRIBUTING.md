@@ -85,9 +85,10 @@ import { ToolIcon } from '../../src/client/icons.jsx';
 - `Select` - a custom dropdown that matches the design system; add `searchable`
   for long lists, `block` for full width. Keyboard + screen-reader accessible.
 
-You can also reuse the existing class names (`filters`, `stat`, `tabs`, …). The
-shell owns the header, rail, setup wizard and toast - don't re-render those.
-`tools/_template/client.jsx` is a working example that uses these.
+You can also reuse the shared design-system classes (`filters`, `card`, `empty`,
+…) and add your own in `tools/<id>/client.scss` (see **Frontend & styles**
+below). The shell owns the header, rail, setup wizard and toast; don't re-render
+those. `tools/_template/client.jsx` is a working example that uses these.
 
 ### 3. `server.mjs` - optional backend
 
@@ -110,6 +111,51 @@ shell because every tool shares them.
 automatic (server: `src/plugins.mjs`; client:
 `import.meta.webpackContext`). Folders starting with `_` (like `_template`) are
 skipped.
+
+## Frontend & styles
+
+Styles live in `src/styles/`, organised as **ITCSS** (Inverted Triangle CSS):
+layers load from generic to specific, low specificity to high, so nothing has to
+fight the cascade.
+
+```
+src/styles/
+  settings/    design tokens (CSS variables), light + dark
+  tools/       Sass mixins (e.g. the mq() breakpoint helper)
+  generic/     resets
+  elements/    bare tags (body, a, input, button …)
+  objects/     layout primitives (.shell)
+  components/  one BEM block per file (header, rail, wizard, select …)
+  utilities/   single-purpose helpers (.tnum, .spin, .note)
+  main.scss    the @use manifest — the only place layers are wired together
+```
+
+Naming is **BEM**: `.block`, `.block__element`, `.block--modifier`. State and
+variants are modifiers (`.tab--active`, `.pill--ok`), never loose words. Nest
+child tags and responsive rules inside the block:
+
+```scss
+@use '../tools/mixins' as *;
+
+.rail {
+  display: flex;
+  &__cap { text-transform: uppercase; }       // .rail__cap
+  &--collapsed { flex-direction: row; }        // .rail--collapsed
+  @include mq('lg') { flex-direction: row; }   // breakpoints: sm / md / lg
+}
+```
+
+**Add a component:** drop a `_name.scss` in `components/`, write one block, then
+add `@use 'components/name';` to `main.scss`. Colours come from `var(--token)`
+only (never hard-code a hex); prefer a spacing token (`--s1`…`--s8`) over a magic
+number.
+
+**A tool owns its styles.** Shell and design-system primitives (header, rail,
+filters, `Select`, `Button`, wizard …) stay in `src/styles/`. A tool's own look
+lives beside its code in `tools/<id>/client.scss`, imported at the top of its
+`client.jsx`. The changelog tool is the worked example
+(`tools/changelog/client.scss`). Webpack bundles every imported `.scss` into the
+single `dist/main.css`, so BEM block names must stay unique across tools.
 
 ## Quality gate
 

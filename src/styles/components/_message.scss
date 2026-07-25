@@ -1,0 +1,8 @@
+// Inline save/test feedback next to a form action.
+.msg {
+  font-size: 0.7813rem;
+  color: var(--muted);
+
+  &--good { color: var(--good-ink); }
+  &--bad { color: var(--bad); }
+}

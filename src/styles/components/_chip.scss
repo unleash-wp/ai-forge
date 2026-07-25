@@ -1,0 +1,23 @@
+// Small status chip on a plugin row (Core / Inactive / Update available).
+.chip {
+  font: 600 0.625rem/1 var(--font);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  flex: none;
+  color: var(--primary);
+  background: var(--ghost-hover);
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+
+  &--off { color: var(--muted); background: var(--tagbg); }
+}
+
+// The "update available" chip is a link variant (navy fill) when rendered as <a>.
+a.chip--up {
+  text-transform: none;
+  letter-spacing: 0;
+  color: #fff;
+  background: var(--navy);
+
+  &:hover { color: #fff; background: var(--slate-2); }
+}

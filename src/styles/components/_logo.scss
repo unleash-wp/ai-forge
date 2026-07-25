@@ -1,0 +1,25 @@
+// Shared UnleashWP wordmark. Used in the header and the installer overlay.
+@use '../tools/mixins' as *;
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  transition: opacity .15s;
+
+  &:hover { opacity: .78; }
+
+  svg {
+    height: 1.75rem;
+    width: auto;
+    display: block;
+
+    @include mq('sm') { height: 1.25rem; }
+  }
+}
+
+// The full-colour mark is navy + yellow; invert it to stay legible on the dark
+// header/overlay surface.
+@media (prefers-color-scheme: dark) {
+  .logo svg { filter: brightness(0) invert(1); }
+}

@@ -1,0 +1,92 @@
+// Custom accessible dropdown/combobox (native <select> can't be styled
+// cross-browser). --block stretches it; --open/--disabled are interaction state.
+.select {
+  position: relative;
+  display: inline-block;
+  min-width: 10rem;
+
+  &--block { display: block; width: 100%; min-width: 0; }
+
+  &--open {
+    .select__button { border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    .select__caret { transform: rotate(180deg); }
+  }
+
+  &--disabled .select__button { opacity: .55; cursor: default; }
+
+  &__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s2);
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: 0.4375rem;
+    background: var(--surface);
+    color: var(--text);
+    font: 400 1rem/1.2 var(--font);
+    cursor: pointer;
+    transition: border-color .12s, box-shadow .12s;
+
+    > span { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    &:hover { border-color: var(--primary); }
+  }
+
+  &__caret { color: var(--muted); flex: none; transition: transform .14s ease; }
+
+  &__menu {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 0.375rem);
+    left: 0;
+    min-width: 100%;
+    max-width: 24rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-lg);
+    padding: 0.3125rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    max-height: 18rem;
+    overflow-y: auto;
+
+    > * { flex: none; }
+  }
+
+  &__option {
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: 400 0.875rem/1.3 var(--font);
+    color: var(--text);
+    padding: 0.5rem 0.625rem;
+    border-radius: 0.375rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &:hover, &--active { background: var(--sunk); }
+    &--selected { color: var(--primary); font-weight: 600; }
+  }
+
+  &__search {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    margin: 0 0 0.25rem;
+    padding: 0.4375rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--sunk);
+    color: var(--text);
+    font: 400 0.8125rem/1 var(--font);
+
+    &:focus { outline: none; border-color: var(--primary); background: var(--surface); }
+  }
+
+  &__note { padding: 0.5rem 0.625rem; font-size: 0.75rem; color: var(--muted); }
+}

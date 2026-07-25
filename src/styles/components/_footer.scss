@@ -1,0 +1,36 @@
+// Site footer: attribution + independence note + contribute link.
+.footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.6875rem;
+  line-height: 1.6;
+  margin-top: var(--s8);
+
+  &__inner {
+    max-width: 70rem;
+    margin: 0 auto;
+    padding: var(--s5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s5);
+  }
+
+  &__left { display: flex; flex-direction: column; gap: 0.125rem; }
+  &__note { opacity: .8; }
+
+  a {
+    color: var(--muted);
+    font-weight: 600;
+
+    &:hover { color: var(--navy); }
+  }
+
+  &__icon {
+    flex: none;
+    display: inline-flex;
+    color: var(--muted);
+
+    &:hover { color: var(--navy); }
+  }
+}
