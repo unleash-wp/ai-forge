@@ -122,6 +122,57 @@ export const routes = [
   { method: 'GET', path: '/api/devnotes', handler: devNotesHandler },
 ];
 
+// MCP tools: exposed over `uwp mcp` so Claude Code / Codex can pull changelog
+// data live. stdout is reserved for JSON-RPC, so notes go to stderr.
+const mcpWarn = (m) => process.stderr.write(m + '\n');
+
+export const mcpTools = [
+  {
+    name: 'get_changelog',
+    description: 'Release-post changelog for WordPress Core + Gutenberg over a date window.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        since: { type: 'string', description: 'Start date (YYYY-MM-DD)' },
+        until: { type: 'string', description: 'End date (YYYY-MM-DD)' },
+        milestone: { type: 'string', description: 'Release milestone x.y (optional; defaults the Gutenberg branch to wp/<x.y>)' },
+        format: { type: 'string', enum: ['markdown', 'post', 'json'], description: 'Output format (default: markdown)' },
+      },
+      required: ['since', 'until'],
+    },
+    run: (a) => changelogOutput({
+      since: a.since,
+      until: a.until,
+      milestone: a.milestone ?? null,
+      json: a.format === 'json',
+      post: a.format === 'post',
+    }, { warn: mcpWarn }),
+  },
+  {
+    name: 'list_branches',
+    description: 'List the available branches for a repo (gutenberg or core).',
+    inputSchema: { type: 'object', properties: { repo: { type: 'string', enum: ['gutenberg', 'core'], description: 'Which repo (default: gutenberg)' } } },
+    run: async (a) => {
+      const repo = a.repo === 'core' ? 'WordPress/wordpress-develop' : 'WordPress/gutenberg';
+      return (await branches(repo)).join('\n');
+    },
+  },
+  {
+    name: 'list_milestones',
+    description: 'List release milestones, derived from the Gutenberg wp/x.y branches.',
+    inputSchema: { type: 'object', properties: {} },
+    run: async () => {
+      const versions = [];
+      for (const b of await branches('WordPress/gutenberg')) {
+        if (b.indexOf('wp/') !== 0) continue;
+        const v = b.slice(3);
+        if (/^[0-9]+\.[0-9]+$/.test(v) && !versions.includes(v)) versions.push(v);
+      }
+      return versions.join('\n');
+    },
+  },
+];
+
 // Terminal command: `uwp changelog --since … --until … [--milestone x.y]
 // [--gb-branch ref] [--core-branch ref] [--no-labels] [--no-dev-notes] [--deep]
 // [--post|--json]`. Accepts `uwp changelog <since> <until>` positionally too.

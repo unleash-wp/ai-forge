@@ -94,6 +94,17 @@ npm install          # builds the UI bundle (dist/)
 uwp serve            # -> http://localhost:4321
 ```
 
+### Claude Code & Codex (MCP)
+
+`uwp mcp` runs Forge as an MCP server over stdio, so an AI coding agent can pull
+release data live and keep working with it. It exposes `get_changelog`,
+`list_milestones` and `list_branches` (plus any tool a plugin adds).
+
+```bash
+claude mcp add uwp -- uwp mcp        # Claude Code
+# Codex: add an MCP server with command "uwp", args ["mcp"]
+```
+
 Pick the **since/until** dates, milestone and branches, hit **Generate**, and
 get: a big count of issues addressed, the summary stat cards, a **Sources** block
 with the exact Trac-query and Gutenberg-commits links (the parameter links to drop

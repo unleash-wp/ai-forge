@@ -27,3 +27,20 @@ export const commands = [
     },
   },
 ];
+
+// MCP tools: export `mcpTools` and `uwp mcp` serves them over stdio, so Claude
+// Code / Codex can call your tool live. Each has a JSON-Schema `inputSchema`;
+// `run(args)` returns a string (or any value, JSON-stringified). Delete if your
+// tool has nothing for the agents to query.
+export const mcpTools = [
+  {
+    name: 'my_tool_echo',
+    description: 'Echo back the given text.',
+    inputSchema: {
+      type: 'object',
+      properties: { text: { type: 'string', description: 'Text to echo' } },
+      required: ['text'],
+    },
+    run: async (args) => `you said: ${args.text}`,
+  },
+];

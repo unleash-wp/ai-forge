@@ -46,7 +46,7 @@
   "Delete everything": "Alles löschen",
   "Cancel": "Abbrechen",
 
-  "Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex just copy a command to run Forge.": "Tools holen ihre Daten von diesen Anbietern. GitHub und WordPress.org werden für jedes Tool benötigt. Claude Code und Codex kopieren nur einen Befehl, um Forge zu starten.",
+  "Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex register Forge as an MCP server to query it live.": "Tools holen ihre Daten von diesen Anbietern. GitHub und WordPress.org werden für jedes Tool benötigt. Claude Code und Codex registrieren Forge als MCP-Server, um es live abzufragen.",
   "Required": "Erforderlich",
   "Connected": "Verbunden",
   "Not connected": "Nicht verbunden",
@@ -66,6 +66,8 @@
   "Cookie saved (environment variable).": "Cookie gespeichert (Umgebungsvariable).",
   "Import from %s": "Aus %s importieren",
   "Run UnleashWP Forge from %s.": "UnleashWP Forge aus %s starten.",
+  "Register Forge as an MCP server in %s.": "Forge als MCP-Server in %s registrieren.",
+  "Add Forge as an MCP server (command uwp, args mcp) in %s.": "Forge als MCP-Server hinzufügen (Befehl uwp, Args mcp) in %s.",
   "Copy command": "Befehl kopieren",
   "Copy": "Kopieren",
   "Copied": "Kopiert",
