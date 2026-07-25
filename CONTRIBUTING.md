@@ -168,6 +168,37 @@ Only the browser bundle depends on Chakra/Emotion (they're `devDependencies`,
 bundled into `dist/main.js`). The core CLI stays zero-dependency vanilla Node and
 never imports any of this.
 
+## Translations
+
+The UI is translatable the WordPress way: every `languages/<code>.json` is loaded
+automatically, so **adding a language is one JSON file, no code change**. The key
+is the English source string, the value is the translation:
+
+```json
+{ "No changelog yet": "Noch kein Changelog", "Generate": "Generieren" }
+```
+
+Copy `languages/de.json` to `languages/fr.json`, translate the values, and French
+shows up in Settings → General → Language (add its display name + flag to
+`LOCALE_NAMES` / `LOCALE_FLAGS` in `src/client/i18n.jsx`). Missing keys fall back
+to English. In components, wrap strings with `const t = useT();` → `{t('Generate')}`;
+outside React use `__('Generate')`. Wrapping more strings only helps translators.
+
+## Hooks & filters
+
+Tools extend the shell without editing it, WordPress-style. `src/client/hooks.js`
+exports `addAction`/`doAction` and `addFilter`/`applyFilters` (priority-ordered),
+also on `window.forge.hooks` and the `core` context.
+
+```js
+import { addFilter, addAction } from '../../src/client/hooks.js';
+addFilter('forge.plugins', (list) => [...list, myTool]);   // add/hide/reorder rail tools
+addAction('forge.tool.open', (id) => { /* react when a tool opens */ });
+```
+
+Fire your own points from a tool with `doAction('mytool.thing', data)` /
+`applyFilters('mytool.value', value)` so other plugins can hook in.
+
 ## Quality gate
 
 CI runs on every push and PR: build the bundle, `node --check` the modules, and
