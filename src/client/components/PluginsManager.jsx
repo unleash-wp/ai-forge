@@ -86,7 +86,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const shown = plugins
     .filter((p) => (filter === 'inactive' ? p.enabled === false : true))
     .filter((p) => (t(p.name) + ' ' + t(p.description || '')).toLowerCase().includes(iq.trim().toLowerCase()));
-  const selectableIds = shown.filter((p) => p.id !== 'changelog').map((p) => p.id);
+  const selectableIds = plugins.length > 1 ? shown.map((p) => p.id) : [];
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
 
   function toggleOne(id) {
@@ -144,17 +144,21 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
         {shown.map((p) => {
           const up = upFor(p.id);
           const active = p.enabled !== false;
-          const core = p.id === 'changelog';
+          // No tool is "core" — every one is a normal plugin. Lock actions only to
+          // avoid an empty app: can't remove the only tool, can't deactivate the
+          // only active one.
+          const soleInstalled = plugins.length <= 1;
+          const soleActive = active && (plugins.length - inactiveCount) <= 1;
           return (
             <Flex key={p.id} align="center" gap="4" px="5" py="4" transition="background .14s ease" opacity={active ? 1 : 0.6} borderTopWidth="1px" borderColor="ui.border" _first={{ borderTopWidth: '0' }} _hover={{ bg: 'ui.sunk' }} flexWrap={{ base: 'wrap', md: 'nowrap' }}>
-              {selectableIds.length > 0 && (core
+              {selectableIds.length > 0 && (soleInstalled
                 ? <Box w="1.25rem" flex="none" aria-hidden="true" />
                 : <Checkbox checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={t('Select %s', p.name)} />)}
               <Flex display="grid" placeItems="center" w="2.5rem" h="2.5rem" flex="none" borderRadius="forge" color="white" bg={active ? 'navy' : 'ui.muted'} css={{ '& svg': { width: '1.25rem', height: '1.25rem' } }}><ToolIcon name={p.icon} size={20} /></Flex>
               <Box flex="1" minW="0">
                 <HStack gap="2">
                   <chakra.h3 m="0" fontSize="0.9375rem" fontWeight="600" color="ui.heading" letterSpacing="-.01em">{t(p.name)}</chakra.h3>
-                  {core && <Badge colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem">{t('Core')}</Badge>}
+                  {soleInstalled && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">{t('Only tool')}</Badge>}
                   {!active && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">{t('Inactive')}</Badge>}
                   {up && <Badge bg="navy" color="white" fontSize="0.625rem">{t('Update available')}</Badge>}
                 </HStack>
@@ -162,10 +166,10 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
                 <Text mt="1.5" fontSize="0.6875rem" color="ui.muted">{t('Version %s', p.version)} · {t('By %s', p.author || t('unknown'))} · {p.price === 'free' ? t('Free') : p.price}</Text>
               </Box>
               <Flex gap="2" flex="none" align="center" w={{ base: 'full', md: 'auto' }} pl={{ base: 'calc(2.75rem + 1rem)', md: '0' }}>
-                {up && !core && <Button variant="primary" size="sm" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>{t('Update to %s', up.latest)}</Button>}
+                {up && <Button variant="primary" size="sm" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>{t('Update to %s', up.latest)}</Button>}
                 {active && <Button variant="ghost" size="sm" onClick={() => onOpen(p.id)}>{t('Open')}</Button>}
-                {!core && <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? t('Deactivate') : t('Activate')}</Button>}
-                {!core && <Button variant="ghost" size="sm" danger disabled={!!busy} onClick={() => remove(p.id, p.name)}>{t('Remove')}</Button>}
+                {(!active || !soleActive) && <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? t('Deactivate') : t('Activate')}</Button>}
+                {!soleInstalled && <Button variant="ghost" size="sm" danger disabled={!!busy} onClick={() => remove(p.id, p.name)}>{t('Remove')}</Button>}
               </Flex>
             </Flex>
           );
