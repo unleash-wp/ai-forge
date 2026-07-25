@@ -25,26 +25,32 @@ CI/Codex.**
 
 ## Quick start for release coordinators
 
-Clone the repo, then pick one path. The CLI runs on plain Node with no build;
-the browser UI (`serve`) is a webpack/React bundle built by `npm install`.
+**In a terminal** (the `ai-forge` command, with `uwp` as a short alias):
 
-**With Claude Code or Codex** - open the repo and just ask:
+```bash
+npm install -g @unleashwp/forge
+ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+```
+
+That prints a ready-to-edit release-post template. Run `ai-forge serve` for a
+click-driven browser UI, or `ai-forge -h` for every command.
+
+**From Claude Code or Codex** - register Forge once as an MCP server, then ask in
+plain language:
+
+```bash
+claude mcp add forge -- npx -y @unleashwp/forge@latest mcp
+```
 
 > "Give me the WordPress 7.1 release changelog for July 15–22, as a post."
 
-The agent reads this repo's own instructions (`CLAUDE.md` / `AGENTS.md`), runs
-the tool, and drafts the post grounded in the real PRs and tickets.
+The agent calls Forge's tools (`get_changelog`, `list_milestones`, …) and drafts
+the post grounded in the real PRs and tickets.
 
-**In a terminal:**
-
-```bash
-git clone https://github.com/unleash-wp/wp-release-helper
-cd wp-release-helper
-node bin/wp-release-helper.mjs --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
-```
-
-That prints a ready-to-edit release-post template. Add `serve` instead for a
-click-driven browser UI, or `npm link` once to get the short `uwp` command.
+**In Claude Desktop** - install the one-click bundle: run `npm run mcpb:pack` to
+build `unleashwp-ai-forge.mcpb`, then open it from Settings → Extensions. It
+prompts for an optional GitHub token + wordpress.org cookie and needs no local
+Node.
 
 ## Why these sources
 
@@ -66,20 +72,26 @@ under **Uncategorized**.
 ## Install
 
 ```bash
-git clone https://github.com/unleash-wp/wp-release-helper
-cd wp-release-helper
-npm install -g .   # installs the `uwp` command globally (or `npm link` for dev)
-gh auth login      # optional but recommended: raises GitHub API limit to 5000/h
+npm install -g @unleashwp/forge   # the `ai-forge` command (alias: `uwp`)
+gh auth login                     # optional: raises the GitHub API limit to 5000/h
 ```
 
-Now `uwp` is on your PATH — no `node …` needed. The core CLI is dependency-free
-(plain Node ≥18, uses the global `fetch`); the browser UI (`uwp serve`) is a
-webpack/React bundle built once by `npm install`.
+`ai-forge` is now on your PATH — no `node …` needed. The core CLI is
+dependency-free (plain Node ≥18, uses the global `fetch`); the browser UI
+(`ai-forge serve`) is a webpack/React bundle that ships pre-built in the package.
+
+**For development**, clone the repo instead and build the UI once:
+
+```bash
+git clone https://github.com/unleash-wp/wp-release-helper
+cd wp-release-helper && npm install   # builds dist/ via the prepare script
+node bin/wp-release-helper.mjs -h
+```
 
 ## Usage
 
 ```bash
-uwp --since 2026-07-15 --until 2026-07-22 --milestone 7.1
+ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1
 ```
 
 ### Browser UI

@@ -126,9 +126,8 @@ export const commands = [
 ];
 ```
 
-The core Changelog tool does this: `uwp changelog --since <date> --until <date>
-[--milestone x.y] [--post|--json]` (the bare `uwp --since …` form is a
-back-compat alias for it).
+The core Changelog tool does this: `ai-forge changelog --since <date> --until
+<date> [--milestone x.y] [--post|--json]` (alias `uwp changelog …`).
 
 **MCP tools.** Export `mcpTools` and `uwp mcp` serves them over stdio (the MCP
 transport), so Claude Code and Codex register Forge once and call your tool
