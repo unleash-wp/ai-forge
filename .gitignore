@@ -4,3 +4,8 @@ dist/
 .DS_Store
 .claude/settings.local.json
 .impeccable/
+
+# Chakra UI agent skills (installed via `npx skills add`)
+.agents/
+skills-lock.json
+.claude/skills/chakra-ui-*
