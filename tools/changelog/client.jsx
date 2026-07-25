@@ -37,11 +37,11 @@ function Ic({ html }) { return <chakra.span display="contents" dangerouslySetInn
 
 function pad(n) { return (n < 10 ? '0' : '') + n; }
 function isoD(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-function fmtDay(isoStr) { const p = isoStr.split('-'); return MON[(+p[1]) - 1] + ' ' + (+p[2]); }
+function fmtDay(isoStr) { const p = isoStr.split('-'); return __(MON[(+p[1]) - 1]) + ' ' + (+p[2]); }
 function fmtRange(a, b) {
   const ya = a.split('-')[0], yb = b.split('-')[0];
-  return ya === yb ? fmtDay(a) + ' to ' + fmtDay(b) + ', ' + ya
-                   : fmtDay(a) + ', ' + ya + ' to ' + fmtDay(b) + ', ' + yb;
+  return ya === yb ? fmtDay(a) + __(' to ') + fmtDay(b) + ', ' + ya
+                   : fmtDay(a) + ', ' + ya + __(' to ') + fmtDay(b) + ', ' + yb;
 }
 
 function uniq(arr) { const seen = {}, out = []; arr.forEach((x) => { if (!seen[x]) { seen[x] = 1; out.push(x); } }); return out; }
@@ -214,26 +214,26 @@ function DateRangePicker({ since, until, onChange }) {
         display="inline-flex" alignItems="center" justifyContent="space-between" gap="2" minW="14rem" px="3.5" py="2.5" textAlign="left"
         bg="ui.surface" color="ui.text" borderWidth="1px" borderColor={open ? 'ui.primary' : 'ui.border'} borderRadius="0.4375rem" cursor="pointer"
         fontSize="1rem" _hover={{ borderColor: 'ui.primary' }}>
-        <chakra.span>{since && until ? fmtRange(since, until) : 'Pick dates'}</chakra.span>
+        <chakra.span>{since && until ? fmtRange(since, until) : __('Pick dates')}</chakra.span>
         <CalendarIcon size={16} className="cal-trigger-icon" />
       </chakra.button>
       {open && (
         <Box onClick={(ev) => ev.stopPropagation()} position="absolute" top="calc(100% + 0.5rem)" left="0" zIndex="30" w="18.75rem"
           bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="lg" p="3" css={calCss}>
           <Flex flexWrap="wrap" gap="1.5" mb="2.5">
-            {[['7 days', 7], ['14 days', 14], ['30 days', 30]].map((p) => (
-              <chakra.button key={p[1]} type="button" onClick={() => preset(p[1])} font="500 0.75rem/1 var(--chakra-fonts-body)"
+            {[7, 14, 30].map((p) => (
+              <chakra.button key={p} type="button" onClick={() => preset(p)} font="500 0.75rem/1 var(--chakra-fonts-body)"
                 bg="ui.sunk" borderWidth="1px" borderColor="ui.border" color="ui.text" borderRadius="sm" px="3" py="1.5" cursor="pointer"
-                _hover={{ borderColor: 'navy', color: 'navy' }}>{p[0]}</chakra.button>
+                _hover={{ borderColor: 'navy', color: 'navy' }}>{__('%s days', p)}</chakra.button>
             ))}
           </Flex>
           <Flex align="center" justify="space-between" mb="2">
-            <chakra.button type="button" aria-label="Previous month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} css={navBtn}><ArrowLeft size={18} /></chakra.button>
-            <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{MON[view.getMonth()] + ' ' + view.getFullYear()}</Text>
-            <chakra.button type="button" aria-label="Next month" disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} css={navBtn}><ArrowRight size={18} /></chakra.button>
+            <chakra.button type="button" aria-label={__('Previous month')} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} css={navBtn}><ArrowLeft size={18} /></chakra.button>
+            <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{__(MON[view.getMonth()]) + ' ' + view.getFullYear()}</Text>
+            <chakra.button type="button" aria-label={__('Next month')} disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} css={navBtn}><ArrowRight size={18} /></chakra.button>
           </Flex>
           <Grid templateColumns="repeat(7, minmax(0, 1fr))" gap="0.5" mb="1">
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => <Text key={d} textAlign="center" fontSize="0.6875rem" fontWeight="600" color="ui.muted" py="1">{d}</Text>)}
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => <Text key={d} textAlign="center" fontSize="0.6875rem" fontWeight="600" color="ui.muted" py="1">{__(d)}</Text>)}
           </Grid>
           <Grid templateColumns="repeat(7, minmax(0, 1fr))" autoRows="2.25rem" gap="0.5"
             onMouseLeave={() => { if (pendStart && hoverDay !== pendStart) setHoverDay(pendStart); }}>{cells}</Grid>
@@ -260,7 +260,7 @@ function SrcRow({ url, text, onCopy }) {
   return (
     <Flex align="center" gap="3" py="3" borderTop="1px solid" borderColor="ui.border" _first={{ borderTop: '0' }}>
       <Link href={url} target="_blank" rel="noopener" flex="1" wordBreak="break-word" fontSize="0.875rem" fontWeight="600" color="ui.primary" dangerouslySetInnerHTML={{ __html: text }} />
-      <UButton variant="ghost" size="sm" onClick={onCopy}><Ic html={IC.link} />Copy link</UButton>
+      <UButton variant="ghost" size="sm" onClick={onCopy}><Ic html={IC.link} />{__('Copy link')}</UButton>
     </Flex>
   );
 }
@@ -292,12 +292,12 @@ function Results({ data, since, until }) {
   function downloadMd() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([data.markdown], { type: 'text/markdown' }));
-    a.download = 'changelog.md'; a.click(); core.toast('Downloaded changelog.md');
+    a.download = 'changelog.md'; a.click(); core.toast(__('Downloaded changelog.md'));
   }
-  function copyCsv() { copy(all.map(withAt).join('\n'), 'CSV copied'); }
+  function copyCsv() { copy(all.map(withAt).join('\n'), __('CSV copied')); }
   function copyPhp() {
     const arr = all.map((n) => "\t'" + withAt(n).replace(/'/g, "\\'") + "',");
-    copy('array(\n' + arr.join('\n') + '\n)', 'PHP array copied');
+    copy('array(\n' + arr.join('\n') + '\n)', __('PHP array copied'));
   }
   const bigNum = { position: 'relative', fontWeight: '700', color: 'ui.heading', lineHeight: '1', letterSpacing: '-.03em', pb: '1.5', fontVariantNumeric: 'tabular-nums' };
   const underline = { content: '""', position: 'absolute', left: 0, bottom: 0, width: '100%', height: '0.375rem', bg: 'yellow', borderRadius: 'full' };
@@ -307,27 +307,27 @@ function Results({ data, since, until }) {
       <Flex align="baseline" gap="4" mb="8" flexWrap="wrap">
         <chakra.b {...bigNum} fontSize="clamp(2.5rem, 1.9rem + 2.6vw, 3.5rem)" css={{ '&::after': underline }}>{dn ? issues : changes}</chakra.b>
         <Text color="ui.muted" fontSize="0.9375rem">{dn
-          ? 'dev notes / field guide tickets, ' + fmtRange(since, until)
-          : <Hint tip={t.gutenbergCommits + ' Gutenberg changes + ' + t.coreChangesets + ' Core changesets'} underline={false}>{'changes landed across Core and Gutenberg, ' + fmtRange(since, until)}</Hint>}</Text>
+          ? __('dev notes / field guide tickets, %s', fmtRange(since, until))
+          : <Hint tip={__('%s Gutenberg changes + %s Core changesets', t.gutenbergCommits, t.coreChangesets)} underline={false}>{__('changes landed across Core and Gutenberg, %s', fmtRange(since, until))}</Hint>}</Text>
       </Flex>
       <SimpleGrid columns={{ base: 2, md: 4 }} gap="3" mb="8">
-        {!dn && <StatCard n={t.gutenbergCommits} label="Gutenberg changes" counted />}
-        <StatCard n={t.coreChangesets} label={dn ? 'Dev-note changesets' : 'Core changesets'} counted={!dn} />
-        <StatCard n={coreTicketsShown} label={dn ? 'Dev-note tickets' : 'Core tickets'} counted={dn} />
-        <StatCard n={all.length} label="Contributors" />
+        {!dn && <StatCard n={t.gutenbergCommits} label={__('Gutenberg changes')} counted />}
+        <StatCard n={t.coreChangesets} label={dn ? __('Dev-note changesets') : __('Core changesets')} counted={!dn} />
+        <StatCard n={coreTicketsShown} label={dn ? __('Dev-note tickets') : __('Core tickets')} counted={dn} />
+        <StatCard n={all.length} label={__('Contributors')} />
       </SimpleGrid>
 
       {meta.deepError && (
-        <Box bg="rgba(252,190,0,.12)" border="1px solid" borderColor="rgba(252,190,0,.45)" color="ui.text" borderRadius="forge" px="3.5" py="2.5" fontSize="0.875rem" mb="6">MCP enrichment skipped ({esc(meta.deepError)}). Descriptions still show, sourced from the GitHub commit bodies.</Box>
+        <Box bg="rgba(252,190,0,.12)" border="1px solid" borderColor="rgba(252,190,0,.45)" color="ui.text" borderRadius="forge" px="3.5" py="2.5" fontSize="0.875rem" mb="6">{__('MCP enrichment skipped (%s). Descriptions still show, sourced from the GitHub commit bodies.', esc(meta.deepError))}</Box>
       )}
 
       <Tabs.Root value={tab} onValueChange={(e) => setTab(e.value)} variant="line" colorPalette="brand">
         <Tabs.List borderBottom="1px solid" borderColor="ui.border">
-          <Tabs.Trigger value="changelog" fontWeight="600">Changelog<Badge ml="2" variant="subtle" colorPalette="brand">{changes}</Badge></Tabs.Trigger>
-          <Tabs.Trigger value="props" fontWeight="600">Props<Badge ml="2" variant="subtle" colorPalette="brand">{all.length}</Badge></Tabs.Trigger>
-          <Tabs.Trigger value="devnotes" fontWeight="600">Dev Notes{devNotes ? <Badge ml="2" variant="subtle" colorPalette="brand">{devNotes.length}</Badge> : null}</Tabs.Trigger>
+          <Tabs.Trigger value="changelog" fontWeight="600">{__('Changelog')}<Badge ml="2" variant="subtle" colorPalette="brand">{changes}</Badge></Tabs.Trigger>
+          <Tabs.Trigger value="props" fontWeight="600">{__('Props')}<Badge ml="2" variant="subtle" colorPalette="brand">{all.length}</Badge></Tabs.Trigger>
+          <Tabs.Trigger value="devnotes" fontWeight="600">{__('Dev Notes')}{devNotes ? <Badge ml="2" variant="subtle" colorPalette="brand">{devNotes.length}</Badge> : null}</Tabs.Trigger>
           <HStack ml="auto" gap="2" pb="2">
-            <UButton variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</UButton>
+            <UButton variant="ghost" size="sm" onClick={() => copy(data.markdown, __('Markdown copied'))}><Ic html={IC.md} />{__('Copy Markdown')}</UButton>
             <UButton variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />{__('Download')}</UButton>
           </HStack>
         </Tabs.List>
@@ -335,14 +335,14 @@ function Results({ data, since, until }) {
         <Tabs.Content value="changelog">
           {data.sources && (
             <Box as="section" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="md" px="6" py="5" mb="6">
-              <Heading as="h2" fontSize="1.25rem" fontWeight="700" color="ui.heading" mb="3" letterSpacing="-.01em">Sources <chakra.em fontStyle="normal" fontWeight="500" color="ui.muted" fontSize="0.8125rem">link these in the post so anyone can verify</chakra.em></Heading>
-              <SrcRow url={s.trac} text={'Closed Core Trac tickets' + (s.milestone ? ' (milestone ' + esc(s.milestone) + ')' : '') + ', ' + esc(s.since) + ' to ' + esc(s.until)} onCopy={() => copy(s.trac, 'Link copied')} />
-              <SrcRow url={s.gutenberg} text={'Gutenberg commits on ' + esc(s.gbBranch) + ', ' + esc(s.since) + ' to ' + esc(s.until)} onCopy={() => copy(s.gutenberg, 'Link copied')} />
+              <Heading as="h2" fontSize="1.25rem" fontWeight="700" color="ui.heading" mb="3" letterSpacing="-.01em">{__('Sources')} <chakra.em fontStyle="normal" fontWeight="500" color="ui.muted" fontSize="0.8125rem">{__('link these in the post so anyone can verify')}</chakra.em></Heading>
+              <SrcRow url={s.trac} text={__('Closed Core Trac tickets') + (s.milestone ? __(' (milestone %s)', esc(s.milestone)) : '') + ', ' + __('%s to %s', esc(s.since), esc(s.until))} onCopy={() => copy(s.trac, __('Link copied'))} />
+              <SrcRow url={s.gutenberg} text={__('Gutenberg commits on %s', esc(s.gbBranch)) + ', ' + __('%s to %s', esc(s.since), esc(s.until))} onCopy={() => copy(s.gutenberg, __('Link copied'))} />
             </Box>
           )}
           <Box css={changelogCss} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
           <chakra.details mt="4">
-            <chakra.summary cursor="pointer" color="ui.muted" fontSize="0.8125rem" fontWeight="500">Raw Markdown</chakra.summary>
+            <chakra.summary cursor="pointer" color="ui.muted" fontSize="0.8125rem" fontWeight="500">{__('Raw Markdown')}</chakra.summary>
             <chakra.pre mt="3" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="forge" p="4" overflowX="auto" fontSize="0.75rem" lineHeight="1.55">{data.markdown}</chakra.pre>
           </chakra.details>
         </Tabs.Content>
@@ -351,25 +351,25 @@ function Results({ data, since, until }) {
           <Flex align="flex-end" justify="space-between" gap="4" flexWrap="wrap" mb="6">
             <Flex align="baseline" gap="3" flexWrap="wrap">
               <chakra.b {...bigNum} fontSize="clamp(1.9rem, 1.55rem + 1.4vw, 2.5rem)" css={{ '&::after': underline }}>{all.length}</chakra.b>
-              <Text fontSize="0.875rem" color="ui.muted">contributors with props this window</Text>
+              <Text fontSize="0.875rem" color="ui.muted">{__('contributors with props this window')}</Text>
             </Flex>
             <Flex align="center" gap="3" flexWrap="wrap">
               <CChk.Root checked={propsAt} colorPalette="brand" onCheckedChange={(d) => setPropsAt(d.checked === true)}>
                 <CChk.HiddenInput /><CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem">{__('Add @ before names')}</CChk.Label>
               </CChk.Root>
-              <UButton variant="ghost" size="sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</UButton>
-              <UButton variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />CSV</UButton>
-              <UButton variant="ghost" size="sm" onClick={copyPhp}><Ic html={IC.md} />PHP array</UButton>
+              <UButton variant="ghost" size="sm" onClick={() => copy(propsLine, __('Props copied'))}><Ic html={IC.clip} />{__('Copy props line')}</UButton>
+              <UButton variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />{__('CSV')}</UButton>
+              <UButton variant="ghost" size="sm" onClick={copyPhp}><Ic html={IC.md} />{__('PHP array')}</UButton>
             </Flex>
           </Flex>
           <Text m="0" fontSize="0.9688rem" lineHeight="1.85" color="ui.text">{propsLine}</Text>
-          {propsAt && <Text mt="3" color="ui.muted" fontSize="0.8125rem">Slack handles usually match the wp.org username, but not always. Double-check before pinging.</Text>}
+          {propsAt && <Text mt="3" color="ui.muted" fontSize="0.8125rem">{__('Slack handles usually match the wp.org username, but not always. Double-check before pinging.')}</Text>}
         </Tabs.Content>
 
         <Tabs.Content value="devnotes">
-          <Text color="ui.muted" fontSize="0.8125rem">Published dev notes for {meta.milestone ? <b>{meta.milestone}</b> : 'this milestone'}, from <Link href={'https://make.wordpress.org/core/tag/dev-notes-' + String(meta.milestone || '').replace(/\./g, '-') + '/'} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">make.wordpress.org/core</Link> (the tagged Field Guide source).</Text>
-          {devNotes === null ? <Text mt="2" color="ui.muted" fontSize="0.8125rem">Loading dev notes…</Text>
-            : devNotes.length === 0 ? <Box textAlign="center" py="12"><Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">No dev notes yet</Heading><Text color="ui.muted" fontSize="0.9688rem">make.wordpress.org has no dev-notes-{String(meta.milestone || '').replace(/\./g, '-')} posts yet. They land as the release nears.</Text></Box>
+          <Text color="ui.muted" fontSize="0.8125rem">{__('Published dev notes for')} {meta.milestone ? <b>{meta.milestone}</b> : __('this milestone')}, {__('from')} <Link href={'https://make.wordpress.org/core/tag/dev-notes-' + String(meta.milestone || '').replace(/\./g, '-') + '/'} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">make.wordpress.org/core</Link> {__('(the tagged Field Guide source).')}</Text>
+          {devNotes === null ? <Text mt="2" color="ui.muted" fontSize="0.8125rem">{__('Loading dev notes…')}</Text>
+            : devNotes.length === 0 ? <Box textAlign="center" py="12"><Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">{__('No dev notes yet')}</Heading><Text color="ui.muted" fontSize="0.9688rem">{__('make.wordpress.org has no dev-notes-%s posts yet. They land as the release nears.', String(meta.milestone || '').replace(/\./g, '-'))}</Text></Box>
             : <Stack as="ul" listStyleType="none" gap="0" mt="3">{devNotes.map((n, i) => (
                 <chakra.li key={i} py="4" borderTop={i ? '1px solid' : '0'} borderColor="ui.border">
                   <Link href={n.url} target="_blank" rel="noopener" fontWeight="600" fontSize="0.9375rem" color="ui.heading" _hover={{ color: 'ui.accent' }}>{n.title}</Link>
@@ -457,9 +457,9 @@ export default function ChangelogTool() {
 
   function submit(e) {
     e.preventDefault();
-    if (!since || !until) { setStatus('Pick a date range first.'); return; }
+    if (!since || !until) { setStatus(__('Pick a date range first.')); return; }
     setBusy(true); setData(null);
-    setStatus('__spin__ Fetching commits, labels and dev-notes…');
+    setStatus('__spin__ ' + __('Fetching commits, labels and dev-notes…'));
     const p = new URLSearchParams({
       since, until, milestone: milestone.trim(), gbBranch: gbBranch.trim(), coreBranch: coreBranch.trim(),
       labels, devNotes, devNotesOnly: devOnly, deep: full,
@@ -468,9 +468,9 @@ export default function ChangelogTool() {
       .then((d) => { setData(d); setStatus(''); })
       .catch((err) => {
         const m = err.message || 'request failed';
-        if (/rate limit|\b403\b/i.test(m)) { setStatus('GitHub rate limit reached. That is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.'); core.openSetup(); }
-        else if (/cookie/i.test(m)) { setStatus('Error: ' + m); core.openSetup(); }
-        else setStatus('Error: ' + m);
+        if (/rate limit|\b403\b/i.test(m)) { setStatus(__('GitHub rate limit reached. That is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.')); core.openSetup(); }
+        else if (/cookie/i.test(m)) { setStatus(__('Error: %s', m)); core.openSetup(); }
+        else setStatus(__('Error: %s', m));
       })
       .finally(() => setBusy(false));
   }
