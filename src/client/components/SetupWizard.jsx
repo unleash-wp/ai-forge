@@ -7,7 +7,7 @@ import { fetchJSON, useCore } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL } from '../brand.js';
 import { Button, TextInput, Select } from '../ui';
-import { Box, CloseButton, Dialog, Flex, Heading, HStack, Link, Portal, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
+import { Box, CloseButton, Dialog, Flex, Heading, HStack, Link, Portal, SimpleGrid, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 
 const msgColor = (k) => (k === 'good' ? 'ui.goodInk' : k === 'bad' ? 'ui.bad' : 'ui.muted');
 const REPO_URL = 'https://github.com/unleash-wp/wp-release-helper';
@@ -27,6 +27,7 @@ const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const ICON_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const ICON_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
 // Copyable one-liner an assistant (Claude Code / Codex, running in this repo)
 // can run to drive Forge from the CLI.
@@ -76,6 +77,18 @@ const DATA = [
   { name: 'GitHub REST API', url: 'https://docs.github.com/rest' },
   { name: 'WordPress.org Trac', url: 'https://core.trac.wordpress.org' },
   { name: 'mcp-context-wporg by Automattic', url: 'https://github.com/Automattic/mcp-context-wporg' },
+];
+const WAYS = [
+  { title: 'Report a bug or idea', desc: 'Open an issue on GitHub.', url: REPO_URL + '/issues/new' },
+  { title: 'Pick a good first issue', desc: 'Small, friendly tasks to start with.', url: REPO_URL + '/labels/good%20first%20issue' },
+  { title: 'Build a tool', desc: 'Every tool is a plugin. Add your own.', url: REPO_URL + '/blob/main/CONTRIBUTING.md' },
+  { title: 'Star the repo', desc: 'Help other people find Forge.', url: REPO_URL },
+];
+const FAQ = [
+  { q: 'Do I need a GitHub account?', a: 'No. A token is optional, but it raises the API limit to 5,000 per hour.' },
+  { q: 'What is deep mode?', a: 'It adds full ticket text from WordPress.org. It needs the wordpress.org cookie connector.' },
+  { q: 'Where are my keys stored?', a: 'On your machine, in owner-only files. They are never shared.' },
+  { q: 'How do I update Forge?', a: 'Run git pull, then npm install. See the Updates tab.' },
 ];
 
 function readPref(key, fallback) {
@@ -153,9 +166,9 @@ function ConnectorIcon({ svg }) {
 // Green check when connected, red cross when not. Replaces the "Connected" text.
 function StatusCircle({ ok }) {
   return (
-    <Box flex="none" w="1.1875rem" h="1.1875rem" borderRadius="full" display="grid" placeItems="center" bg={ok ? 'ui.good' : 'ui.bad'} color="white"
+    <Box flex="none" w="0.9375rem" h="0.9375rem" borderRadius="full" display="grid" placeItems="center" bg={ok ? 'ui.good' : 'ui.bad'} color="white"
       title={ok ? 'Connected' : 'Not connected'} aria-label={ok ? 'Connected' : 'Not connected'}
-      css={{ '& svg': { width: '0.6875rem', height: '0.6875rem' } }} dangerouslySetInnerHTML={{ __html: ok ? ICON_CHECK : ICON_X }} />
+      css={{ '& svg': { width: '0.5625rem', height: '0.5625rem' } }} dangerouslySetInnerHTML={{ __html: ok ? ICON_CHECK : ICON_X }} />
   );
 }
 
@@ -209,6 +222,16 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const [updates, setUpdates] = useState([]);
   const [checking, setChecking] = useState(false);
 
+  // Contribute: live "good first issue" list from the public repo.
+  const [issues, setIssues] = useState([]);
+  useEffect(() => {
+    if (!open) return;
+    fetch('https://api.github.com/repos/unleash-wp/wp-release-helper/issues?state=open&labels=good%20first%20issue&per_page=6')
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d) => setIssues(Array.isArray(d) ? d.filter((i) => !i.pull_request).slice(0, 6) : []))
+      .catch(() => {});
+  }, [open]);
+
   const gh = status ? status.github : { set: false };
   const trac = status ? status.trac : { set: false };
   const version = (status && status.version) || '';
@@ -221,23 +244,26 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   }
   useEffect(() => { if (open) checkUpdatesNow(); }, [open]);
 
-  function pickLang(v) { setLang(v); writePref('forge:lang', v); }
-  function pickTz(v) { setTz(v); writePref('forge:tz', v); }
+  function pickLang(v) { setLang(v); writePref('forge:lang', v); core.toast('Saved', 'success'); }
+  function pickTz(v) { setTz(v); writePref('forge:tz', v); core.toast('Saved', 'success'); }
   function resetSettings() {
     try { localStorage.removeItem('forge:lang'); localStorage.removeItem('forge:tz'); } catch { /* blocked */ }
-    setLang('en'); setTz(browserTz()); core.toast('Settings cleared');
+    setLang('en'); setTz(browserTz()); core.toast('Settings cleared', 'success');
   }
 
-  function copyCmd(id) {
-    copyText(FORGE_CMD)
-      .then(() => { setCopiedId(id); core.toast('Command copied'); setTimeout(() => setCopiedId(null), 1600); })
+  function copyStr(text, id) {
+    copyText(text)
+      .then(() => { setCopiedId(id); core.toast('Copied', 'success'); setTimeout(() => setCopiedId(null), 1600); })
       .catch(() => core.toast('Copy failed'));
   }
+  function copyCmd(id) { copyStr(FORGE_CMD, id); }
 
   function testGh() {
     setGhMsg({ text: 'Checking…', kind: '' });
     return fetchJSON('/api/github-token/test', { method: 'POST' }).then(({ data }) => {
-      setGhMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' }); return refreshStatus();
+      setGhMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' });
+      if (data.ok) core.toast('GitHub connected', 'success');
+      return refreshStatus();
     });
   }
   function saveGh() {
@@ -251,7 +277,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   function connectGh() {
     setBusy('gh-cli');
     fetchJSON('/api/github-token/enable', { method: 'POST' })
-      .then(({ data }) => { if (data && data.error) core.toast(data.error); return refreshStatus(); })
+      .then(({ data }) => { if (data && data.error) core.toast(data.error); else core.toast('GitHub connected', 'success'); return refreshStatus(); })
       .finally(() => setBusy(''));
   }
   function disconnectGh() {
@@ -262,7 +288,9 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   function testCookie() {
     setCkMsg({ text: 'Checking…', kind: '' });
     return fetchJSON('/api/cookie/test', { method: 'POST' }).then(({ data }) => {
-      setCkMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' }); return refreshStatus();
+      setCkMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' });
+      if (data.ok) core.toast('WordPress.org connected', 'success');
+      return refreshStatus();
     });
   }
   function saveCookie() {
@@ -281,7 +309,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   function importCookie() {
     setBusy('wp-import'); setCkMsg({ text: '', kind: '' });
     fetchJSON('/api/cookie/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ browser }) })
-      .then(({ data }) => { setCkMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' }); return refreshStatus(); })
+      .then(({ data }) => { setCkMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' }); if (data.ok) core.toast('WordPress.org connected', 'success'); return refreshStatus(); })
       .catch(() => setCkMsg({ text: 'Import failed.', kind: 'bad' }))
       .finally(() => setBusy(''));
   }
@@ -304,6 +332,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                   <TabItem value="general" icon={ICON_SLIDERS} label="General" />
                   <TabItem value="connectors" icon={ICON_PLUG} label="Connectors" />
                   <TabItem value="updates" icon={ICON_DOWNLOAD} label="Updates" />
+                  <TabItem value="help" icon={ICON_HELP} label="Help" />
                   <TabItem value="credits" icon={ICON_INFO} label="Credits" />
                 </Tabs.List>
 
@@ -413,58 +442,131 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                         </Stack>
                       ) : (
                         <HStack gap="2" mt="4" pt="4" borderTopWidth="1px" borderColor="ui.border" color="ui.goodInk" fontSize="0.8125rem" fontWeight="600">
-                          <Box w="0.4375rem" h="0.4375rem" borderRadius="full" bg="ui.good" flex="none" />
+                          <StatusCircle ok />
                           <chakra.span>{checking ? 'Checking for updates…' : 'You have the latest version.'}</chakra.span>
                         </HStack>
                       )}
                     </Box>
                     <Text fontSize="0.75rem" color="ui.muted" mt="4" mb="1.5">Get the latest version:</Text>
-                    <chakra.pre bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto">git pull &amp;&amp; npm install</chakra.pre>
+                    <Flex align="center" gap="2">
+                      <chakra.pre flex="1" minW="0" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto">git pull &amp;&amp; npm install</chakra.pre>
+                      <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" flex="none" onClick={() => copyStr('git pull && npm install', 'git')}>{copiedId === 'git' ? 'Copied' : 'Copy'}</Button>
+                    </Flex>
                     <Link href={REPO_URL + '/releases'} target="_blank" rel="noopener" display="inline-block" mt="3" fontSize="0.75rem" color="ui.primary" fontWeight="600">All releases ↗</Link>
                   </Tabs.Content>
 
-                  <Tabs.Content value="credits" mt="0">
-                    <TabTitle>Credits</TabTitle>
+                  <Tabs.Content value="help" mt="0">
+                    <TabTitle>Help</TabTitle>
                     <Stack gap="6" maxW="46rem">
-                      <Box borderRadius="forge" overflow="hidden" bg="linear-gradient(145deg, #2a3f6f, #0f131f)" color="white" px="6" py="6" boxShadow="md">
-                        <Box css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
-                        <HStack mt="3.5" gap="2.5" align="center" flexWrap="wrap">
-                          <chakra.span fontWeight="700" fontSize="1.0625rem">Forge</chakra.span>
-                          <chakra.span bg="whiteAlpha.200" fontSize="0.75rem" fontWeight="600" px="2" py="0.5" borderRadius="full">v{version || '0.0.0'}</chakra.span>
-                        </HStack>
-                        <Text mt="1.5" fontSize="0.8125rem" color="whiteAlpha.800">Release changelogs for WordPress Core and Gutenberg.</Text>
-                      </Box>
-
-                      <Text fontSize="0.8125rem" color="ui.muted" lineHeight="1.6">
-                        An independent project by Benjamin Zekavica (Morvance). Not linked to the WordPress Foundation or Automattic Inc.{' '}
-                        <Link href="https://unleash-wp.com" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">unleash-wp.com ↗</Link>
-                      </Text>
-
                       <Box>
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">Contributors</Heading>
-                        <Text fontSize="0.8125rem" color="ui.text">Benjamin Zekavica, creator and maintainer.</Text>
-                        <Text fontSize="0.8125rem" color="ui.muted" mt="1">Forge is open to everyone. <Link href={REPO_URL} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Contribute on GitHub ↗</Link></Text>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">How it works</Heading>
+                        <chakra.ol ml="1.125rem" fontSize="0.8125rem" color="ui.text" lineHeight="1.5" css={{ '& li': { marginTop: '0.375rem' } }}>
+                          <chakra.li>Connect GitHub and WordPress.org in the Connectors tab.</chakra.li>
+                          <chakra.li>Pick a date range and a milestone.</chakra.li>
+                          <chakra.li>Click Generate to get the changelog.</chakra.li>
+                        </chakra.ol>
                       </Box>
-
                       <Box>
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1.5">Built with</Heading>
-                        <InlineLinks items={STACK} />
-                      </Box>
-
-                      <Box>
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1.5">Data sources</Heading>
-                        <InlineLinks items={DATA} />
-                      </Box>
-
-                      <Box borderTopWidth="1px" borderColor="ui.border" pt="5" pb="6">
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">Legal notice</Heading>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">Common questions</Heading>
                         <Stack gap="3.5">
-                          <LegalRow label="Provider">Morvance | Benjamin Zekavica<br />Charlottenstraße 14<br />52070 Aachen<br />Germany</LegalRow>
-                          <LegalRow label="Contact"><Link href="mailto:support@unleash-wp.com" color="ui.primary" fontWeight="600">support@unleash-wp.com</Link></LegalRow>
-                          <LegalRow label="VAT ID">DE 358 256 337<br /><chakra.span color="ui.muted" fontSize="0.75rem">VAT ID under § 27a German VAT Act.</chakra.span></LegalRow>
+                          {FAQ.map((f) => (
+                            <Box key={f.q}>
+                              <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{f.q}</Text>
+                              <Text fontSize="0.8125rem" color="ui.muted" mt="0.5" lineHeight="1.5">{f.a}</Text>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Box>
+                      <Box borderTopWidth="1px" borderColor="ui.border" pt="5" pb="6">
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2.5">More help</Heading>
+                        <Stack gap="1.5">
+                          <Link href={REPO_URL} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">Docs on GitHub ↗</Link>
+                          <Link href={REPO_URL + '/issues'} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">Browse issues ↗</Link>
+                          <Link href={REPO_URL + '/discussions'} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">Ask in Discussions ↗</Link>
                         </Stack>
                       </Box>
                     </Stack>
+                  </Tabs.Content>
+
+                  <Tabs.Content value="credits" mt="0">
+                    <Tabs.Root defaultValue="about" variant="line" colorPalette="brand">
+                      <Tabs.List borderBottomWidth="1px" borderColor="ui.border" mb="6" gap="1">
+                        <Tabs.Trigger value="about" fontWeight="600">Credits</Tabs.Trigger>
+                        <Tabs.Trigger value="contribute" fontWeight="600">Contribute</Tabs.Trigger>
+                      </Tabs.List>
+
+                      <Tabs.Content value="about" mt="0">
+                        <Stack gap="6" maxW="46rem">
+                          <Box borderRadius="forge" overflow="hidden" bg="linear-gradient(145deg, #2a3f6f, #0f131f)" color="white" px="6" py="6" boxShadow="md">
+                            <Box css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
+                            <HStack mt="3.5" gap="2.5" align="center" flexWrap="wrap">
+                              <chakra.span fontWeight="700" fontSize="1.0625rem">Forge</chakra.span>
+                              <chakra.span bg="whiteAlpha.200" fontSize="0.75rem" fontWeight="600" px="2" py="0.5" borderRadius="full">v{version || '0.0.0'}</chakra.span>
+                            </HStack>
+                            <Text mt="1.5" fontSize="0.8125rem" color="whiteAlpha.800">Release changelogs for WordPress Core and Gutenberg.</Text>
+                          </Box>
+
+                          <Text fontSize="0.8125rem" color="ui.muted" lineHeight="1.6">
+                            An independent project by Benjamin Zekavica (Morvance). Not linked to the WordPress Foundation or Automattic Inc.{' '}
+                            <Link href="https://unleash-wp.com" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">unleash-wp.com ↗</Link>
+                          </Text>
+
+                          <Box>
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">Contributors</Heading>
+                            <Text fontSize="0.8125rem" color="ui.text">Benjamin Zekavica, creator and maintainer.</Text>
+                          </Box>
+
+                          <Box>
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">Built with</Heading>
+                            <InlineLinks items={STACK} />
+                            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.03em" color="ui.muted" mt="3" mb="1">Data from</Text>
+                            <InlineLinks items={DATA} />
+                          </Box>
+
+                          <Box borderTopWidth="1px" borderColor="ui.border" pt="5" pb="6">
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">Legal notice</Heading>
+                            <Stack gap="3.5">
+                              <LegalRow label="Provider">Morvance | Benjamin Zekavica<br />Charlottenstraße 14<br />52070 Aachen<br />Germany</LegalRow>
+                              <LegalRow label="Contact"><Link href="mailto:support@unleash-wp.com" color="ui.primary" fontWeight="600">support@unleash-wp.com</Link></LegalRow>
+                              <LegalRow label="VAT ID">DE 358 256 337<br /><chakra.span color="ui.muted" fontSize="0.75rem">VAT ID under § 27a German VAT Act.</chakra.span></LegalRow>
+                            </Stack>
+                          </Box>
+                        </Stack>
+                      </Tabs.Content>
+
+                      <Tabs.Content value="contribute" mt="0">
+                        <Stack gap="5" maxW="46rem">
+                          <Box borderRadius="forge" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" px="5" py="4">
+                            <Text fontSize="0.9375rem" fontWeight="700" color="ui.heading" lineHeight="1.5">Forge is open source, built by the community.</Text>
+                            <Text fontSize="0.8125rem" color="ui.muted" mt="1" lineHeight="1.55">Every fix, idea, or new tool makes it better for the whole WordPress world. Jump in, you are welcome here.</Text>
+                          </Box>
+
+                          <SimpleGrid columns={{ base: 1, sm: 2 }} gap="3">
+                            {WAYS.map((w) => (
+                              <Link key={w.title} href={w.url} target="_blank" rel="noopener" display="block" borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="4" py="3.5" transition="border-color .12s, background .12s" _hover={{ borderColor: 'ui.primary', bg: 'ui.sunk', textDecoration: 'none' }}>
+                                <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{w.title}</Text>
+                                <Text fontSize="0.75rem" color="ui.muted" mt="0.5" lineHeight="1.4">{w.desc}</Text>
+                              </Link>
+                            ))}
+                          </SimpleGrid>
+
+                          <Box>
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2.5">Good first issues</Heading>
+                            {issues.length ? (
+                              <Stack gap="2">
+                                {issues.map((i) => (
+                                  <Link key={i.id} href={i.html_url} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">#{i.number} {i.title}</Link>
+                                ))}
+                              </Stack>
+                            ) : (
+                              <Text fontSize="0.8125rem" color="ui.muted">None open right now. Spot something? <Link href={REPO_URL + '/issues/new'} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Open the first one ↗</Link></Text>
+                            )}
+                          </Box>
+
+                          <Button variant="primary" size="sm" py="1.5" fontSize="0.8125rem" alignSelf="flex-start" onClick={() => window.open(REPO_URL, '_blank', 'noopener')}>Contribute on GitHub</Button>
+                        </Stack>
+                      </Tabs.Content>
+                    </Tabs.Root>
                   </Tabs.Content>
 
                 </Box>

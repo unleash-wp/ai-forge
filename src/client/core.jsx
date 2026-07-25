@@ -13,18 +13,20 @@ const ToastCtx = createContext(() => {});
 export function useToast() { return useContext(ToastCtx); }
 
 export function ToastProvider({ children }) {
-  const [msg, setMsg] = useState('');
+  const [toastState, setToastState] = useState({ msg: '', kind: '' });
   const timer = useRef(null);
-  const toast = useCallback((m) => {
-    setMsg(m);
+  // toast(message) is neutral (navy); toast(message, 'success') is green.
+  const toast = useCallback((m, kind = '') => {
+    setToastState({ msg: m, kind });
     clearTimeout(timer.current);
-    timer.current = setTimeout(() => setMsg(''), 1800);
+    timer.current = setTimeout(() => setToastState((s) => ({ ...s, msg: '' })), 1800);
   }, []);
+  const { msg, kind } = toastState;
   return (
     <ToastCtx.Provider value={toast}>
       {children}
       <Portal>
-        <Box position="fixed" bottom="6" left="50%" zIndex="2147483647" bg="navy" color="white"
+        <Box position="fixed" bottom="6" left="50%" zIndex="2147483647" bg={kind === 'success' ? 'ui.good' : 'navy'} color="white"
           px="4.5" py="2.5" borderRadius="lg" boxShadow="lg" fontWeight="600" fontSize="0.8438rem"
           pointerEvents="none" transition="opacity .2s ease, transform .2s ease"
           opacity={msg ? 1 : 0} transform={msg ? 'translate(-50%, 0)' : 'translate(-50%, 1rem)'}
