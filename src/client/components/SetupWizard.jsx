@@ -157,7 +157,7 @@ function DisconnectBtn({ onClick }) {
 
 function TabItem({ value, icon, label }) {
   return (
-    <Tabs.Trigger value={value} justifyContent="flex-start" gap="2.5" fontWeight="600" borderRadius="sm" px="3" py="2" color="ui.text" transition="none" _selected={{ bg: 'navy', color: 'white', boxShadow: 'sm' }}>
+    <Tabs.Trigger value={value} justifyContent="flex-start" gap="2.5" fontWeight="500" borderRadius="sm" px="3" py="2" color="ui.text" transition="none" _selected={{ bg: 'navy', color: 'white', boxShadow: 'sm' }}>
       <Glyph svg={icon} />
       {label}
     </Tabs.Trigger>

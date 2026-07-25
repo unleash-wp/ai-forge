@@ -407,6 +407,30 @@ function Results({ data, since, until }) {
 }
 
 // ---- The tool ----
+// Loading placeholder shown while milestones and branches load: mirrors the
+// form layout (four fields + the filter row) with a spinner by the submit slot.
+function FormSkeleton() {
+  const Field = ({ flex }) => (
+    <Box flex={flex}><Skeleton h="0.75rem" w="5rem" mb="2" /><Skeleton h="2.9375rem" borderRadius="0.4375rem" /></Box>
+  );
+  return (
+    <Box>
+      <Flex flexWrap="wrap" gap={{ base: '4', lg: '6' }} align="flex-end">
+        <Field flex="1.3 1 14rem" /><Field flex="1 1 10rem" /><Field flex="1 1 10rem" /><Field flex="1 1 10rem" />
+      </Flex>
+      <Flex align="center" justify="space-between" gap="4" mt="6" pt="4" borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
+        <Flex align="center" gap={{ base: '4', lg: '6' }} flexWrap="wrap">
+          {[0, 1, 2, 3].map((i) => <Skeleton key={i} h="1.25rem" w="7rem" />)}
+        </Flex>
+        <Flex align="center" gap="3" flex="none">
+          <Spinner size="sm" borderWidth="2px" color="navy" />
+          <Skeleton h="2.75rem" w="8rem" borderRadius="forge" />
+        </Flex>
+      </Flex>
+    </Box>
+  );
+}
+
 // Loading placeholder shown while the changelog is being fetched.
 function ResultsSkeleton() {
   return (
@@ -510,7 +534,7 @@ export default function ChangelogTool() {
     <>
       <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
         {!loaded ? (
-          <Flex align="center" justify="center" gap="2.5" color="ui.muted" fontSize="0.875rem" py="12">Loading milestones and branches…</Flex>
+          <FormSkeleton />
         ) : (
           <chakra.form onSubmit={submit}>
             <Flex flexWrap="wrap" gap={{ base: '4', lg: '6' }} align="flex-end">
