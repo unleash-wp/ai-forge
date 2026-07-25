@@ -18,6 +18,11 @@
   "Show each change's full text from GitHub.": "Vollen Text jeder Änderung von GitHub anzeigen.",
 
   "Settings": "Einstellungen",
+  "Close": "Schließen",
+  "Toggle dark mode": "Dunkelmodus umschalten",
+  "Light mode": "Heller Modus",
+  "Dark mode": "Dunkler Modus",
+  "Select %s": "%s auswählen",
   "General": "Allgemein",
   "Connectors": "Verbindungen",
   "Updates": "Updates",
