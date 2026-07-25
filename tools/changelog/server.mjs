@@ -12,7 +12,8 @@ import { branches } from './lib/github-queries.mjs';
 import { resolveCookie } from '../../src/connectors/wporg-cookie.mjs';
 import { countTracTickets } from './lib/trac-tickets.mjs';
 import { applyCommitBodies, applyDeepDetails } from './lib/aggregate.mjs';
-import { mcpAvailable, mcpTicketDetails } from '../../src/mcp.mjs';
+import { wporgAvailable } from '../../src/mcp-wporg.mjs';
+import { mcpTicketDetails } from './lib/mcp-tickets.mjs';
 import { fetchDevNotes } from './lib/makenotes.mjs';
 
 // "Dev notes only": narrow the report to Core changesets flagged in the docs
@@ -55,7 +56,9 @@ async function reportHandler(req, res, url, ctx) {
       meta.deepSource = 'commit';
       // Optional enrichment: fill any gaps with the Trac ticket description via
       // the MCP. Never block the report on a deep failure - the bodies still show.
-      if (mcpAvailable()) {
+      // Without the wporg MCP installed, --deep degrades to commit bodies; flag it
+      // so the caller can say enrichment was skipped rather than silently thinner.
+      if (wporgAvailable()) {
         try {
           const details = await mcpTicketDetails(report.core.tickets || []);
           applyDeepDetails(report, details);
@@ -64,6 +67,8 @@ async function reportHandler(req, res, url, ctx) {
         } catch (err) {
           meta.deepError = err.message;
         }
+      } else {
+        meta.deepMcpUnavailable = true;
       }
     }
     if (q.get('devNotesOnly') === 'true') { filterDevNotes(report); meta.devNotesOnly = true; }

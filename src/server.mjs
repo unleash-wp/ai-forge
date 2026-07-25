@@ -8,7 +8,7 @@ import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 import { checkUpdates } from './update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
-import { mcpAvailable, mcpListTools, mcpExecute, mcpText } from './mcp.mjs';
+import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
 import { tmpdir } from 'node:os';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -174,16 +174,16 @@ export function startServer({ port = 4321, quiet = false } = {}) {
           path: cookiePath(),
           envLocked: !!process.env.WPORG_TRAC_COOKIE,
         },
-        mcp: { available: mcpAvailable() },
+        mcp: { available: wporgAvailable() },
       });
       return;
     }
 
     // MCP status: is the Automattic mcp-context-wporg server installed + reachable?
     if (url.pathname === '/api/mcp/status') {
-      if (!mcpAvailable()) { json(res, 200, { available: false }); return; }
+      if (!wporgAvailable()) { json(res, 200, { available: false }); return; }
       try {
-        const tools = await mcpListTools();
+        const tools = await wporgListTools();
         json(res, 200, { available: true, reachable: true, tools: tools.map((t) => t.name) });
       } catch (err) {
         json(res, 200, { available: true, reachable: false, error: err.message });
@@ -196,7 +196,7 @@ export function startServer({ port = 4321, quiet = false } = {}) {
       try {
         const { provider, tool, params } = JSON.parse(await readBody(req) || '{}');
         if (!provider || !tool) throw new Error('provider and tool are required');
-        const result = await mcpExecute(provider, tool, params || {});
+        const result = await wporgExecute(provider, tool, params || {});
         json(res, 200, { ok: !result.isError, data: mcpText(result) });
       } catch (err) {
         json(res, 200, { ok: false, error: err.message });
