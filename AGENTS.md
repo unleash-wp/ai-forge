@@ -8,7 +8,7 @@ Gutenberg. **Zero dependencies, plain Node ≥18** - nothing to install or build
 1. Ask the user (or infer) the **start date, end date, and milestone** (e.g. `7.1`).
 2. Run:
    ```bash
-   node bin/wp-release-helper.mjs --since <start> --until <end> --milestone <x.y> --post
+   node bin/wp-release-helper.mjs changelog --since <start> --until <end> --milestone <x.y> --post
    ```
    Output modes:
    - `--post` → a ready-to-edit release-post template (headline, "N issues"
