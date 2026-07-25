@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { once } from 'node:events';
 import { startServer } from './server.mjs';
+import { FONT_FACE_CSS } from './fonts.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const BUNDLE = join(DIR, '..', 'dist', 'main.js');
@@ -45,5 +46,5 @@ export function appAvailable() { return existsSync(BUNDLE); }
 // The ui:// resource HTML: app shell + bridge + the inlined production bundle.
 export function forgeAppHtml() {
   const bundle = readFileSync(BUNDLE, 'utf8');
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>UnleashWP AI Forge</title></head><body><div id="root"></div><script>${BRIDGE}</script><script>${bundle}</script></body></html>`;
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>UnleashWP AI Forge</title><style>${FONT_FACE_CSS}</style></head><body><div id="root"></div><script>${BRIDGE}</script><script>${bundle}</script></body></html>`;
 }

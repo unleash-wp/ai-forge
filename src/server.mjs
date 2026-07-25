@@ -6,6 +6,7 @@ import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from '
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
 import { listConnectors } from './connectors/registry.mjs';
 import { VERSION } from './version.mjs';
+import { FONT_FACE_CSS } from './fonts.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 import { checkUpdates } from './update.mjs';
@@ -375,9 +376,7 @@ const PAGE = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UnleashWP AI Forge</title>
 <link rel="icon" type="image/svg+xml" href="/brand/bulb.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
+<style>${FONT_FACE_CSS}</style>
 </head>
 <body>
 <div id="root"></div>
