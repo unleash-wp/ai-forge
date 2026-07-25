@@ -1,4 +1,4 @@
-import { apiJson } from './github.mjs';
+import { apiJson } from '../../../src/github.mjs';
 
 // The WordPress docs team triages each release into a per-release folder of
 // component JSON files here - cookie-free, already component + classification

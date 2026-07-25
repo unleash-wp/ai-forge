@@ -5,14 +5,14 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { generate } from '../../src/report.mjs';
-import { changelogOutput } from '../../src/changelog-cli.mjs';
-import { toMarkdown, toPost, sourceUrls } from '../../src/format.mjs';
+import { generate } from './lib/report.mjs';
+import { changelogOutput } from './lib/changelog-cli.mjs';
+import { toMarkdown, toPost, sourceUrls } from './lib/format.mjs';
 import { branches } from '../../src/github.mjs';
 import { resolveCookie, countTracTickets } from '../../src/trac.mjs';
-import { applyCommitBodies, applyDeepDetails } from '../../src/aggregate.mjs';
+import { applyCommitBodies, applyDeepDetails } from './lib/aggregate.mjs';
 import { mcpAvailable, mcpTicketDetails } from '../../src/mcp.mjs';
-import { fetchDevNotes } from '../../src/makenotes.mjs';
+import { fetchDevNotes } from './lib/makenotes.mjs';
 
 // "Dev notes only": narrow the report to Core changesets flagged in the docs
 // tracker (dev-note / misc-dev-note / field-guide) and drop Gutenberg. Mutates

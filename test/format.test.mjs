@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { sourceUrls, toMarkdown, toPost } from '../src/format.mjs';
+import { sourceUrls, toMarkdown, toPost } from '../tools/changelog/lib/format.mjs';
 
 const meta = {
   since: '2026-07-15T00:00:00Z',

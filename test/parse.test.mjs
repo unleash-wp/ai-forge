@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCommit } from '../src/parse.mjs';
+import { parseCommit } from '../tools/changelog/lib/parse.mjs';
 
 const mk = (message) => parseCommit({
   sha: 'abc123def456',
