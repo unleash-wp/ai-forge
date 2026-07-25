@@ -1,6 +1,6 @@
 {
   "name": "@unleashwp/ai-forge",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "UnleashWP AI Forge — a hub for WordPress release tooling. Runs a browser UI, a zero-dependency CLI, and an MCP server (`uwp mcp`) so Claude Code and Codex can query its tools and skills live.",
   "type": "module",
   "bin": {
