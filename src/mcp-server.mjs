@@ -44,6 +44,9 @@ export async function startMcpServer() {
     tools.set('forge_api', {
       name: 'forge_api',
       description: 'Internal: proxy a Forge /api request. Used by the app window; not for direct use.',
+      // App-only: hidden from the model so injected text in ingested tickets can't
+      // drive it (e.g. POST /api/plugins/install). Only the app iframe calls it.
+      visibility: ['app'],
       inputSchema: { type: 'object', properties: { method: { type: 'string' }, path: { type: 'string' }, body: {} } },
       run: async (a) => {
         const r = await fetch('http://127.0.0.1:' + internalPort + a.path, {
@@ -118,8 +121,10 @@ export async function startMcpServer() {
             description: t.description || '',
             inputSchema: t.inputSchema || { type: 'object', properties: {} },
           };
-          // MCP Apps: link the tool to its ui:// panel so the host renders it.
-          if (t.ui) entry._meta = { ui: { resourceUri: t.ui, visibility: ['model', 'app'] } };
+          // MCP Apps: link the tool to its ui:// panel, and/or restrict visibility
+          // (an app-only tool is hidden from the model).
+          if (t.ui) entry._meta = { ui: { resourceUri: t.ui, visibility: t.visibility || ['model', 'app'] } };
+          else if (t.visibility) entry._meta = { ui: { visibility: t.visibility } };
           return entry;
         }),
       });

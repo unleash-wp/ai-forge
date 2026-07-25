@@ -27,6 +27,11 @@ export function startServer({ port = 4321, quiet = false } = {}) {
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`);
 
+    // Anti-DNS-rebinding: only serve requests addressed to a local host. A rebound
+    // attacker domain (resolving to 127.0.0.1) still carries its own Host header,
+    // so this rejects it before any handler runs.
+    if (!isLocalHost(req)) { json(res, 403, { error: 'invalid host' }); return; }
+
     // Cross-site guard: reject a state-changing request that a browser makes from
     // another origin, so a malicious web page can't POST a wordpress.org session
     // cookie (or a GitHub token, or a plugin install) to this local server. The
@@ -348,6 +353,15 @@ function json(res, code, obj) {
 // Fetch Metadata header (every modern browser sends Sec-Fetch-Site); fall back to
 // an Origin/Host comparison for older ones. A request with neither header is not
 // a browser (CLI, loopback proxy, tests) and is treated as same-origin.
+// True when the request's Host is a local address (localhost / 127.0.0.1 / ::1 /
+// *.localhost), or absent (non-browser callers). Anything else is a rebind attempt.
+function isLocalHost(req) {
+  let host = (req.headers.host || '').toLowerCase();
+  if (!host) return true;
+  host = host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.split(':')[0];
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.localhost');
+}
+
 function isCrossSite(req) {
   const sfs = req.headers['sec-fetch-site'];
   if (sfs) return sfs !== 'same-origin' && sfs !== 'none';
