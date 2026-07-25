@@ -17,16 +17,16 @@
     flex-wrap: wrap;
     gap: var(--s2);
   }
+}
 
-  &__cap {
-    font: 600 0.5938rem/1 var(--font);
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    padding: 0 0.125rem var(--s1);
+.c-rail__cap {
+  font: 600 0.5938rem/1 var(--font);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0.125rem var(--s1);
 
-    @include mq('lg') { width: 100%; }
-  }
+  @include mq('lg') { width: 100%; }
 }
 
 .c-tool {
@@ -47,20 +47,19 @@
   transition: transform .12s ease, box-shadow .12s ease, background .14s ease;
 
   &:hover { transform: translateY(-0.0625rem); box-shadow: var(--shadow-sm); }
-
-  &__ic { display: grid; place-items: center; }
-  &__name { font: 500 0.5938rem/1.25 var(--font); }
-
-  &.is-active {
-    background: var(--navy);
-    color: var(--white);
-    box-shadow: var(--shadow-sm);
-    cursor: default;
-
-    &:hover { transform: none; }
-  }
-
-  // --plugins is a marker for the manager tile; it inherits the base tool look.
-
   @include mq('lg') { flex: 1 1 7.5rem; height: 4.75rem; }
+}
+
+.c-tool__ic { display: grid; place-items: center; }
+.c-tool__name { font: 500 0.5938rem/1.25 var(--font); }
+
+// --plugins is a marker for the manager tile; it inherits the base tool look.
+
+.c-tool.is-active {
+  background: var(--navy);
+  color: var(--white);
+  box-shadow: var(--shadow-sm);
+  cursor: default;
+
+  &:hover { transform: none; }
 }

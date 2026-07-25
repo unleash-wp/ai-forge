@@ -8,16 +8,16 @@
   background: var(--ghost-hover);
   padding: 0.25rem 0.5rem;
   border-radius: 999px;
-
-  &--off { color: var(--muted); background: var(--tagbg); }
-
-  // "Update available" stands out as a filled navy chip.
-  &--up {
-    text-transform: none;
-    letter-spacing: 0;
-    color: var(--white);
-    background: var(--navy);
-
-    &:hover { color: var(--white); background: var(--slate-2); }
-  }
 }
+
+.c-chip--off { color: var(--muted); background: var(--tagbg); }
+
+// "Update available" stands out as a filled navy chip.
+.c-chip--up {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--white);
+  background: var(--navy);
+}
+
+.c-chip--up:hover { color: var(--white); background: var(--slate-2); }

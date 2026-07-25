@@ -6,18 +6,18 @@
   align-items: center;
   flex: none;
   transition: opacity .15s;
+}
 
-  &:hover { opacity: .78; }
+.c-logo:hover { opacity: .78; }
 
-  // Injected brand SVG (dangerouslySetInnerHTML) — the one sanctioned tag
-  // selector: the markup is generated, so there is no element to class.
-  svg {
-    height: 1.75rem;
-    width: auto;
-    display: block;
+// Injected brand SVG (dangerouslySetInnerHTML) — the one sanctioned tag
+// selector: the markup is generated, so there is no element to class.
+.c-logo svg {
+  height: 1.75rem;
+  width: auto;
+  display: block;
 
-    @include mq('sm') { height: 1.25rem; }
-  }
+  @include mq('sm') { height: 1.25rem; }
 }
 
 // Invert the navy+yellow mark so it stays legible on the dark surface.

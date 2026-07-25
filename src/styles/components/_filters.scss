@@ -10,19 +10,17 @@
   margin-bottom: var(--s6);
 
   @include mq('lg') { padding: var(--s5) var(--s4); }
-
-  &__loading {
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 0.625rem;
-    color: var(--muted);
-    font-size: 0.875rem;
-    padding: var(--s7) 0;
-  }
-
-  &.is-loading {
-    .c-filters__loading { display: flex; }
-    .c-query { display: none; }
-  }
 }
+
+.c-filters__loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  padding: var(--s7) 0;
+}
+
+.c-filters.is-loading .c-filters__loading { display: flex; }
+.c-filters.is-loading .c-query { display: none; }

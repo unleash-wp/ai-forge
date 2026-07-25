@@ -16,29 +16,28 @@
   transition: border-color .15s, transform .1s;
 
   &:hover { border-color: var(--primary); transform: translateY(-0.0625rem); }
-
-  &__ic {
-    width: 1rem;
-    height: 1rem;
-    border-radius: 50%;
-    display: inline-grid;
-    place-items: center;
-    font-size: 0.625rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  &.is-ok .c-pill__ic {
-    background: var(--good);
-    color: var(--white);
-
-    &::after { content: "✓"; }
-  }
-
-  &.is-off .c-pill__ic {
-    border: 1.5px solid var(--yellow);
-    color: var(--yellow);
-  }
-
   @include mq('sm') { padding: 0.4375rem 0.6875rem; font-size: 0.75rem; }
+}
+
+.c-pill__ic {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.c-pill.is-ok .c-pill__ic {
+  background: var(--good);
+  color: var(--white);
+
+  &::after { content: "✓"; }
+}
+
+.c-pill.is-off .c-pill__ic {
+  border: 1.5px solid var(--yellow);
+  color: var(--yellow);
 }
