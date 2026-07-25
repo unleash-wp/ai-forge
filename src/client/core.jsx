@@ -25,6 +25,16 @@ export function fetchJSON(path, opts) {
   return apiFetch(path, opts).then((r) => r.json().then((data) => ({ ok: r.ok, data })));
 }
 
+// Look up one connector descriptor from /api/config/status by id (or null).
+export function connector(status, id) {
+  return ((status && status.connectors) || []).find((c) => c.id === id) || null;
+}
+// Its credential status object (set / source / …), with a not-connected default.
+export function connectorStatus(status, id) {
+  const c = connector(status, id);
+  return (c && c.status) || { set: false };
+}
+
 // ---- Toast (confirmation after any copy / download) ----
 const ToastCtx = createContext(() => {});
 export function useToast() { return useContext(ToastCtx); }

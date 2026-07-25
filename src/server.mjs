@@ -2,8 +2,9 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { authenticated, tokenStatus, saveToken, deleteToken, checkToken, setDisabled } from './connectors/github-token.mjs';
+import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from './connectors/github-token.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
+import { listConnectors } from './connectors/registry.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 import { checkUpdates } from './update.mjs';
@@ -161,19 +162,13 @@ export function startServer({ port = 4321, quiet = false } = {}) {
       return;
     }
 
-    // Combined credential status for the setup wizard (never returns the values).
+    // Connector status for the setup wizard, derived from the Core registry
+    // (never returns the secret values themselves).
     if (url.pathname === '/api/config/status') {
-      const c = resolveCookie();
       json(res, 200, {
         version: VERSION,
         installed: isInstalled(),
-        github: tokenStatus(),
-        trac: {
-          set: !!c,
-          source: process.env.WPORG_TRAC_COOKIE ? 'env' : 'file',
-          path: cookiePath(),
-          envLocked: !!process.env.WPORG_TRAC_COOKIE,
-        },
+        connectors: await listConnectors(),
         mcp: { available: wporgAvailable() },
       });
       return;
