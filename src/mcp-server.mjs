@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadPlugins } from './plugins.mjs';
+import { startInternalServer, forgeAppHtml, appAvailable } from './mcp-app.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')).version;
@@ -35,6 +36,39 @@ export async function startMcpServer() {
       if (uiResources.has(res.uri)) { process.stderr.write(`uwp mcp: duplicate app "${res.uri}" from ${p.manifest.id} ignored\n`); continue; }
       uiResources.set(res.uri, res);
     }
+  }
+
+  // Core MCP-App infrastructure (platform, not a plugin): serve the whole Forge
+  // app as a ui:// window, backed by the existing HTTP server proxied through the
+  // forge_api tool. The app shell hosts every plugin's UI unchanged.
+  let internalPort = null;
+  try { internalPort = (await startInternalServer()).port; }
+  catch (err) { process.stderr.write(`uwp mcp: internal server failed (${err.message}); app window disabled\n`); }
+  if (internalPort && appAvailable()) {
+    tools.set('forge_api', {
+      name: 'forge_api',
+      description: 'Internal: proxy a Forge /api request. Used by the app window; not for direct use.',
+      inputSchema: { type: 'object', properties: { method: { type: 'string' }, path: { type: 'string' }, body: {} } },
+      run: async (a) => {
+        const r = await fetch('http://127.0.0.1:' + internalPort + a.path, {
+          method: a.method || 'GET',
+          headers: a.body != null ? { 'Content-Type': 'application/json' } : {},
+          body: a.body != null ? a.body : undefined,
+        });
+        return { text: `${r.status} ${a.method || 'GET'} ${a.path}`, structured: { status: r.status, contentType: r.headers.get('content-type') || 'application/json', body: await r.text() } };
+      },
+    });
+    tools.set('open_forge', {
+      name: 'open_forge',
+      description: 'Open the full UnleashWP AI Forge app as a window in the conversation.',
+      ui: 'ui://forge/app',
+      inputSchema: { type: 'object', properties: {} },
+      run: async () => ({ text: 'Opening UnleashWP AI Forge…', structured: {} }),
+    });
+    uiResources.set('ui://forge/app', {
+      uri: 'ui://forge/app', name: 'forge', description: 'UnleashWP AI Forge — the full app.',
+      html: forgeAppHtml(), permissions: { clipboardWrite: {} },
+    });
   }
 
   const send = (obj) => process.stdout.write(JSON.stringify(obj) + '\n');
