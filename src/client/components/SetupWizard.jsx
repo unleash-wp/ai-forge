@@ -58,16 +58,21 @@ function browserTz() {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
 }
 
-// Open-source projects + data sources Forge is built on (link list in Credits).
+// Actual libraries in the browser bundle (package.json devDependencies).
 const STACK = [
   { name: 'React', url: 'https://react.dev' },
   { name: 'Chakra UI', url: 'https://chakra-ui.com' },
   { name: 'Emotion', url: 'https://emotion.sh' },
+  { name: 'next-themes', url: 'https://github.com/pacocoursey/next-themes' },
+  { name: 'Remix Icon', url: 'https://remixicon.com' },
   { name: 'webpack', url: 'https://webpack.js.org' },
   { name: 'Babel', url: 'https://babeljs.io' },
   { name: 'Node.js', url: 'https://nodejs.org' },
-  { name: 'WordPress', url: 'https://wordpress.org' },
+];
+// Where the data comes from (not build dependencies).
+const DATA = [
   { name: 'GitHub REST API', url: 'https://docs.github.com/rest' },
+  { name: 'WordPress.org Trac', url: 'https://core.trac.wordpress.org' },
   { name: 'mcp-context-wporg by Automattic', url: 'https://github.com/Automattic/mcp-context-wporg' },
 ];
 
@@ -430,9 +435,19 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
 
                       <Box>
                         <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1">Built with</Heading>
-                        <Text fontSize="0.8125rem" color="ui.muted" mb="2.5">Open-source projects Forge is built on:</Text>
+                        <Text fontSize="0.8125rem" color="ui.muted" mb="2.5">Open-source libraries in the app:</Text>
                         <Stack gap="1.5">
                           {STACK.map((s) => (
+                            <Link key={s.name} href={s.url} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">{s.name} ↗</Link>
+                          ))}
+                        </Stack>
+                      </Box>
+
+                      <Box>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1">Data sources</Heading>
+                        <Text fontSize="0.8125rem" color="ui.muted" mb="2.5">Where the changelog data comes from:</Text>
+                        <Stack gap="1.5">
+                          {DATA.map((s) => (
                             <Link key={s.name} href={s.url} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">{s.name} ↗</Link>
                           ))}
                         </Stack>
