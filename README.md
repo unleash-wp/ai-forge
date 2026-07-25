@@ -96,16 +96,49 @@ uwp serve            # -> http://localhost:4321
 
 ### Claude Code & Codex (MCP)
 
-`uwp mcp` runs Forge as an MCP server over stdio, so an AI coding agent can pull
-release data live and keep working with it. It exposes `get_changelog`,
+`uwp mcp` runs Forge as an MCP server over stdio, so an AI coding agent pulls
+release data live and keeps working with it. It exposes `get_changelog`,
 `list_milestones` and `list_branches` tools, plus **skills** (MCP prompts) like
 `write_release_post` that teach the agent to use them — run `uwp skills` to list
 them. Any plugin can add more.
 
-```bash
-claude mcp add forge -- uwp mcp      # Claude Code (server named "forge")
-# Codex: add an MCP server with command "uwp", args ["mcp"]
+Both agents run Forge via `npx @unleashwp/forge@latest`, so it stays
+dependency-free and **one `npm publish` updates Claude Code and Codex together**
+— no reinstall.
+
+**Claude Code — as a plugin (recommended):**
+
 ```
+/plugin marketplace add unleash-wp/wp-release-helper
+/plugin install forge@unleashwp-forge
+```
+
+The plugin auto-registers the `forge` MCP server; check with `/mcp`. Or add just
+the server directly:
+
+```bash
+claude mcp add forge -- npx -y @unleashwp/forge@latest mcp
+```
+
+**Codex:**
+
+```bash
+codex mcp add forge -- npx -y @unleashwp/forge@latest mcp
+```
+
+### Releasing (keeps both agents in sync)
+
+Forge ships from npm; both agents resolve `@latest` at launch, so publishing is
+the single update step.
+
+```bash
+npm version patch          # bump + tag
+npm publish                # @unleashwp/forge (public); prepublish builds + tests
+git push --follow-tags     # updates the Claude Code plugin (marketplace) too
+```
+
+`gh release create` from the same tag keeps the in-app "update available" check
+(which reads GitHub Releases) aligned with the published version.
 
 Pick the **since/until** dates, milestone and branches, hit **Generate**, and
 get: a big count of issues addressed, the summary stat cards, a **Sources** block

@@ -34,8 +34,8 @@ const ICON_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 // Register Forge as an MCP server so Claude Code / Codex can query its tools
 // (get_changelog, list_milestones, list_branches) live. Claude Code has a CLI
 // for it; Codex points its MCP config at the same `uwp mcp` command.
-const MCP_CMD_CLAUDE = 'claude mcp add forge -- uwp mcp';
-const MCP_CMD_CODEX = 'uwp mcp';
+const MCP_CMD_CLAUDE = 'claude mcp add forge -- npx -y @unleashwp/forge@latest mcp';
+const MCP_CMD_CODEX = 'codex mcp add forge -- npx -y @unleashwp/forge@latest mcp';
 
 // Flag emoji from a 2-letter country code (regional indicator letters).
 const flagOf = (cc) => cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
@@ -452,7 +452,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                         <CmdPanel id="claude" cmd={MCP_CMD_CLAUDE} copiedId={copiedId} onCopy={() => copyCmd('claude', MCP_CMD_CLAUDE)} />
                       </ConnectorCard>
 
-                      <ConnectorCard icon={ICON_CODEX} name="Codex" desc={t('Add Forge as an MCP server (command uwp, args mcp) in %s.', 'Codex')} open={openId === 'codex'} onToggle={() => toggle('codex')}>
+                      <ConnectorCard icon={ICON_CODEX} name="Codex" desc={t('Add Forge as an MCP server in %s.', 'Codex')} open={openId === 'codex'} onToggle={() => toggle('codex')}>
                         <CmdPanel id="codex" cmd={MCP_CMD_CODEX} copiedId={copiedId} onCopy={() => copyCmd('codex', MCP_CMD_CODEX)} />
                       </ConnectorCard>
 
