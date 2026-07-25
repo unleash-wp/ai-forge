@@ -5,8 +5,8 @@
 import { useState, useEffect } from 'react';
 import { fetchJSON, useCore } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
-import { LOGO_FULL } from '../brand.js';
-import { useI18n, availableLocales, LOCALE_NAMES, LOCALE_FLAGS } from '../i18n.jsx';
+import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
+import { useI18n, __, availableLocales, LOCALE_NAMES, LOCALE_FLAGS } from '../i18n.jsx';
 import { Button, TextInput, Select } from '../ui';
 import { Box, CloseButton, Dialog, Flex, Heading, HStack, Link, Portal, SimpleGrid, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 
@@ -149,7 +149,7 @@ function BusyBtn({ busy, variant = 'primary', children, ...rest }) {
 function DisconnectBtn({ onClick }) {
   return (
     <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={onClick} color="ui.bad" borderColor="ui.bad" _hover={{ bg: 'rgba(192,57,43,.08)', borderColor: 'ui.bad', color: 'ui.bad' }}>
-      <HStack gap="1.5"><Glyph svg={ICON_UNLINK} size="0.875rem" /><chakra.span>Disconnect</chakra.span></HStack>
+      <HStack gap="1.5"><Glyph svg={ICON_UNLINK} size="0.875rem" /><chakra.span>{__('Disconnect')}</chakra.span></HStack>
     </Button>
   );
 }
@@ -179,7 +179,7 @@ function ConnectorIcon({ svg }) {
 function StatusCircle({ ok }) {
   return (
     <Box flex="none" w="0.9375rem" h="0.9375rem" borderRadius="full" display="grid" placeItems="center" bg={ok ? 'ui.good' : 'ui.bad'} color="white"
-      title={ok ? 'Connected' : 'Not connected'} aria-label={ok ? 'Connected' : 'Not connected'}
+      title={ok ? __('Connected') : __('Not connected')} aria-label={ok ? __('Connected') : __('Not connected')}
       css={{ '& svg': { width: '0.5625rem', height: '0.5625rem' } }} dangerouslySetInnerHTML={{ __html: ok ? ICON_CHECK : ICON_X }} />
   );
 }
@@ -194,7 +194,7 @@ function ConnectorCard({ icon, name, desc, status, required, open, onToggle, chi
         <Box flex="1" minW="0">
           <HStack gap="2" flexWrap="wrap">
             <chakra.span fontWeight="700" fontSize="0.9375rem" color="ui.heading">{name}</chakra.span>
-            {required ? <chakra.span flex="none" fontSize="0.6875rem" fontWeight="600" color="ui.muted">Required</chakra.span> : null}
+            {required ? <chakra.span flex="none" fontSize="0.6875rem" fontWeight="600" color="ui.muted">{__('Required')}</chakra.span> : null}
             {status !== undefined ? <StatusCircle ok={status} /> : null}
           </HStack>
           {desc ? <chakra.span display="block" mt="0.5" fontSize="0.75rem" color="ui.muted" lineHeight="1.35">{desc}</chakra.span> : null}
@@ -210,7 +210,7 @@ function CmdPanel({ id, copiedId, onCopy }) {
   return (
     <Stack gap="3">
       <chakra.code display="block" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{FORGE_CMD}</chakra.code>
-      <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={onCopy} alignSelf="flex-start">{copiedId === id ? 'Copied' : 'Copy command'}</Button>
+      <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={onCopy} alignSelf="flex-start">{copiedId === id ? __('Copied') : __('Copy command')}</Button>
     </Stack>
   );
 }
@@ -227,7 +227,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const [busy, setBusy] = useState('');
 
   // General
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale, t } = useI18n();
   const [tz, setTz] = useState(() => readPref('forge:tz', browserTz()));
 
   // Updates
@@ -333,7 +333,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
         <Dialog.Positioner p="4">
           <Dialog.Content bg="ui.surface" color="ui.text" maxW="64rem" w="full" h="min(90vh, 46rem)" borderRadius="forge" overflow="hidden" display="flex" flexDirection="column">
             <Dialog.Header borderBottomWidth="1px" borderColor="ui.border" px="6" py="4" flex="none">
-              <Dialog.Title fontSize="1.25rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">Settings</Dialog.Title>
+              <Dialog.Title fontSize="1.25rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Settings')}</Dialog.Title>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" position="absolute" top="3.5" right="4" color="ui.muted" _hover={{ color: 'navy', bg: 'ui.ghostHover' }} />
               </Dialog.CloseTrigger>
@@ -341,79 +341,79 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
             <Dialog.Body p="0" flex="1" minH="0" display="flex">
               <Tabs.Root orientation="vertical" defaultValue="general" variant="plain" display="flex" w="full" flex="1" minH="0">
                 <Tabs.List flex="none" minW="12.5rem" bg="ui.sunk" borderRightWidth="1px" borderColor="ui.border" p="3" gap="0.5" display="flex" flexDirection="column" alignItems="stretch">
-                  <TabItem value="general" icon={ICON_SLIDERS} label="General" />
-                  <TabItem value="connectors" icon={ICON_PLUG} label="Connectors" />
-                  <TabItem value="updates" icon={ICON_DOWNLOAD} label="Updates" />
-                  <TabItem value="help" icon={ICON_HELP} label="Help" />
-                  <TabItem value="credits" icon={ICON_INFO} label="Credits" />
+                  <TabItem value="general" icon={ICON_SLIDERS} label={t('General')} />
+                  <TabItem value="connectors" icon={ICON_PLUG} label={t('Connectors')} />
+                  <TabItem value="updates" icon={ICON_DOWNLOAD} label={t('Updates')} />
+                  <TabItem value="help" icon={ICON_HELP} label={t('Help')} />
+                  <TabItem value="credits" icon={ICON_INFO} label={t('Credits')} />
                 </Tabs.List>
 
                 <Box flex="1" minW="0" overflowY="auto" px="6" py="6">
 
                   <Tabs.Content value="general" mt="0">
-                    <TabTitle>General</TabTitle>
-                    <TabIntro>Your settings for this browser. Saved on this device.</TabIntro>
+                    <TabTitle>{t('General')}</TabTitle>
+                    <TabIntro>{t('Your settings for this browser. Saved on this device.')}</TabIntro>
                     <Stack gap="5" maxW="26rem">
                       <Box>
-                        <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">Language</chakra.label>
-                        <Select block ariaLabel="Language" value={locale} onChange={pickLang} options={LANGUAGES} />
+                        <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">{t('Language')}</chakra.label>
+                        <Select block ariaLabel={t('Language')} value={locale} onChange={pickLang} options={LANGUAGES} />
                       </Box>
                       <Box>
-                        <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">Timezone</chakra.label>
-                        <Select block searchable ariaLabel="Timezone" value={tz} onChange={pickTz} options={TIMEZONES} placeholder="Pick a timezone" />
-                        <Text fontSize="0.75rem" color="ui.muted" mt="1.5">Used to format dates.</Text>
+                        <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">{t('Timezone')}</chakra.label>
+                        <Select block searchable ariaLabel={t('Timezone')} value={tz} onChange={pickTz} options={TIMEZONES} placeholder={t('Pick a timezone')} />
+                        <Text fontSize="0.75rem" color="ui.muted" mt="1.5">{t('Used to format dates.')}</Text>
                       </Box>
                       <Box borderTopWidth="1px" borderColor="ui.border" pt="5">
-                        <Text fontSize="0.75rem" color="ui.muted" mb="3">Settings stay in this browser. Connectors are saved on this machine.</Text>
+                        <Text fontSize="0.75rem" color="ui.muted" mb="3">{t('Settings stay in this browser. Connectors are saved on this machine.')}</Text>
                         <HStack gap="3" flexWrap="wrap">
-                          <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={resetSettings}>Clear local settings</Button>
-                          <BusyBtn busy={false} disabled onClick={() => {}}>Sync with UnleashWP account (soon)</BusyBtn>
+                          <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={resetSettings}>{t('Clear local settings')}</Button>
+                          <BusyBtn busy={false} disabled onClick={() => {}}>{t('Sync with UnleashWP account (soon)')}</BusyBtn>
                         </HStack>
                       </Box>
                     </Stack>
                   </Tabs.Content>
 
                   <Tabs.Content value="connectors" mt="0">
-                    <TabTitle>Connectors</TabTitle>
-                    <TabIntro>Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex just copy a command to run Forge.</TabIntro>
+                    <TabTitle>{t('Connectors')}</TabTitle>
+                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex just copy a command to run Forge.')}</TabIntro>
                     <Stack gap="3">
 
-                      <ConnectorCard icon={ICON_GITHUB} name="GitHub" required desc="Raises the API limit to 5,000 requests per hour." status={gh.set} open={openId === 'gh'} onToggle={() => toggle('gh')}>
+                      <ConnectorCard icon={ICON_GITHUB} name="GitHub" required desc={t('Raises the API limit to 5,000 requests per hour.')} status={gh.set} open={openId === 'gh'} onToggle={() => toggle('gh')}>
                         {gh.set ? (
                           <HStack justify="space-between" gap="3" flexWrap="wrap">
-                            <Text fontSize="0.8125rem" color="ui.muted">Connected with {ghSourceLabel(gh.source)}.</Text>
+                            <Text fontSize="0.8125rem" color="ui.muted">{t('Connected with %s.', t(ghSourceLabel(gh.source)))}</Text>
                             {gh.source !== 'env' && <DisconnectBtn onClick={disconnectGh} />}
                           </HStack>
                         ) : (
                           <Stack gap="3">
-                            {gh.ghAvailable && <BusyBtn busy={busy === 'gh-cli'} onClick={connectGh} alignSelf="flex-start">Connect with GitHub CLI</BusyBtn>}
+                            {gh.ghAvailable && <BusyBtn busy={busy === 'gh-cli'} onClick={connectGh} alignSelf="flex-start">{t('Connect with GitHub CLI')}</BusyBtn>}
                             <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0">
                               <HStack gap="2" align="center">
-                                <Box flex="1"><TextInput type="password" size="sm" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder={gh.ghAvailable ? 'Or paste a token' : 'Paste a GitHub token'} autoComplete="off" spellCheck="false" /></Box>
-                                <BusyBtn busy={busy === 'gh-token'} variant="ghost" onClick={saveGh} flex="none">Connect</BusyBtn>
+                                <Box flex="1"><TextInput type="password" size="sm" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder={gh.ghAvailable ? t('Or paste a token') : t('Paste a GitHub token')} autoComplete="off" spellCheck="false" /></Box>
+                                <BusyBtn busy={busy === 'gh-token'} variant="ghost" onClick={saveGh} flex="none">{t('Connect')}</BusyBtn>
                               </HStack>
                             </chakra.form>
                             <HStack justify="space-between" gap="3">
-                              <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">Create a token ↗</Link>
+                              <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Create a token ↗')}</Link>
                               {ghMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>}
                             </HStack>
                           </Stack>
                         )}
                       </ConnectorCard>
 
-                      <ConnectorCard icon={ICON_WORDPRESS} name="WordPress.org" required desc="Adds full ticket text for deep mode." status={trac.set} open={openId === 'trac'} onToggle={() => toggle('trac')}>
+                      <ConnectorCard icon={ICON_WORDPRESS} name="WordPress.org" required desc={t('Adds full ticket text for deep mode.')} status={trac.set} open={openId === 'trac'} onToggle={() => toggle('trac')}>
                         {trac.set ? (
                           <HStack justify="space-between" gap="3" flexWrap="wrap">
-                            <Text fontSize="0.8125rem" color="ui.muted">Cookie saved{trac.source === 'env' ? ' (environment variable)' : ''}.</Text>
+                            <Text fontSize="0.8125rem" color="ui.muted">{trac.source === 'env' ? t('Cookie saved (environment variable).') : t('Cookie saved.')}</Text>
                             {trac.source === 'file' && <DisconnectBtn onClick={disconnectCookie} />}
                           </HStack>
                         ) : (
                           <Stack gap="3">
-                            {browser && <BusyBtn busy={busy === 'wp-import'} onClick={importCookie} alignSelf="flex-start">Import from {BROWSER_NAMES[browser]}</BusyBtn>}
+                            {browser && <BusyBtn busy={busy === 'wp-import'} onClick={importCookie} alignSelf="flex-start">{t('Import from %s', BROWSER_NAMES[browser])}</BusyBtn>}
                             <chakra.form onSubmit={(e) => e.preventDefault()} m="0">
                               <HStack gap="2" align="center">
                                 <Box flex="1"><TextInput size="sm" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="Or paste wporg_logged_in=…; wporg_sec=…" spellCheck="false" /></Box>
-                                <BusyBtn busy={busy === 'wp-cookie'} variant="ghost" onClick={saveCookie} flex="none">Connect</BusyBtn>
+                                <BusyBtn busy={busy === 'wp-cookie'} variant="ghost" onClick={saveCookie} flex="none">{t('Connect')}</BusyBtn>
                               </HStack>
                             </chakra.form>
                             {ckMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>}
@@ -421,11 +421,11 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                         )}
                       </ConnectorCard>
 
-                      <ConnectorCard icon={ICON_CLAUDE} name="Claude Code" desc="Run UnleashWP Forge from Claude Code." open={openId === 'claude'} onToggle={() => toggle('claude')}>
+                      <ConnectorCard icon={ICON_CLAUDE} name="Claude Code" desc={t('Run UnleashWP Forge from %s.', 'Claude Code')} open={openId === 'claude'} onToggle={() => toggle('claude')}>
                         <CmdPanel id="claude" copiedId={copiedId} onCopy={() => copyCmd('claude')} />
                       </ConnectorCard>
 
-                      <ConnectorCard icon={ICON_CODEX} name="Codex" desc="Run UnleashWP Forge from Codex." open={openId === 'codex'} onToggle={() => toggle('codex')}>
+                      <ConnectorCard icon={ICON_CODEX} name="Codex" desc={t('Run UnleashWP Forge from %s.', 'Codex')} open={openId === 'codex'} onToggle={() => toggle('codex')}>
                         <CmdPanel id="codex" copiedId={copiedId} onCopy={() => copyCmd('codex')} />
                       </ConnectorCard>
 
@@ -433,75 +433,75 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                   </Tabs.Content>
 
                   <Tabs.Content value="updates" mt="0">
-                    <TabTitle>Updates</TabTitle>
-                    <TabIntro>Updates come from the public GitHub repo. Nothing installs on its own. You update with git when you want.</TabIntro>
+                    <TabTitle>{t('Updates')}</TabTitle>
+                    <TabIntro>{t('Updates come from the public GitHub repo. Nothing installs on its own. You update with git when you want.')}</TabIntro>
                     <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" p="4">
                       <Flex align="center" justify="space-between" gap="3" flexWrap="wrap">
                         <Box>
                           <chakra.span fontWeight="700" fontSize="0.9375rem" color="ui.heading">UnleashWP Forge</chakra.span>
-                          <Text fontSize="0.8125rem" color="ui.muted">Version {version || '…'}</Text>
+                          <Text fontSize="0.8125rem" color="ui.muted">{t('Version %s', version || '…')}</Text>
                         </Box>
-                        <BusyBtn busy={checking} variant="ghost" onClick={checkUpdatesNow}>{checking ? 'Checking…' : 'Check for updates'}</BusyBtn>
+                        <BusyBtn busy={checking} variant="ghost" onClick={checkUpdatesNow}>{checking ? t('Checking…') : t('Check for updates')}</BusyBtn>
                       </Flex>
                       {updates.length ? (
                         <Stack gap="2" mt="4" pt="4" borderTopWidth="1px" borderColor="ui.border">
                           {updates.map((u) => (
                             <HStack key={u.id} justify="space-between" gap="3" flexWrap="wrap">
                               <Text fontSize="0.8125rem" color="ui.text">{u.name}: {u.current} to <chakra.b color="ui.heading">{u.latest}</chakra.b></Text>
-                              <Link href={u.url} target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">Release notes ↗</Link>
+                              <Link href={u.url} target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Release notes ↗')}</Link>
                             </HStack>
                           ))}
                         </Stack>
                       ) : (
                         <HStack gap="2" mt="4" pt="4" borderTopWidth="1px" borderColor="ui.border" color="ui.goodInk" fontSize="0.8125rem" fontWeight="600">
                           <StatusCircle ok />
-                          <chakra.span>{checking ? 'Checking for updates…' : 'You have the latest version.'}</chakra.span>
+                          <chakra.span>{checking ? t('Checking for updates…') : t('You have the latest version.')}</chakra.span>
                         </HStack>
                       )}
                     </Box>
-                    <Text fontSize="0.75rem" color="ui.muted" mt="4" mb="1.5">Get the latest version:</Text>
+                    <Text fontSize="0.75rem" color="ui.muted" mt="4" mb="1.5">{t('Get the latest version:')}</Text>
                     <Flex align="center" gap="2">
                       <chakra.pre flex="1" minW="0" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto">git pull &amp;&amp; npm install</chakra.pre>
-                      <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" flex="none" onClick={() => copyStr('git pull && npm install', 'git')}>{copiedId === 'git' ? 'Copied' : 'Copy'}</Button>
+                      <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" flex="none" onClick={() => copyStr('git pull && npm install', 'git')}>{copiedId === 'git' ? t('Copied') : t('Copy')}</Button>
                     </Flex>
-                    <Link href={REPO_URL + '/releases'} target="_blank" rel="noopener" display="inline-block" mt="3" fontSize="0.75rem" color="ui.primary" fontWeight="600">All releases ↗</Link>
+                    <Link href={REPO_URL + '/releases'} target="_blank" rel="noopener" display="inline-block" mt="3" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('All releases ↗')}</Link>
                   </Tabs.Content>
 
                   <Tabs.Content value="help" mt="0">
-                    <TabTitle>Help</TabTitle>
-                    <TabIntro>New to Forge? Here is how to get going, plus answers to common questions.</TabIntro>
+                    <TabTitle>{t('Help')}</TabTitle>
+                    <TabIntro>{t('New to Forge? Here is how to get going, plus answers to common questions.')}</TabIntro>
                     <Stack gap="6" maxW="46rem">
                       <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="5" py="4">
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3.5">How it works</Heading>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3.5">{t('How it works')}</Heading>
                         <Stack gap="3">
                           {STEPS.map((s, i) => (
                             <Flex key={i} gap="3" align="center">
                               <Box flex="none" w="1.5rem" h="1.5rem" borderRadius="full" bg="navy" color="white" display="grid" placeItems="center" fontSize="0.75rem" fontWeight="700">{i + 1}</Box>
-                              <Text fontSize="0.8125rem" color="ui.text" lineHeight="1.4">{s}</Text>
+                              <Text fontSize="0.8125rem" color="ui.text" lineHeight="1.4">{t(s)}</Text>
                             </Flex>
                           ))}
                         </Stack>
                       </Box>
 
                       <Box>
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">Common questions</Heading>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">{t('Common questions')}</Heading>
                         <Stack gap="2">
                           {FAQ.map((f) => (
                             <Box key={f.q} borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="4" py="3">
-                              <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{f.q}</Text>
-                              <Text fontSize="0.8125rem" color="ui.muted" mt="0.5" lineHeight="1.5">{f.a}</Text>
+                              <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{t(f.q)}</Text>
+                              <Text fontSize="0.8125rem" color="ui.muted" mt="0.5" lineHeight="1.5">{t(f.a)}</Text>
                             </Box>
                           ))}
                         </Stack>
                       </Box>
 
                       <Box pb="8">
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">More help</Heading>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">{t('More help')}</Heading>
                         <SimpleGrid columns={{ base: 1, sm: 3 }} gap="3">
                           {HELP_LINKS.map((l) => (
                             <Link key={l.title} href={l.url} target="_blank" rel="noopener" display="block" borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="4" py="3.5" transition="border-color .12s, background .12s" _hover={{ borderColor: 'ui.primary', bg: 'ui.sunk', textDecoration: 'none' }}>
-                              <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{l.title} ↗</Text>
-                              <Text fontSize="0.75rem" color="ui.muted" mt="0.5" lineHeight="1.4">{l.desc}</Text>
+                              <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{t(l.title)} ↗</Text>
+                              <Text fontSize="0.75rem" color="ui.muted" mt="0.5" lineHeight="1.4">{t(l.desc)}</Text>
                             </Link>
                           ))}
                         </SimpleGrid>
@@ -512,43 +512,44 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                   <Tabs.Content value="credits" mt="0">
                     <Tabs.Root defaultValue="about" variant="line" colorPalette="brand">
                       <Tabs.List borderBottomWidth="1px" borderColor="ui.border" mb="6" gap="1">
-                        <Tabs.Trigger value="about" fontWeight="600">Credits</Tabs.Trigger>
-                        <Tabs.Trigger value="contribute" fontWeight="600">Contribute</Tabs.Trigger>
+                        <Tabs.Trigger value="about" fontWeight="600">{t('Credits')}</Tabs.Trigger>
+                        <Tabs.Trigger value="contribute" fontWeight="600">{t('Contribute')}</Tabs.Trigger>
                       </Tabs.List>
 
                       <Tabs.Content value="about" mt="0">
                         <Stack gap="6" maxW="46rem">
                           <Flex align="center" justify="space-between" gap="4" flexWrap="wrap" borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="6" py="5" boxShadow="sm">
                             <Box>
-                              <Box css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block', _dark: { filter: 'brightness(0) invert(1)' } } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
-                              <Text mt="2.5" fontSize="0.8125rem" color="ui.muted">Release changelogs for WordPress Core and Gutenberg.</Text>
+                              <Box _dark={{ display: 'none' }} css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block' } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
+                              <Box display="none" _dark={{ display: 'block' }} css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block' } }} dangerouslySetInnerHTML={{ __html: LOGO_WHITE }} />
+                              <Text mt="2.5" fontSize="0.8125rem" color="ui.muted">{t('Release changelogs for WordPress Core and Gutenberg.')}</Text>
                             </Box>
                             <chakra.span flex="none" bg="navy" color="white" fontSize="0.75rem" fontWeight="700" px="2.5" py="1" borderRadius="full">v{version || '0.0.0'}</chakra.span>
                           </Flex>
 
                           <Text fontSize="0.8125rem" color="ui.muted" lineHeight="1.6">
-                            An independent project by Benjamin Zekavica (Morvance). Not linked to the WordPress Foundation or Automattic Inc.{' '}
+                            {t('An independent project by Benjamin Zekavica (Morvance). Not linked to the WordPress Foundation or Automattic Inc.')}{' '}
                             <Link href="https://unleash-wp.com" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">unleash-wp.com ↗</Link>
                           </Text>
 
                           <Box>
-                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">Contributors</Heading>
-                            <Text fontSize="0.8125rem" color="ui.text">Benjamin Zekavica, creator and maintainer.</Text>
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">{t('Contributors')}</Heading>
+                            <Text fontSize="0.8125rem" color="ui.text">{t('Benjamin Zekavica, creator and maintainer.')}</Text>
                           </Box>
 
                           <Box>
-                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">Built with</Heading>
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">{t('Built with')}</Heading>
                             <InlineLinks items={STACK} />
-                            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.03em" color="ui.muted" mt="3" mb="1">Data from</Text>
+                            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.03em" color="ui.muted" mt="3" mb="1">{t('Data from')}</Text>
                             <InlineLinks items={DATA} />
                           </Box>
 
                           <Box borderTopWidth="1px" borderColor="ui.border" pt="5" pb="6">
-                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">Legal notice</Heading>
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">{t('Legal notice')}</Heading>
                             <Stack gap="3.5">
-                              <LegalRow label="Provider">Morvance | Benjamin Zekavica<br />Charlottenstraße 14<br />52070 Aachen<br />Germany</LegalRow>
-                              <LegalRow label="Contact"><Link href="mailto:support@unleash-wp.com" color="ui.primary" fontWeight="600">support@unleash-wp.com</Link></LegalRow>
-                              <LegalRow label="VAT ID">DE 358 256 337<br /><chakra.span color="ui.muted" fontSize="0.75rem">VAT ID under § 27a German VAT Act.</chakra.span></LegalRow>
+                              <LegalRow label={t('Provider')}>Morvance | Benjamin Zekavica<br />Charlottenstraße 14<br />52070 Aachen<br />{t('Germany')}</LegalRow>
+                              <LegalRow label={t('Contact')}><Link href="mailto:support@unleash-wp.com" color="ui.primary" fontWeight="600">support@unleash-wp.com</Link></LegalRow>
+                              <LegalRow label={t('VAT ID')}>DE 358 256 337<br /><chakra.span color="ui.muted" fontSize="0.75rem">{t('VAT ID under § 27a German VAT Act.')}</chakra.span></LegalRow>
                             </Stack>
                           </Box>
                         </Stack>
@@ -557,21 +558,21 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                       <Tabs.Content value="contribute" mt="0">
                         <Stack gap="5" maxW="46rem">
                           <Box borderRadius="forge" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" px="5" py="4">
-                            <Text fontSize="0.9375rem" fontWeight="700" color="ui.heading" lineHeight="1.5">Forge is open source, built by the community.</Text>
-                            <Text fontSize="0.8125rem" color="ui.muted" mt="1" lineHeight="1.55">Every fix, idea, or new tool makes it better for the whole WordPress world. Jump in, you are welcome here.</Text>
+                            <Text fontSize="0.9375rem" fontWeight="700" color="ui.heading" lineHeight="1.5">{t('Forge is open source, built by the community.')}</Text>
+                            <Text fontSize="0.8125rem" color="ui.muted" mt="1" lineHeight="1.55">{t('Every fix, idea, or new tool makes it better for the whole WordPress world. Jump in, you are welcome here.')}</Text>
                           </Box>
 
                           <SimpleGrid columns={{ base: 1, sm: 2 }} gap="3">
                             {WAYS.map((w) => (
                               <Link key={w.title} href={w.url} target="_blank" rel="noopener" display="block" borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="4" py="3.5" transition="border-color .12s, background .12s" _hover={{ borderColor: 'ui.primary', bg: 'ui.sunk', textDecoration: 'none' }}>
-                                <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{w.title}</Text>
-                                <Text fontSize="0.75rem" color="ui.muted" mt="0.5" lineHeight="1.4">{w.desc}</Text>
+                                <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{t(w.title)}</Text>
+                                <Text fontSize="0.75rem" color="ui.muted" mt="0.5" lineHeight="1.4">{t(w.desc)}</Text>
                               </Link>
                             ))}
                           </SimpleGrid>
 
                           <Box>
-                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2.5">Good first issues</Heading>
+                            <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2.5">{t('Good first issues')}</Heading>
                             {issues.length ? (
                               <Stack gap="2">
                                 {issues.map((i) => (
@@ -579,11 +580,11 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                                 ))}
                               </Stack>
                             ) : (
-                              <Text fontSize="0.8125rem" color="ui.muted">None open right now. Spot something? <Link href={REPO_URL + '/issues/new'} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Open the first one ↗</Link></Text>
+                              <Text fontSize="0.8125rem" color="ui.muted">{t('None open right now. Spot something?')} <Link href={REPO_URL + '/issues/new'} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('Open the first one ↗')}</Link></Text>
                             )}
                           </Box>
 
-                          <Button variant="primary" size="sm" py="1.5" fontSize="0.8125rem" alignSelf="flex-start" onClick={() => window.open(REPO_URL, '_blank', 'noopener')}>Contribute on GitHub</Button>
+                          <Button variant="primary" size="sm" py="1.5" fontSize="0.8125rem" alignSelf="flex-start" onClick={() => window.open(REPO_URL, '_blank', 'noopener')}>{t('Contribute on GitHub')}</Button>
                         </Stack>
                       </Tabs.Content>
                     </Tabs.Root>
