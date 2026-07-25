@@ -27,6 +27,16 @@ export function startServer({ port = 4321, quiet = false } = {}) {
   const server = createServer(async (req, res) => {
     const url = new URL(req.url, `http://localhost:${port}`);
 
+    // Cross-site guard: reject a state-changing request that a browser makes from
+    // another origin, so a malicious web page can't POST a wordpress.org session
+    // cookie (or a GitHub token, or a plugin install) to this local server. The
+    // CLI, the MCP app's loopback proxy and tests are not browsers — they send no
+    // Sec-Fetch-Site/Origin and pass. Reads (GET/HEAD) return only public data.
+    if (req.method !== 'GET' && req.method !== 'HEAD' && isCrossSite(req)) {
+      json(res, 403, { error: 'cross-site request refused' });
+      return;
+    }
+
     if (url.pathname === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(PAGE);
@@ -322,6 +332,20 @@ export function startServer({ port = 4321, quiet = false } = {}) {
 function json(res, code, obj) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(JSON.stringify(obj));
+}
+
+// True when a request is a browser request from a different origin. Prefer the
+// Fetch Metadata header (every modern browser sends Sec-Fetch-Site); fall back to
+// an Origin/Host comparison for older ones. A request with neither header is not
+// a browser (CLI, loopback proxy, tests) and is treated as same-origin.
+function isCrossSite(req) {
+  const sfs = req.headers['sec-fetch-site'];
+  if (sfs) return sfs !== 'same-origin' && sfs !== 'none';
+  const origin = req.headers.origin;
+  if (origin) {
+    try { return new URL(origin).host !== req.headers.host; } catch { return true; }
+  }
+  return false;
 }
 
 // First-run marker: the install wizard writes this once it's finished, so it
