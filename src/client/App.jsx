@@ -91,7 +91,7 @@ export default function App() {
 
       <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
 
-      <Footer />
+      <Footer version={status && status.version} />
     </CoreContext.Provider>
   );
 }
