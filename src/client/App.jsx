@@ -56,7 +56,7 @@ export default function App() {
     window.addEventListener('resize', place);
     place(); onScroll();
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', place); };
-  });
+  }, []);
 
   const openSetup = useCallback(() => setWizardOpen(true), []);
   useEffect(() => {

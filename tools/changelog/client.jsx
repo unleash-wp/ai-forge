@@ -2,7 +2,7 @@
 // Default-exports a React component that the shell mounts in <main>. It receives
 // the core services (toast, openSetup) via the CoreContext. Emits the same markup
 // / class names the vanilla UI did, so the existing SCSS styles it unchanged.
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useCore } from '../../src/client/core.jsx';
 import { Button, Select, Checkbox } from '../../src/client/ui';
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
@@ -110,7 +110,7 @@ function DateRangePicker({ since, until, onChange }) {
     document.addEventListener('click', onDoc);
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('click', onDoc); document.removeEventListener('keydown', onKey); };
-  });
+  }, [open]);
 
   function close() { setOpen(false); setPendStart(null); setHoverDay(null); }
   const tISO = isoD(today);
@@ -199,11 +199,16 @@ function Results({ data, since, until }) {
   // a saved cookie; otherwise the cookie-free count of tickets the in-window
   // changesets close.
   const coreTicketsShown = report.core.tracTicketCount != null ? report.core.tracTicketCount : (t.coreTickets || 0);
-  const all = uniq((report.gutenberg.contributors || []).concat(report.core.contributors || [])
+  // Contributor list is pure over the report; memoize so tab switches and the
+  // "Add @" toggle don't re-run the clean/bot-filter/sort every render.
+  const all = useMemo(() => uniq((report.gutenberg.contributors || []).concat(report.core.contributors || [])
     .map(cleanName).filter((n) => n && !isBot(n)))
-    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+    .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())), [report]);
   const dn = !!meta.devNotesOnly;
   const s = data.sources || {};
+  // The changelog body is a big HTML string (hundreds of <li>). Rebuild it only
+  // when the data changes, not on every tab/@-toggle/dev-notes re-render.
+  const bodyHtml = useMemo(() => changelogBodyHtml(data), [data]);
 
   // @ is off by default and controlled by the toggle for both the view and every export.
   const withAt = (n) => (propsAt ? '@' : '') + n;
@@ -255,7 +260,7 @@ function Results({ data, since, until }) {
             <SrcRow url={s.gutenberg} text={'Gutenberg commits on ' + esc(s.gbBranch) + ', ' + esc(s.since) + ' to ' + esc(s.until)} onCopy={() => copy(s.gutenberg, 'Link copied')} />
           </section>
         )}
-        <div dangerouslySetInnerHTML={{ __html: changelogBodyHtml(data) }} />
+        <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
         <details><summary>Raw Markdown</summary><pre>{data.markdown}</pre></details>
       </div>
 
