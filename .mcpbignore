@@ -1,0 +1,20 @@
+# Forge's MCP server is zero-runtime-dependency: bin/ + src/ + tools/ run on Node
+# built-ins only, and dist/main.js is a pre-built bundle. So node_modules (all
+# devDependencies) and the dev/build tooling are excluded from the .mcpb.
+node_modules/
+.git/
+.github/
+.claude/
+.agents/
+.impeccable/
+test/
+scripts/
+scratchpad/
+*.mcpb
+*.log
+.DS_Store
+.gitignore
+.npmignore
+skills-lock.json
+webpack.config.cjs
+CLAUDE.md
