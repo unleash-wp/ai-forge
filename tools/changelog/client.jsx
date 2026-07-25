@@ -459,10 +459,10 @@ export default function ChangelogTool() {
 
   const fieldLabel = { fontSize: '0.7813rem', fontWeight: '600', letterSpacing: '.04em', textTransform: 'uppercase', color: 'ui.muted', mb: '1.5', display: 'block' };
   const CHECKS = [
-    [labels, setLabels, 'Group Gutenberg', 'Group Gutenberg changes by label (Bug, Feature). Off shows one flat list.'],
-    [devNotes, setDevNotes, 'Group Core', 'Group Core changes by component (Editor, REST API). Off shows one flat list.'],
-    [devOnly, setDevOnly, 'Dev notes only', 'Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep.'],
-    [full, setFull, 'Full descriptions', "Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast."],
+    [labels, setLabels, 'Group Gutenberg', 'Group Gutenberg changes by label.'],
+    [devNotes, setDevNotes, 'Group Core', 'Group Core changes by component.'],
+    [devOnly, setDevOnly, 'Dev notes only', 'Show only Core dev-note tickets.'],
+    [full, setFull, 'Full descriptions', "Show each change's full text from GitHub."],
   ];
 
   return (

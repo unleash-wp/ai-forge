@@ -25,6 +25,8 @@ const ICON_PLUG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_SLIDERS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>';
 const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 const ICON_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
 // Copyable one-liner an assistant (Claude Code / Codex, running in this repo)
 // can run to drive Forge from the CLI.
@@ -148,18 +150,18 @@ function ConnectorIcon({ svg }) {
       css={{ '& svg': { width: '1.25rem', height: '1.25rem' } }} dangerouslySetInnerHTML={{ __html: svg }} />
   );
 }
-function ConnectedTag() {
+// Green check when connected, red cross when not. Replaces the "Connected" text.
+function StatusCircle({ ok }) {
   return (
-    <HStack gap="1.5" flex="none" color="ui.goodInk" fontSize="0.75rem" fontWeight="600">
-      <Box w="0.4375rem" h="0.4375rem" borderRadius="full" bg="ui.good" flex="none" />
-      <chakra.span>Connected</chakra.span>
-    </HStack>
+    <Box flex="none" w="1.1875rem" h="1.1875rem" borderRadius="full" display="grid" placeItems="center" bg={ok ? 'ui.good' : 'ui.bad'} color="white"
+      title={ok ? 'Connected' : 'Not connected'} aria-label={ok ? 'Connected' : 'Not connected'}
+      css={{ '& svg': { width: '0.6875rem', height: '0.6875rem' } }} dangerouslySetInnerHTML={{ __html: ok ? ICON_CHECK : ICON_X }} />
   );
 }
 
 // A connector is an accordion: the whole header row toggles the panel, so you
 // never have to hit a small icon.
-function ConnectorCard({ icon, name, desc, connected, required, open, onToggle, children }) {
+function ConnectorCard({ icon, name, desc, status, required, open, onToggle, children }) {
   return (
     <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" overflow="hidden">
       <Flex as="button" type="button" onClick={onToggle} align="center" gap="3" w="full" textAlign="left" bg="transparent" border="0" px="4" py="3.5" cursor="pointer" transition="background .12s" _hover={{ bg: 'ui.sunk' }}>
@@ -168,7 +170,7 @@ function ConnectorCard({ icon, name, desc, connected, required, open, onToggle, 
           <HStack gap="2" flexWrap="wrap">
             <chakra.span fontWeight="700" fontSize="0.9375rem" color="ui.heading">{name}</chakra.span>
             {required ? <chakra.span flex="none" fontSize="0.6875rem" fontWeight="600" color="ui.muted">Required</chakra.span> : null}
-            {connected ? <ConnectedTag /> : null}
+            {status !== undefined ? <StatusCircle ok={status} /> : null}
           </HStack>
           {desc ? <chakra.span display="block" mt="0.5" fontSize="0.75rem" color="ui.muted" lineHeight="1.35">{desc}</chakra.span> : null}
         </Box>
@@ -221,6 +223,10 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
 
   function pickLang(v) { setLang(v); writePref('forge:lang', v); }
   function pickTz(v) { setTz(v); writePref('forge:tz', v); }
+  function resetSettings() {
+    try { localStorage.removeItem('forge:lang'); localStorage.removeItem('forge:tz'); } catch { /* blocked */ }
+    setLang('en'); setTz(browserTz()); core.toast('Settings cleared');
+  }
 
   function copyCmd(id) {
     copyText(FORGE_CMD)
@@ -293,7 +299,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
               </Dialog.CloseTrigger>
             </Dialog.Header>
             <Dialog.Body p="0" flex="1" minH="0" display="flex">
-              <Tabs.Root orientation="vertical" defaultValue="connectors" variant="plain" display="flex" w="full" flex="1" minH="0">
+              <Tabs.Root orientation="vertical" defaultValue="general" variant="plain" display="flex" w="full" flex="1" minH="0">
                 <Tabs.List flex="none" minW="12.5rem" bg="ui.sunk" borderRightWidth="1px" borderColor="ui.border" p="3" gap="0.5" display="flex" flexDirection="column" alignItems="stretch">
                   <TabItem value="general" icon={ICON_SLIDERS} label="General" />
                   <TabItem value="connectors" icon={ICON_PLUG} label="Connectors" />
@@ -316,6 +322,13 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                         <Select block searchable ariaLabel="Timezone" value={tz} onChange={pickTz} options={TIMEZONES} placeholder="Pick a timezone" />
                         <Text fontSize="0.75rem" color="ui.muted" mt="1.5">Used to format dates.</Text>
                       </Box>
+                      <Box borderTopWidth="1px" borderColor="ui.border" pt="5">
+                        <Text fontSize="0.75rem" color="ui.muted" mb="3">Settings stay in this browser. Connectors are saved on this machine.</Text>
+                        <HStack gap="3" flexWrap="wrap">
+                          <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={resetSettings}>Clear local settings</Button>
+                          <BusyBtn busy={false} disabled onClick={() => {}}>Sync with UnleashWP account (soon)</BusyBtn>
+                        </HStack>
+                      </Box>
                     </Stack>
                   </Tabs.Content>
 
@@ -324,7 +337,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                     <TabIntro>Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex just copy a command to run Forge.</TabIntro>
                     <Stack gap="3">
 
-                      <ConnectorCard icon={ICON_GITHUB} name="GitHub" required desc="Raises the API limit to 5,000 requests per hour." connected={gh.set} open={openId === 'gh'} onToggle={() => toggle('gh')}>
+                      <ConnectorCard icon={ICON_GITHUB} name="GitHub" required desc="Raises the API limit to 5,000 requests per hour." status={gh.set} open={openId === 'gh'} onToggle={() => toggle('gh')}>
                         {gh.set ? (
                           <HStack justify="space-between" gap="3" flexWrap="wrap">
                             <Text fontSize="0.8125rem" color="ui.muted">Connected with {ghSourceLabel(gh.source)}.</Text>
@@ -347,7 +360,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                         )}
                       </ConnectorCard>
 
-                      <ConnectorCard icon={ICON_WORDPRESS} name="WordPress.org" required desc="Adds full ticket text for deep mode." connected={trac.set} open={openId === 'trac'} onToggle={() => toggle('trac')}>
+                      <ConnectorCard icon={ICON_WORDPRESS} name="WordPress.org" required desc="Adds full ticket text for deep mode." status={trac.set} open={openId === 'trac'} onToggle={() => toggle('trac')}>
                         {trac.set ? (
                           <HStack justify="space-between" gap="3" flexWrap="wrap">
                             <Text fontSize="0.8125rem" color="ui.muted">Cookie saved{trac.source === 'env' ? ' (environment variable)' : ''}.</Text>
@@ -413,14 +426,14 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                   <Tabs.Content value="credits" mt="0">
                     <TabTitle>Credits</TabTitle>
                     <Stack gap="6" maxW="46rem">
-                      <Flex align="center" justify="space-between" gap="4" flexWrap="wrap" borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.sunk" px="5" py="4">
-                        <Link href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP" display="inline-flex" alignItems="center"
-                          css={{ '& svg': { height: '1.5rem', width: 'auto', display: 'block', _dark: { filter: 'brightness(0) invert(1)' } } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
-                        <Box textAlign={{ base: 'left', sm: 'right' }}>
-                          <chakra.span display="block" fontWeight="700" color="ui.heading" fontSize="0.9375rem">UnleashWP Forge</chakra.span>
-                          <Text fontSize="0.8125rem" color="ui.muted">Version {version || '…'}</Text>
-                        </Box>
-                      </Flex>
+                      <Box borderRadius="forge" overflow="hidden" bg="linear-gradient(145deg, #2a3f6f, #0f131f)" color="white" px="6" py="6" boxShadow="md">
+                        <Box css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
+                        <HStack mt="3.5" gap="2.5" align="center" flexWrap="wrap">
+                          <chakra.span fontWeight="700" fontSize="1.0625rem">Forge</chakra.span>
+                          <chakra.span bg="whiteAlpha.200" fontSize="0.75rem" fontWeight="600" px="2" py="0.5" borderRadius="full">v{version || '0.0.0'}</chakra.span>
+                        </HStack>
+                        <Text mt="1.5" fontSize="0.8125rem" color="whiteAlpha.800">Release changelogs for WordPress Core and Gutenberg.</Text>
+                      </Box>
 
                       <Text fontSize="0.8125rem" color="ui.muted" lineHeight="1.6">
                         An independent project by Benjamin Zekavica (Morvance). Not linked to the WordPress Foundation or Automattic Inc.{' '}
@@ -434,23 +447,13 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                       </Box>
 
                       <Box>
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1">Built with</Heading>
-                        <Text fontSize="0.8125rem" color="ui.muted" mb="2.5">Open-source libraries in the app:</Text>
-                        <Stack gap="1.5">
-                          {STACK.map((s) => (
-                            <Link key={s.name} href={s.url} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">{s.name} ↗</Link>
-                          ))}
-                        </Stack>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1.5">Built with</Heading>
+                        <InlineLinks items={STACK} />
                       </Box>
 
                       <Box>
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1">Data sources</Heading>
-                        <Text fontSize="0.8125rem" color="ui.muted" mb="2.5">Where the changelog data comes from:</Text>
-                        <Stack gap="1.5">
-                          {DATA.map((s) => (
-                            <Link key={s.name} href={s.url} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">{s.name} ↗</Link>
-                          ))}
-                        </Stack>
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="1.5">Data sources</Heading>
+                        <InlineLinks items={DATA} />
                       </Box>
 
                       <Box borderTopWidth="1px" borderColor="ui.border" pt="5" pb="6">
@@ -471,6 +474,19 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
         </Dialog.Positioner>
       </Portal>
     </Dialog.Root>
+  );
+}
+
+// Comma-separated inline links (WordPress-credits style, no icons).
+function InlineLinks({ items }) {
+  return (
+    <Text fontSize="0.8125rem" color="ui.muted" lineHeight="1.8">
+      {items.map((s, i) => (
+        <chakra.span key={s.name}>
+          <Link href={s.url} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{s.name}</Link>{i < items.length - 1 ? ', ' : ''}
+        </chakra.span>
+      ))}
+    </Text>
   );
 }
 
