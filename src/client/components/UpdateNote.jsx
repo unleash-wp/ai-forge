@@ -1,6 +1,7 @@
 // Non-blocking "update available" note (free, via GitHub Releases). Never
 // downloads code - just links the release notes.
 import { useState, useEffect } from 'react';
+import { Box, Link, Text } from '@chakra-ui/react';
 
 export default function UpdateNote() {
   const [updates, setUpdates] = useState([]);
@@ -9,10 +10,11 @@ export default function UpdateNote() {
   }, []);
   if (!updates.length) return null;
   return (
-    <div className="c-warn">
+    <Box bg="rgba(252,190,0,.12)" border="1px solid" borderColor="rgba(252,190,0,.45)" color="ui.text"
+      borderRadius="forge" px="3.5" py="2.5" fontSize="0.875rem" mb="6">
       {updates.map((u) => (
-        <div key={u.id}>Update available: <b>{u.name}</b> {u.current} → {u.latest}. <a href={u.url} target="_blank" rel="noopener">Release notes</a></div>
+        <Text as="div" key={u.id}>Update available: <b>{u.name}</b> {u.current} → {u.latest}. <Link href={u.url} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Release notes</Link></Text>
       ))}
-    </div>
+    </Box>
   );
 }

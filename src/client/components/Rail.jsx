@@ -1,23 +1,32 @@
-// Left tool rail: one entry per installed+enabled tool (from /api/plugins) plus
+// Left tool rail: one tile per installed+enabled tool (from /api/plugins) plus
 // the Plugins manager entry. Icons come from each tool's manifest icon keyword.
+import { Box, Button, Stack, Text } from '@chakra-ui/react';
 import { ToolIcon, PluginsIcon } from '../icons.jsx';
+
+function Tile({ active, icon, name, ariaCurrent, onClick }) {
+  return (
+    <Button onClick={onClick} aria-current={ariaCurrent} variant="plain" h="auto" w="full"
+      flexDir="column" gap="1" py="3" px="1.5" borderRadius="forge" cursor={active ? 'default' : 'pointer'}
+      bg={active ? 'navy' : 'ui.sunk'} color={active ? 'white' : 'ui.text'} boxShadow={active ? 'sm' : 'none'}
+      transition="transform .12s ease, box-shadow .12s ease, background .14s ease"
+      _hover={active ? {} : { transform: 'translateY(-1px)', boxShadow: 'sm' }}>
+      <Box display="grid" placeItems="center">{icon}</Box>
+      <Text fontSize="0.5938rem" fontWeight="500" lineHeight="1.25">{name}</Text>
+    </Button>
+  );
+}
 
 export default function Rail({ railRef, plugins, activeId, inPlugins, onSelect, onPlugins }) {
   return (
-    <aside className="c-rail" ref={railRef}>
-      <span className="c-rail__cap">Tools</span>
-      <div id="railTools">
-        {plugins.filter((p) => p.enabled !== false).map((p) => (
-          <button key={p.id} type="button" className={'c-tool' + (p.id === activeId ? ' is-active' : '')} aria-current={p.id === activeId ? 'true' : undefined} onClick={() => onSelect(p.id)}>
-            <span className="c-tool__ic"><ToolIcon name={p.icon} size={18} /></span>
-            <span className="c-tool__name">{p.name}</span>
-          </button>
-        ))}
-        <button type="button" className={'c-tool c-tool--plugins' + (inPlugins ? ' is-active' : '')} aria-current={inPlugins ? 'true' : undefined} onClick={onPlugins}>
-          <span className="c-tool__ic"><PluginsIcon size={18} /></span>
-          <span className="c-tool__name">Plugins</span>
-        </button>
-      </div>
-    </aside>
+    <Stack as="aside" ref={railRef} position="sticky" top="5.125rem" mt="8" gap="2"
+      direction={{ base: 'row', lg: 'column' }} flexWrap={{ base: 'wrap', lg: 'nowrap' }}>
+      <Text fontSize="0.5938rem" fontWeight="600" letterSpacing=".12em" textTransform="uppercase" color="ui.muted" px="0.5" w={{ base: 'full', lg: 'auto' }}>Tools</Text>
+      {plugins.filter((p) => p.enabled !== false).map((p) => (
+        <Tile key={p.id} active={p.id === activeId} ariaCurrent={p.id === activeId ? 'true' : undefined}
+          onClick={() => onSelect(p.id)} name={p.name} icon={<ToolIcon name={p.icon} size={18} />} />
+      ))}
+      <Tile active={inPlugins} ariaCurrent={inPlugins ? 'true' : undefined} onClick={onPlugins}
+        name="Plugins" icon={<PluginsIcon size={18} />} />
+    </Stack>
   );
 }
