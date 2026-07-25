@@ -19,6 +19,8 @@ const config = defineConfig({
     '*, *::before, *::after': { borderWidth: '0', borderStyle: 'solid', borderColor: 'ui.border' },
   },
   theme: {
+    // Match the old SCSS mq() breakpoints so responsive props line up.
+    breakpoints: { sm: '560px', md: '640px', lg: '780px', xl: '1280px', '2xl': '1536px' },
     tokens: {
       colors: {
         navy: { value: '#203159' },

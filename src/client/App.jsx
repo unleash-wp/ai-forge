@@ -2,6 +2,7 @@
 // wizard and first-run installer. Brand = UnleashWP, platform = Forge; tools live
 // under it. Every piece is its own component in ./components/.
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Box, Grid, Heading, Text } from '@chakra-ui/react';
 import { CoreContext, useToast } from './core.jsx';
 import REGISTRY from './registry.js';
 import Header from './components/Header.jsx';
@@ -78,20 +79,26 @@ export default function App() {
 
       <Header headerRef={headerRef} scrolled={scrolled} ghSet={!!(gh && gh.set)} tracSet={!!(trac && trac.set)} onToggleSetup={() => setWizardOpen((o) => !o)} />
 
-      <div className="o-shell">
+      <Grid maxW="72.5rem" mx="auto" px={{ base: '4', lg: '6' }} gap={{ base: '4', lg: '8' }} alignItems="start"
+        templateColumns={{ base: '1fr', lg: '7.75rem minmax(0, 1fr)' }}>
         <Rail railRef={railRef} plugins={plugins} activeId={activeId} inPlugins={inPlugins} onSelect={setActiveId} onPlugins={() => setActiveId(PLUGINS_VIEW)} />
-        <main className="o-workspace">
+        <Box as="main" minW="0" pt={{ base: '4', lg: '8' }} pb="16">
           <UpdateNote />
-          <div className="c-workspace-head">
-            <h1 className="c-workspace-head__title">{inPlugins ? 'Plugins' : (active ? active.name : 'WP Changelog')}</h1>
-            <p className="c-workspace-head__desc">{inPlugins ? 'Tools installed on this Forge. Every tool is a plugin. Add your own.' : (active ? active.description : '')}</p>
-          </div>
+          <Box mb="6">
+            <Heading as="h1" fontWeight="700" color="ui.heading" letterSpacing="-.02em" mb="1.5"
+              fontSize={{ base: '1.375rem', lg: 'clamp(1.5rem, 1.28rem + 1.1vw, 1.75rem)' }}>
+              {inPlugins ? 'Plugins' : (active ? active.name : 'WP Changelog')}
+            </Heading>
+            <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
+              {inPlugins ? 'Tools installed on this Forge. Every tool is a plugin. Add your own.' : (active ? active.description : '')}
+            </Text>
+          </Box>
           {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}
-          <div ref={wizardRef}>
+          <Box ref={wizardRef}>
             <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
-          </div>
-        </main>
-      </div>
+          </Box>
+        </Box>
+      </Grid>
 
       <Footer />
     </CoreContext.Provider>
