@@ -90,6 +90,16 @@ const FAQ = [
   { q: 'Where are my keys stored?', a: 'On your machine, in owner-only files. They are never shared.' },
   { q: 'How do I update Forge?', a: 'Run git pull, then npm install. See the Updates tab.' },
 ];
+const STEPS = [
+  'Connect GitHub and WordPress.org in the Connectors tab.',
+  'Pick a date range and a milestone.',
+  'Click Generate to get the changelog.',
+];
+const HELP_LINKS = [
+  { title: 'Docs', desc: 'README and guides.', url: REPO_URL },
+  { title: 'Issues', desc: 'Report or track bugs.', url: REPO_URL + '/issues' },
+  { title: 'Discussions', desc: 'Ask the community.', url: REPO_URL + '/discussions' },
+];
 
 function readPref(key, fallback) {
   try { return localStorage.getItem(key) || fallback; } catch { return fallback; }
@@ -457,33 +467,42 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
 
                   <Tabs.Content value="help" mt="0">
                     <TabTitle>Help</TabTitle>
+                    <TabIntro>New to Forge? Here is how to get going, plus answers to common questions.</TabIntro>
                     <Stack gap="6" maxW="46rem">
-                      <Box>
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2">How it works</Heading>
-                        <chakra.ol ml="1.125rem" fontSize="0.8125rem" color="ui.text" lineHeight="1.5" css={{ '& li': { marginTop: '0.375rem' } }}>
-                          <chakra.li>Connect GitHub and WordPress.org in the Connectors tab.</chakra.li>
-                          <chakra.li>Pick a date range and a milestone.</chakra.li>
-                          <chakra.li>Click Generate to get the changelog.</chakra.li>
-                        </chakra.ol>
+                      <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="5" py="4">
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3.5">How it works</Heading>
+                        <Stack gap="3">
+                          {STEPS.map((s, i) => (
+                            <Flex key={i} gap="3" align="center">
+                              <Box flex="none" w="1.5rem" h="1.5rem" borderRadius="full" bg="navy" color="white" display="grid" placeItems="center" fontSize="0.75rem" fontWeight="700">{i + 1}</Box>
+                              <Text fontSize="0.8125rem" color="ui.text" lineHeight="1.4">{s}</Text>
+                            </Flex>
+                          ))}
+                        </Stack>
                       </Box>
+
                       <Box>
                         <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">Common questions</Heading>
-                        <Stack gap="3.5">
+                        <Stack gap="2">
                           {FAQ.map((f) => (
-                            <Box key={f.q}>
+                            <Box key={f.q} borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="4" py="3">
                               <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{f.q}</Text>
                               <Text fontSize="0.8125rem" color="ui.muted" mt="0.5" lineHeight="1.5">{f.a}</Text>
                             </Box>
                           ))}
                         </Stack>
                       </Box>
-                      <Box borderTopWidth="1px" borderColor="ui.border" pt="5" pb="6">
-                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="2.5">More help</Heading>
-                        <Stack gap="1.5">
-                          <Link href={REPO_URL} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">Docs on GitHub ↗</Link>
-                          <Link href={REPO_URL + '/issues'} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">Browse issues ↗</Link>
-                          <Link href={REPO_URL + '/discussions'} target="_blank" rel="noopener" fontSize="0.8125rem" color="ui.primary" fontWeight="600" w="fit-content">Ask in Discussions ↗</Link>
-                        </Stack>
+
+                      <Box pb="2">
+                        <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">More help</Heading>
+                        <SimpleGrid columns={{ base: 1, sm: 3 }} gap="3">
+                          {HELP_LINKS.map((l) => (
+                            <Link key={l.title} href={l.url} target="_blank" rel="noopener" display="block" borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="4" py="3.5" transition="border-color .12s, background .12s" _hover={{ borderColor: 'ui.primary', bg: 'ui.sunk', textDecoration: 'none' }}>
+                              <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{l.title} ↗</Text>
+                              <Text fontSize="0.75rem" color="ui.muted" mt="0.5" lineHeight="1.4">{l.desc}</Text>
+                            </Link>
+                          ))}
+                        </SimpleGrid>
                       </Box>
                     </Stack>
                   </Tabs.Content>
@@ -497,14 +516,13 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
 
                       <Tabs.Content value="about" mt="0">
                         <Stack gap="6" maxW="46rem">
-                          <Box borderRadius="forge" overflow="hidden" bg="linear-gradient(145deg, #2a3f6f, #0f131f)" color="white" px="6" py="6" boxShadow="md">
-                            <Box css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block', filter: 'brightness(0) invert(1)' } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
-                            <HStack mt="3.5" gap="2.5" align="center" flexWrap="wrap">
-                              <chakra.span fontWeight="700" fontSize="1.0625rem">Forge</chakra.span>
-                              <chakra.span bg="whiteAlpha.200" fontSize="0.75rem" fontWeight="600" px="2" py="0.5" borderRadius="full">v{version || '0.0.0'}</chakra.span>
-                            </HStack>
-                            <Text mt="1.5" fontSize="0.8125rem" color="whiteAlpha.800">Release changelogs for WordPress Core and Gutenberg.</Text>
-                          </Box>
+                          <Flex align="center" justify="space-between" gap="4" flexWrap="wrap" borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="6" py="5" boxShadow="sm">
+                            <Box>
+                              <Box css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block', _dark: { filter: 'brightness(0) invert(1)' } } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
+                              <Text mt="2.5" fontSize="0.8125rem" color="ui.muted">Release changelogs for WordPress Core and Gutenberg.</Text>
+                            </Box>
+                            <chakra.span flex="none" bg="navy" color="white" fontSize="0.75rem" fontWeight="700" px="2.5" py="1" borderRadius="full">v{version || '0.0.0'}</chakra.span>
+                          </Flex>
 
                           <Text fontSize="0.8125rem" color="ui.muted" lineHeight="1.6">
                             An independent project by Benjamin Zekavica (Morvance). Not linked to the WordPress Foundation or Automattic Inc.{' '}
