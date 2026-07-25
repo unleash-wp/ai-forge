@@ -1,4 +1,4 @@
-# UnleashWP Forge
+# UnleashWP AI Forge
 
 A small, self-hosted **toolbelt for WordPress release and dev work**, by
 [UnleashWP](https://unleash-wp.com). The free core ships with the **Changelog

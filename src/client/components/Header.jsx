@@ -31,7 +31,7 @@ export default function Header({ headerRef, scrolled, onHome, onOpenSettings }) 
         </Link>
         <Separator orientation="vertical" h="1.25rem" borderColor="ui.border" hideBelow="sm" />
         <Link href="/" onClick={(e) => { e.preventDefault(); onHome(); }}
-          color="ui.heading" fontWeight="500" fontSize="0.9688rem" hideBelow="sm" _hover={{ opacity: 0.7 }}>Forge</Link>
+          color="ui.heading" fontWeight="500" fontSize="0.9688rem" hideBelow="sm" _hover={{ opacity: 0.7 }}>AI Forge</Link>
         <HStack ml="auto" gap="1">
           <chakra.button {...iconBtn} onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={t('Toggle dark mode')} title={dark ? t('Light mode') : t('Dark mode')}
             css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: dark ? SUN : MOON }} />

@@ -1,7 +1,7 @@
 {
   "name": "unleashwp-forge",
   "owner": { "name": "UnleashWP" },
-  "description": "UnleashWP Forge — WordPress release tooling for Claude Code and Codex.",
+  "description": "UnleashWP AI Forge — WordPress release tooling for Claude Code and Codex.",
   "plugins": [
     {
       "name": "forge",

@@ -98,7 +98,7 @@ export default function App() {
               {inPlugins ? t('Plugins') : (active ? t(active.name) : 'Changelog')}
             </Heading>
             <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
-              {inPlugins ? t('Tools installed on UnleashWP Forge. Every tool is a plugin. Add your own.') : (active ? t(active.description) : '')}
+              {inPlugins ? t('Tools installed on UnleashWP AI Forge. Every tool is a plugin. Add your own.') : (active ? t(active.description) : '')}
             </Text>
           </Box>
           {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}

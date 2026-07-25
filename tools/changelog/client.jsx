@@ -1,4 +1,4 @@
-// Changelog Generator - client side of the first UnleashWP Forge tool plugin.
+// Changelog Generator - client side of the first UnleashWP AI Forge tool plugin.
 // Default-exports a React component that the shell mounts in <main>. It receives
 // the core services (toast, openSetup) via the CoreContext. UI is Chakra UI v3;
 // the changelog body stays an HTML string (React can't mount components inside
