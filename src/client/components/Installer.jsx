@@ -4,6 +4,10 @@ import { fetchJSON } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL } from '../brand.js';
 import { Button, TextInput, TextArea } from '../ui';
+import { Box, Code, Flex, Heading, HStack, Link, Text, chakra } from '@chakra-ui/react';
+
+const msgColor = (k) => (k === 'good' ? 'ui.goodInk' : k === 'bad' ? 'ui.bad' : 'ui.muted');
+const linkBtn = { background: 'none', border: '0', color: 'ui.muted', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'body' };
 
 export default function Installer({ status, onDone }) {
   const [step, setStep] = useState(1);
@@ -57,64 +61,62 @@ export default function Installer({ status, onDone }) {
   }
 
   return (
-    <div className="c-installer">
-      <div className="c-installer__card">
-        <div className="c-installer__head">
-          <span className="c-logo" aria-label="UnleashWP" dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
-          <div className="c-installer__dots">
-            <span className={'c-installer__dot' + (step >= 1 ? ' is-active' : '')} />
-            <span className={'c-installer__dot' + (step >= 2 ? ' is-active' : '')} />
-          </div>
-        </div>
-        <div className="c-installer__body">
+    <Flex position="fixed" inset="0" zIndex="200" bg="rgba(15,19,31,.55)" backdropFilter="blur(4px)" placeItems="center" p="6">
+      <Box w="full" maxW="35rem" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="lg" overflow="hidden">
+        <Flex align="center" justify="space-between" gap="4" px="6" py="4" borderBottom="1px solid" borderColor="ui.border">
+          <chakra.span aria-label="UnleashWP" css={{ '& svg': { height: '1.25rem', width: 'auto', display: 'block', _dark: { filter: 'brightness(0) invert(1)' } } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
+          <HStack gap="2">
+            {[1, 2].map((n) => <Box key={n} w="0.5rem" h="0.5rem" borderRadius="full" transition="background .2s" bg={step >= n ? 'navy' : 'ui.border'} />)}
+          </HStack>
+        </Flex>
+        <Box p="6">
           {step === 1 && (
-            <div className="c-installer__step">
-              <span className="c-installer__kicker">Step 1 of 2</span>
-              <h2 className="c-installer__step-title">Connect GitHub</h2>
-              <p className="c-installer__step-desc">Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.</p>
+            <Box>
+              <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">Step 1 of 2</Text>
+              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">Connect GitHub</Heading>
+              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.</Text>
               {ghDetected ? (
-                <div className="c-installer__ok"><span>✓</span> GitHub ready · {status.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token'} · 5000/h</div>
+                <HStack gap="2" color="ui.goodInk" fontWeight="500" fontSize="0.875rem" mb="3"><chakra.span>✓</chakra.span> GitHub ready · {status.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token'} · 5000/h</HStack>
               ) : (
-                <div>
-                  <ol className="c-installer__step-list"><li className="c-installer__step-item">Detected automatically if the <code>gh</code> CLI is logged in, or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it:</li></ol>
-                  <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ margin: 0 }}>
-                    <TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder="ghp_… or github_pat_…  (optional, skip for 60/h)" autoComplete="off" spellCheck="false" />
-                  </form>
-                  <span className={'c-message' + (ghMsg.kind ? ' is-' + ghMsg.kind : '')}>{ghMsg.text}</span>
-                </div>
+                <Box>
+                  <chakra.ol mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">Detected automatically if the <Code>gh</Code> CLI is logged in, or <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">create a token</Link> (leave every scope unchecked) and paste it:</chakra.li></chakra.ol>
+                  <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0"><TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder="ghp_… or github_pat_…  (optional, skip for 60/h)" autoComplete="off" spellCheck="false" /></chakra.form>
+                  <Text as="span" fontSize="0.7813rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>
+                </Box>
               )}
-            </div>
+            </Box>
           )}
           {step === 2 && (
-            <div className="c-installer__step">
-              <span className="c-installer__kicker">Step 2 of 2</span>
-              <h2 className="c-installer__step-title">Connect WordPress.org</h2>
-              <p className="c-installer__step-desc">Needed for <b>deep</b>: full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
+            <Box>
+              <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">Step 2 of 2</Text>
+              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">Connect WordPress.org</Heading>
+              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">Needed for <b>deep</b>: full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</Text>
               {browser && (
-                <div className="c-quick-import">
-                  <span className="c-quick-import__label">Quick import from your browser <span className="c-quick-import__note">(you must be logged in there)</span></span>
-                  <div className="c-quick-import__buttons"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></div>
-                </div>
+                <Box mb="3">
+                  <chakra.span display="block" fontSize="0.7813rem" fontWeight="600" color="ui.text" mb="2">Quick import from your browser <chakra.span fontWeight="400" color="ui.muted">(you must be logged in there)</chakra.span></chakra.span>
+                  <HStack flexWrap="wrap" gap="2"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></HStack>
+                </Box>
               )}
-              <details className="c-quick-import__manual"><summary className="c-quick-import__summary">Or paste it manually</summary>
-                <ol className="c-quick-import__steps">
-                  <li className="c-quick-import__step"><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
-                  <li className="c-quick-import__step">DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
-                </ol>
+              <chakra.details mb="3">
+                <chakra.summary fontSize="0.7813rem" color="ui.muted" cursor="pointer">Or paste it manually</chakra.summary>
+                <chakra.ol mt="2" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted">
+                  <chakra.li my="1"><Link href="https://wordpress.org/" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Log in to wordpress.org</Link>.</chakra.li>
+                  <chakra.li my="1">DevTools → Application → Cookies → <Code>wordpress.org</Code> → copy <Code>wporg_logged_in</Code> + <Code>wporg_sec</Code> as <Code>name=value; name=value</Code>.</chakra.li>
+                </chakra.ol>
                 <TextArea rows="3" value={cookie} onChange={(e) => setCookie(e.target.value)} placeholder="wporg_logged_in=…; wporg_sec=…" />
-              </details>
-              <span className={'c-message' + (ckMsg.kind ? ' is-' + ckMsg.kind : '')}>{ckMsg.text}</span>
+              </chakra.details>
+              <Text as="span" fontSize="0.7813rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>
               {escape && (
-                <div className="c-installer__escape">Trac isn't reachable right now (bot wall or expired cookie). You can <button className="c-installer__back" type="button" onClick={finish}>continue anyway</button>. The tool runs cookie-free and you can add the cookie later in Setup.</div>
+                <Box mt="4" pt="4" borderTop="1px solid" borderColor="ui.border" fontSize="0.8125rem" color="ui.muted">Trac isn't reachable right now (bot wall or expired cookie). You can <chakra.button type="button" onClick={finish} css={linkBtn}>continue anyway</chakra.button>. The tool runs cookie-free and you can add the cookie later in Setup.</Box>
               )}
-            </div>
+            </Box>
           )}
-        </div>
-        <div className="c-installer__foot">
-          {step !== 1 && <button className="c-installer__back" type="button" onClick={() => setStep(1)}>Back</button>}
-          <Button variant="primary" onClick={primary}>{step === 1 ? 'Continue' : 'Finish setup'}</Button>
-        </div>
-      </div>
-    </div>
+        </Box>
+        <Flex align="center" gap="3" px="6" py="4" borderTop="1px solid" borderColor="ui.border">
+          {step !== 1 && <chakra.button type="button" onClick={() => setStep(1)} css={linkBtn}>Back</chakra.button>}
+          <Box ml="auto"><Button variant="primary" onClick={primary}>{step === 1 ? 'Continue' : 'Finish setup'}</Button></Box>
+        </Flex>
+      </Box>
+    </Flex>
   );
 }
