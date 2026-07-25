@@ -215,7 +215,9 @@ function CmdPanel({ id, copiedId, onCopy }) {
   );
 }
 
-export default function SetupWizard({ status, refreshStatus, open, onClose }) {
+export default function SetupWizard({ status, refreshStatus, open, initialTab = 'general', onClose }) {
+  const [tab, setTab] = useState('general');
+  useEffect(() => { if (open) setTab(initialTab); }, [open, initialTab]);
   const [ghToken, setGhToken] = useState('');
   const [cookieVal, setCookieVal] = useState('');
   const [ghMsg, setGhMsg] = useState({ text: '', kind: '' });
@@ -339,7 +341,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
               </Dialog.CloseTrigger>
             </Dialog.Header>
             <Dialog.Body p="0" flex="1" minH="0" display="flex">
-              <Tabs.Root orientation="vertical" defaultValue="general" variant="plain" display="flex" w="full" flex="1" minH="0">
+              <Tabs.Root orientation="vertical" value={tab} onValueChange={(e) => setTab(e.value)} variant="plain" display="flex" w="full" flex="1" minH="0">
                 <Tabs.List flex="none" minW="12.5rem" bg="ui.sunk" borderRightWidth="1px" borderColor="ui.border" p="3" gap="0.5" display="flex" flexDirection="column" alignItems="stretch">
                   <TabItem value="general" icon={ICON_SLIDERS} label={t('General')} />
                   <TabItem value="connectors" icon={ICON_PLUG} label={t('Connectors')} />
