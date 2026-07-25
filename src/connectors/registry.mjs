@@ -15,7 +15,7 @@ export const CONNECTOR_KINDS = ['credential', 'command', 'oauth-device'];
 
 // The line Claude Code / Codex run to register Forge as an MCP server. One source
 // so the setup cards and any installer step stay in sync.
-const mcpAddCmd = (agent) => `${agent} mcp add forge -- npx -y @unleashwp/forge@latest mcp`;
+const mcpAddCmd = (agent) => `${agent} mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp`;
 
 // Core connectors, in setup order. `status()` returns the per-connector status
 // the UI renders (never the secret itself); `command` is the line for command-kind.

@@ -5,7 +5,7 @@ Forge is UnleashWP's AI tool + **plugin platform** for WordPress; it ships with 
 ## 1. Install
 
 ```bash
-npm install -g @unleashwp/forge
+npm install -g @unleashwp/ai-forge
 ```
 
 This puts the `ai-forge` command on your PATH (`uwp` and `forge` are aliases). The CLI is plain Node ≥ 18 with zero runtime dependencies; the browser UI ships pre-built.
@@ -37,7 +37,7 @@ Opens a browser UI at `http://localhost:4321` with a date-range picker and Copy 
 Register Forge once as an MCP server, then just ask Claude Code or Codex:
 
 ```bash
-claude mcp add forge -- npx -y @unleashwp/forge@latest mcp
+claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp
 ```
 
 > "Give me the WordPress 7.1 release changelog for July 15–22, as a post."

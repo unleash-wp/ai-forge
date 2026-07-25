@@ -5,7 +5,7 @@ Forge runs in four places. Pick whichever fits how you work — they share the s
 ## npm (terminal)
 
 ```bash
-npm install -g @unleashwp/forge   # the `ai-forge` command (aliases: uwp, forge)
+npm install -g @unleashwp/ai-forge   # the `ai-forge` command (aliases: uwp, forge)
 gh auth login                     # optional: raises the GitHub API limit to 5000/h
 ```
 
@@ -14,7 +14,7 @@ gh auth login                     # optional: raises the GitHub API limit to 500
 Run it without a global install using `npx`:
 
 ```bash
-npx @unleashwp/forge@latest changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+npx @unleashwp/ai-forge@latest changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 ```
 
 ## Claude Code / Codex (MCP server)
@@ -23,10 +23,10 @@ Register Forge once; the agent then calls its tools live.
 
 ```bash
 # Claude Code
-claude mcp add forge -- npx -y @unleashwp/forge@latest mcp
+claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp
 
 # Codex — add an MCP server:
-#   command = "npx", args = ["-y", "@unleashwp/forge@latest", "mcp"]
+#   command = "npx", args = ["-y", "@unleashwp/ai-forge@latest", "mcp"]
 ```
 
 The MCP server is named **`forge`**. See **[Using Forge from Claude & Codex](Using-Forge-from-Claude-and-Codex)**.
@@ -46,7 +46,7 @@ Then open **Claude Desktop → Settings → Extensions** and install `unleashwp-
 
 ## Claude Code plugin (marketplace)
 
-The repo ships a Claude Code plugin manifest, so you can add Forge through the plugin marketplace flow. The plugin registers the same `forge` MCP server via `npx @unleashwp/forge@latest mcp`.
+The repo ships a Claude Code plugin manifest, so you can add Forge through the plugin marketplace flow. The plugin registers the same `forge` MCP server via `npx @unleashwp/ai-forge@latest mcp`.
 
 ## Development (clone + build)
 

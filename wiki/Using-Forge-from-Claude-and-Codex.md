@@ -6,14 +6,14 @@ Forge is a **Model Context Protocol (MCP) server**. Register it once, and Claude
 
 ```bash
 # Claude Code
-claude mcp add forge -- npx -y @unleashwp/forge@latest mcp
+claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp
 ```
 
 For **Codex**, add an MCP server to your config with:
 
 ```
 command = "npx"
-args    = ["-y", "@unleashwp/forge@latest", "mcp"]
+args    = ["-y", "@unleashwp/ai-forge@latest", "mcp"]
 ```
 
 The server is named **`forge`** and runs over stdio. `npx @latest` means it always fetches the current published version.

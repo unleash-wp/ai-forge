@@ -26,7 +26,7 @@ Forge lists branches with `git ls-remote`, which is **not** subject to the GitHu
 
 ### How do I update Forge?
 
-- **npm / npx:** `npx @unleashwp/forge@latest …` always uses the current release; a global install updates with `npm i -g @unleashwp/forge@latest`.
+- **npm / npx:** `npx @unleashwp/ai-forge@latest …` always uses the current release; a global install updates with `npm i -g @unleashwp/ai-forge@latest`.
 - **Claude Code / Codex:** the MCP command uses `@latest`, so it updates itself.
 - **Claude Desktop:** re-pack (`npm run mcpb:pack`) and reinstall the `.mcpb`.
 - **Dev clone:** `git pull && npm install`.
