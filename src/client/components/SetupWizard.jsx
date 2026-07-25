@@ -3,6 +3,7 @@
 // token + wordpress.org cookie), stored locally (owner-only), sent only to
 // GitHub / WordPress.org. Chakra handles backdrop, focus trap and Escape.
 import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import { fetchJSON, useCore } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
@@ -217,7 +218,8 @@ function CmdPanel({ id, copiedId, onCopy }) {
 
 export default function SetupWizard({ status, refreshStatus, open, initialTab = 'general', onClose }) {
   const [tab, setTab] = useState('general');
-  useEffect(() => { if (open) setTab(initialTab); }, [open, initialTab]);
+  const [confirmClear, setConfirmClear] = useState(false);
+  useEffect(() => { if (open) { setTab(initialTab); setConfirmClear(false); } }, [open, initialTab]);
   const [ghToken, setGhToken] = useState('');
   const [cookieVal, setCookieVal] = useState('');
   const [ghMsg, setGhMsg] = useState({ text: '', kind: '' });
@@ -231,6 +233,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   // General
   const { locale, setLocale, t } = useI18n();
   const [tz, setTz] = useState(() => readPref('forge:tz', browserTz()));
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = resolvedTheme === 'dark';
 
   // Updates
   const [updates, setUpdates] = useState([]);
@@ -261,8 +265,13 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   function pickLang(v) { setLocale(v); core.toast('Saved', 'success'); }
   function pickTz(v) { setTz(v); writePref('forge:tz', v); core.toast('Saved', 'success'); }
   function resetSettings() {
-    try { localStorage.removeItem('forge:lang'); localStorage.removeItem('forge:tz'); } catch { /* blocked */ }
-    setLocale('en'); setTz(browserTz()); core.toast('Settings cleared', 'success');
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf('forge:') === 0) localStorage.removeItem(k);
+      }
+    } catch { /* blocked */ }
+    setLocale('en'); setTz(browserTz()); core.toast(t('Settings cleared'), 'success');
   }
 
   function copyStr(text, id) {
@@ -365,12 +374,26 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                         <Select block searchable ariaLabel={t('Timezone')} value={tz} onChange={pickTz} options={TIMEZONES} placeholder={t('Pick a timezone')} />
                         <Text fontSize="0.75rem" color="ui.muted" mt="1.5">{t('Used to format dates.')}</Text>
                       </Box>
+                      <Box>
+                        <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">{t('Appearance')}</chakra.label>
+                        <HStack gap="2">
+                          <Button variant={dark ? 'ghost' : 'primary'} size="sm" onClick={() => setTheme('light')}>{t('Light')}</Button>
+                          <Button variant={dark ? 'primary' : 'ghost'} size="sm" onClick={() => setTheme('dark')}>{t('Dark')}</Button>
+                        </HStack>
+                      </Box>
                       <Box borderTopWidth="1px" borderColor="ui.border" pt="5">
                         <Text fontSize="0.75rem" color="ui.muted" mb="3">{t('Settings stay in this browser. Connectors are saved on this machine.')}</Text>
-                        <HStack gap="3" flexWrap="wrap">
-                          <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={resetSettings}>{t('Clear local settings')}</Button>
-                          <BusyBtn busy={false} disabled onClick={() => {}}>{t('Sync with UnleashWP account (soon)')}</BusyBtn>
-                        </HStack>
+                        {confirmClear ? (
+                          <Box borderWidth="1px" borderColor="ui.bad" borderRadius="forge" bg="rgba(192,57,43,.08)" p="3.5" maxW="24rem">
+                            <Text fontSize="0.8125rem" color="ui.text" mb="3">{t('Delete all local settings for this browser? This cannot be undone.')}</Text>
+                            <HStack gap="2">
+                              <Button variant="primary" size="sm" bg="ui.bad" _hover={{ bg: 'ui.bad', opacity: 0.9 }} onClick={() => { resetSettings(); setConfirmClear(false); }}>{t('Delete everything')}</Button>
+                              <Button variant="ghost" size="sm" onClick={() => setConfirmClear(false)}>{t('Cancel')}</Button>
+                            </HStack>
+                          </Box>
+                        ) : (
+                          <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" danger color="ui.bad" borderColor="rgba(192,57,43,.4)" onClick={() => setConfirmClear(true)}>{t('Clear local settings')}</Button>
+                        )}
                       </Box>
                     </Stack>
                   </Tabs.Content>
@@ -512,7 +535,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                   </Tabs.Content>
 
                   <Tabs.Content value="credits" mt="0">
-                    <Tabs.Root defaultValue="about" variant="line" colorPalette="brand">
+                    <Tabs.Root defaultValue="about" variant="line" colorPalette="brand"
+                      css={{ '& [data-part="trigger"][data-selected]': { color: 'ui.heading' } }}>
                       <Tabs.List borderBottomWidth="1px" borderColor="ui.border" mb="6" gap="1">
                         <Tabs.Trigger value="about" fontWeight="600">{t('Credits')}</Tabs.Trigger>
                         <Tabs.Trigger value="contribute" fontWeight="600">{t('Contribute')}</Tabs.Trigger>
