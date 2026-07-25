@@ -36,14 +36,18 @@ jobs:
       - name: Install
         run: npm ci --ignore-scripts
 
-      # One version source: the tag must match package.json (strip the leading v).
-      - name: Check tag matches package.json version
+      # One version source = package.json. The tag must match it, and every derived
+      # file (manifest.json) must be in sync — run `node scripts/sync-version.mjs`.
+      - name: Check versions are in sync
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PKG="$(node -p "require('./package.json').version")"
+          MAN="$(node -p "require('./manifest.json').version")"
           if [ "$TAG" != "$PKG" ]; then
-            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG" >&2
-            exit 1
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG" >&2; exit 1
+          fi
+          if [ "$MAN" != "$PKG" ]; then
+            echo "manifest.json ($MAN) != package.json ($PKG) — run: node scripts/sync-version.mjs" >&2; exit 1
           fi
 
       - name: Build the browser UI bundle

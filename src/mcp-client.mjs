@@ -6,6 +6,7 @@
 // specifics (see src/mcp-wporg.mjs for the one server we bind today).
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { VERSION } from './version.mjs';
 
 // id -> { resolvePath: () => string, credentialEnv: { ENV_NAME: () => value|null } }
 const servers = new Map();
@@ -68,7 +69,7 @@ export function mcpSession(id, calls, { timeout = 30000 } = {}) {
 
     (async () => {
       try {
-        await req('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'forge', version: '0.1.0' } });
+        await req('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'forge', version: VERSION } });
         send({ jsonrpc: '2.0', method: 'notifications/initialized' });
         const results = [];
         for (const c of calls) {
