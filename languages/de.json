@@ -11,6 +11,7 @@
   "Descriptions": "Beschreibung",
   "Search…": "Suchen…",
   "Filter options": "Optionen filtern",
+  "No matches": "Keine Treffer",
   "Group Gutenberg changes by label.": "Gutenberg-Änderungen nach Label gruppieren.",
   "Group Core changes by component.": "Core-Änderungen nach Komponente gruppieren.",
   "Show only Core dev-note tickets.": "Nur Core-Dev-Note-Tickets anzeigen.",
@@ -132,7 +133,7 @@
   "Tools installed on UnleashWP Forge. Every tool is a plugin. Add your own.": "Tools, die auf UnleashWP Forge installiert sind. Jedes Tool ist ein Plugin. Füge dein eigenes hinzu.",
   "All rights reserved.": "Alle Rechte vorbehalten.",
 
-  "Turn a date window into a ready release-post changelog for Core and Gutenberg.": "Mach aus einem Zeitfenster einen fertigen Release-Post-Changelog für Core und Gutenberg.",
+  "Release-post changelog for Core and Gutenberg.": "Release-Post-Changelog für Core und Gutenberg.",
 
   "Date range": "Zeitraum",
   "Milestone": "Meilenstein",

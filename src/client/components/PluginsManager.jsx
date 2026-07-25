@@ -139,17 +139,17 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
         </Flex>
       )}
 
-      <Box borderWidth="1px" borderColor="ui.border" borderRadius="0.875rem" bg="ui.surface" boxShadow="md" overflow="hidden">
+      <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" boxShadow="sm" overflow="hidden">
         {shown.map((p) => {
           const up = upFor(p.id);
           const active = p.enabled !== false;
           const core = p.id === 'changelog';
           return (
-            <Flex key={p.id} align="center" gap="4" px="6" py="4.5" transition="background .14s ease" opacity={active ? 1 : 0.6} borderTopWidth="1px" borderColor="ui.border" _first={{ borderTopWidth: '0' }} _hover={{ bg: 'ui.sunk' }} flexWrap={{ base: 'wrap', md: 'nowrap' }}>
+            <Flex key={p.id} align="center" gap="4" px="5" py="4" transition="background .14s ease" opacity={active ? 1 : 0.6} borderTopWidth="1px" borderColor="ui.border" _first={{ borderTopWidth: '0' }} _hover={{ bg: 'ui.sunk' }} flexWrap={{ base: 'wrap', md: 'nowrap' }}>
               {selectableIds.length > 0 && (core
                 ? <Box w="1.25rem" flex="none" aria-hidden="true" />
                 : <Checkbox checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
-              <Flex display="grid" placeItems="center" w="2.75rem" h="2.75rem" flex="none" borderRadius="0.6875rem" color="white" bg={active ? 'linear-gradient(145deg, #2a3f6f, #0f131f)' : 'ui.slate'} boxShadow={active ? '0 2px 8px rgba(32,49,89,.28), inset 0 1px 0 rgba(255,255,255,.08)' : 'none'} css={{ '& svg': { width: '1.3125rem', height: '1.3125rem' } }}><ToolIcon name={p.icon} size={20} /></Flex>
+              <Flex display="grid" placeItems="center" w="2.5rem" h="2.5rem" flex="none" borderRadius="forge" color="white" bg={active ? 'navy' : 'ui.muted'} css={{ '& svg': { width: '1.25rem', height: '1.25rem' } }}><ToolIcon name={p.icon} size={20} /></Flex>
               <Box flex="1" minW="0">
                 <HStack gap="2">
                   <chakra.h3 m="0" fontSize="0.9375rem" fontWeight="600" color="ui.heading" letterSpacing="-.01em">{t(p.name)}</chakra.h3>

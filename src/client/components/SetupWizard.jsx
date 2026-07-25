@@ -33,7 +33,7 @@ const ICON_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 // Copyable one-liner an assistant (Claude Code / Codex, running in this repo)
 // can run to drive Forge from the CLI.
-const FORGE_CMD = 'node bin/wp-release-helper.mjs --since <start> --until <end> --milestone <x.y> --post';
+const FORGE_CMD = 'uwp --since <start> --until <end> --milestone <x.y> --post';
 
 // Flag emoji from a 2-letter country code (regional indicator letters).
 const flagOf = (cc) => cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
