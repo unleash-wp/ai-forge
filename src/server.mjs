@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from './connectors/github-token.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
 import { listConnectors } from './connectors/registry.mjs';
+import { VERSION } from './version.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 import { checkUpdates } from './update.mjs';
@@ -16,7 +17,6 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 // Light-bulb mark served at /brand/bulb.svg (favicon + empty-state image). The
 // header wordmark now lives in the React bundle, not injected here.
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
-const VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')).version;
 
 export function startServer({ port = 4321, quiet = false } = {}) {
   // Load tool plugins; reloadable so install/uninstall picks up changes without

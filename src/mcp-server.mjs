@@ -6,14 +6,10 @@
 // Register it (the server is named "forge"; the command it runs is `uwp mcp`):
 //   Claude Code:  claude mcp add forge -- uwp mcp
 //   Codex:        add an MCP server { command = "uwp", args = ["mcp"] }
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import { loadPlugins } from './plugins.mjs';
 import { startInternalServer, forgeAppHtml, appAvailable } from './mcp-app.mjs';
+import { VERSION } from './version.mjs';
 
-const DIR = dirname(fileURLToPath(import.meta.url));
-const VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')).version;
 const PROTOCOL = '2024-11-05';
 
 export async function startMcpServer() {
