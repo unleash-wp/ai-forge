@@ -27,6 +27,20 @@ const config = defineConfig({
         yellow: { value: '#fcbe00' },
         slate: { value: '#727f9f' },
         slate2: { value: '#35415b' },
+        // Brand palette (navy) — powers colorPalette="brand" on Chakra components.
+        brand: {
+          50: { value: '#eef1f6' },
+          100: { value: '#d7dded' },
+          200: { value: '#b0bcd6' },
+          300: { value: '#8496bd' },
+          400: { value: '#5d6f9f' },
+          500: { value: '#3c4e7d' },
+          600: { value: '#2a3b64' },
+          700: { value: '#203159' },
+          800: { value: '#1a2747' },
+          900: { value: '#141d35' },
+          950: { value: '#0f131f' },
+        },
       },
       fonts: {
         heading: { value: '"Ubuntu", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
@@ -38,6 +52,14 @@ const config = defineConfig({
     },
     semanticTokens: {
       colors: {
+        // brand colorPalette sub-tokens (what Chakra's recipes resolve).
+        'brand.solid': { value: { base: '{colors.brand.700}', _dark: '{colors.brand.400}' } },
+        'brand.contrast': { value: '#ffffff' },
+        'brand.fg': { value: { base: '{colors.brand.700}', _dark: '{colors.brand.300}' } },
+        'brand.muted': { value: { base: '{colors.brand.100}', _dark: '{colors.brand.900}' } },
+        'brand.subtle': { value: { base: '{colors.brand.50}', _dark: '{colors.brand.950}' } },
+        'brand.emphasized': { value: { base: '{colors.brand.200}', _dark: '{colors.brand.800}' } },
+        'brand.focusRing': { value: { base: '{colors.brand.600}', _dark: '{colors.brand.400}' } },
         'ui.bg': { value: { base: '#eef1f6', _dark: '#0f1218' } },
         'ui.surface': { value: { base: '#ffffff', _dark: '#171b24' } },
         'ui.sunk': { value: { base: '#f5f7fa', _dark: '#1e232e' } },
@@ -52,6 +74,14 @@ const config = defineConfig({
         'ui.good': { value: '#1a8f57' },
         'ui.goodInk': { value: { base: '#157a45', _dark: '#4bd08a' } },
         'ui.bad': { value: '#c0392b' },
+        'ui.ghostHover': { value: { base: 'rgba(32,49,89,.06)', _dark: 'rgba(124,147,255,.12)' } },
+        'ui.ring': { value: { base: 'rgba(32,49,89,.26)', _dark: 'rgba(124,147,255,.42)' } },
+        'ui.rangeFill': { value: { base: '#e7ebf5', _dark: '#26314d' } },
+      },
+      shadows: {
+        sm: { value: { base: '0 1px 2px rgba(32,49,89,.06)', _dark: '0 1px 2px rgba(0,0,0,.4)' } },
+        md: { value: { base: '0 6px 24px rgba(32,49,89,.09)', _dark: '0 6px 24px rgba(0,0,0,.4)' } },
+        lg: { value: { base: '0 18px 48px rgba(32,49,89,.16)', _dark: '0 18px 48px rgba(0,0,0,.55)' } },
       },
     },
   },
