@@ -7,6 +7,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { ToolIcon } from '../icons.jsx';
 import { Button, Select, TextInput, Checkbox } from '../ui';
+import { Badge, Box, Flex, HStack, Link, Text, chakra } from '@chakra-ui/react';
+
+const NOTICE = { bg: 'rgba(252,190,0,.12)', border: '1px solid', borderColor: 'rgba(252,190,0,.45)', color: 'ui.text', borderRadius: 'forge', px: '3.5', py: '2.5', fontSize: '0.875rem', mb: '6' };
 
 const VERB = { activate: 'Activating', deactivate: 'Deactivating', update: 'Updating', remove: 'Removing' };
 const BULK_OPTIONS = [
@@ -105,73 +108,76 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
 
   return (
     <>
-      {busy && <div className="c-warn" role="status" aria-live="polite">{busy}</div>}
-      {err && <div className="c-warn c-warn--error" role="alert">{err}</div>}
+      {busy && <Box {...NOTICE} role="status" aria-live="polite">{busy}</Box>}
+      {err && <Box {...NOTICE} borderColor="ui.bad" color="ui.bad" role="alert">{err}</Box>}
 
-      <div className="c-plugins__install">
-        <span className="c-plugins__install-label">Add a tool</span>
-        <form className="c-plugins__install-form" onSubmit={(e) => { e.preventDefault(); installUrl(); }}>
-          <TextInput className="c-plugins__install-input" value={source} onChange={(e) => setSource(e.target.value)} placeholder="github:owner/repo or https://github.com/owner/repo" spellCheck="false" disabled={!!busy} />
+      <Flex align="center" gap="4" flexWrap="wrap" boxShadow="sm" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="0.75rem" px="4" py="3">
+        <Text fontWeight="600" color="ui.heading" flex="none" letterSpacing="-.01em">Add a tool</Text>
+        <Flex as="form" gap="2" align="center" flex="1" minW="18rem" m="0" onSubmit={(e) => { e.preventDefault(); installUrl(); }}>
+          <TextInput flex="1" value={source} onChange={(e) => setSource(e.target.value)} placeholder="github:owner/repo or https://github.com/owner/repo" spellCheck="false" disabled={!!busy} />
           <Button variant="primary" size="sm" type="submit" disabled={!!busy}>Install</Button>
           <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => fileRef.current && fileRef.current.click()}>Upload .zip</Button>
-          <input ref={fileRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={(e) => uploadZip(e.target.files[0])} />
-        </form>
-      </div>
-      <p className="c-plugins__trust">Installs run the tool's code on this machine. Only install tools you trust. <a href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Build your own →</a></p>
+          <chakra.input ref={fileRef} type="file" accept=".zip" display="none" onChange={(e) => uploadZip(e.target.files[0])} />
+        </Flex>
+      </Flex>
+      <Text fontSize="0.75rem" color="ui.muted" mt="2" mb="6">Installs run the tool's code on this machine. Only install tools you trust. <Link href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Build your own →</Link></Text>
 
-      <div className="c-plugins__bar">
-        <div className="c-segmented">
-          <button className={'c-segmented__item' + (filter === 'all' ? ' is-active' : '')} type="button" onClick={() => setFilter('all')}>All <span className="c-segmented__count">{plugins.length}</span></button>
-          <button className={'c-segmented__item' + (filter === 'inactive' ? ' is-active' : '')} type="button" onClick={() => setFilter('inactive')}>Inactive <span className="c-segmented__count">{inactiveCount}</span></button>
-        </div>
-        <div className="c-plugins__bar-right">
-          {updMsg && <span className="c-plugins__upd-msg">{updMsg}</span>}
+      <Flex justify="space-between" align={{ base: 'stretch', md: 'center' }} gap="3" flexWrap="wrap" mt="2" mb="3" direction={{ base: 'column', md: 'row' }}>
+        <Flex display="inline-flex" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="0.625rem" p="1" gap="1">
+          {[['all', 'All', plugins.length], ['inactive', 'Inactive', inactiveCount]].map(([key, label, n]) => (
+            <chakra.button key={key} type="button" onClick={() => setFilter(key)} display="inline-flex" alignItems="center" gap="1.5" px="3.5" py="2" borderRadius="0.4375rem" fontSize="0.8125rem" fontWeight={filter === key ? '600' : '500'} cursor="pointer" transition="color .12s, background .12s" bg={filter === key ? 'ui.surface' : 'transparent'} color={filter === key ? 'ui.heading' : 'ui.muted'} boxShadow={filter === key ? 'sm' : 'none'} _hover={{ color: 'ui.text' }}>
+              {label} <chakra.span fontSize="0.6875rem" fontWeight="600" px="1.5" py="0.5" borderRadius="999px" color={filter === key ? 'ui.primary' : 'ui.muted'} bg={filter === key ? 'ui.ghostHover' : 'ui.tagbg'}>{n}</chakra.span>
+            </chakra.button>
+          ))}
+        </Flex>
+        <Flex align="center" gap="3" flexWrap="wrap" justify="flex-end">
+          {updMsg && <Text fontSize="0.8125rem" color="ui.muted">{updMsg}</Text>}
           <Button variant="ghost" size="sm" onClick={checkUpdates}>Check for updates</Button>
-          <TextInput className="c-plugins__search" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
-        </div>
-      </div>
+          <TextInput maxW="18rem" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
+        </Flex>
+      </Flex>
 
       {selectableIds.length > 0 && (
-        <div className="c-bulk">
-          <label className="c-bulk__all"><Checkbox checked={allSelected} onChange={toggleAll} /> Select all</label>
+        <Flex align="center" gap="3" flexWrap="wrap" mb="3">
+          <HStack as="label" gap="2" fontSize="0.8125rem" color="ui.muted"><Checkbox checked={allSelected} onChange={toggleAll} /> Select all</HStack>
           <Select value={bulk} onChange={setBulk} options={BULK_OPTIONS} placeholder="Bulk actions" ariaLabel="Bulk actions" disabled={!!busy} />
           <Button variant="ghost" size="sm" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</Button>
-          {selected.size > 0 && <span className="c-bulk__count">{selected.size} selected</span>}
-        </div>
+          {selected.size > 0 && <Text fontSize="0.8125rem" color="ui.muted">{selected.size} selected</Text>}
+        </Flex>
       )}
 
-      <div className="c-plugin-list">
+      <Box borderWidth="1px" borderColor="ui.border" borderRadius="0.875rem" bg="ui.surface" boxShadow="md" overflow="hidden">
         {shown.map((p) => {
           const up = upFor(p.id);
           const active = p.enabled !== false;
           const core = p.id === 'changelog';
           return (
-            <div className={'c-plugin-row' + (active ? '' : ' is-inactive')} key={p.id}>
+            <Flex key={p.id} align="center" gap="4" px="6" py="4.5" transition="background .14s ease" opacity={active ? 1 : 0.6} borderTopWidth="1px" borderColor="ui.border" _first={{ borderTopWidth: '0' }} _hover={{ bg: 'ui.sunk' }} flexWrap={{ base: 'wrap', md: 'nowrap' }}>
               {selectableIds.length > 0 && (core
-                ? <span className="c-plugin-row__cbx c-plugin-row__cbx--spacer" aria-hidden="true" />
-                : <Checkbox className="c-plugin-row__cbx" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
-              <span className="c-plugin-row__icon"><ToolIcon name={p.icon} size={20} /></span>
-              <div className="c-plugin-row__info">
-                <div className="c-plugin-row__title">
-                  <h3 className="c-plugin-row__name">{p.name}</h3>
-                  {core && <span className="c-chip">Core</span>}
-                  {!active && <span className="c-chip c-chip--off">Inactive</span>}
-                  {up && <span className="c-chip c-chip--up">Update available</span>}
-                </div>
-                <p className="c-plugin-row__desc">{p.description}</p>
-                <div className="c-plugin-row__sub">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</div>
-              </div>
-              <div className="c-plugin-row__actions">
+                ? <Box w="1.25rem" flex="none" aria-hidden="true" />
+                : <Checkbox checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
+              <Flex display="grid" placeItems="center" w="2.75rem" h="2.75rem" flex="none" borderRadius="0.6875rem" color="white" bg={active ? 'linear-gradient(145deg, #2a3f6f, #0f131f)' : 'ui.slate'} boxShadow={active ? '0 2px 8px rgba(32,49,89,.28), inset 0 1px 0 rgba(255,255,255,.08)' : 'none'} css={{ '& svg': { width: '1.3125rem', height: '1.3125rem' } }}><ToolIcon name={p.icon} size={20} /></Flex>
+              <Box flex="1" minW="0">
+                <HStack gap="2">
+                  <chakra.h3 m="0" fontSize="0.9375rem" fontWeight="600" color="ui.heading" letterSpacing="-.01em">{p.name}</chakra.h3>
+                  {core && <Badge colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem">Core</Badge>}
+                  {!active && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">Inactive</Badge>}
+                  {up && <Badge bg="navy" color="white" fontSize="0.625rem">Update available</Badge>}
+                </HStack>
+                <Text mt="1" fontSize="0.8125rem" color="ui.muted" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{p.description}</Text>
+                <Text mt="1.5" fontSize="0.6875rem" color="ui.muted">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</Text>
+              </Box>
+              <Flex gap="2" flex="none" align="center" w={{ base: 'full', md: 'auto' }} pl={{ base: 'calc(2.75rem + 1rem)', md: '0' }}>
                 {up && !core && <Button variant="primary" size="sm" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>Update to {up.latest}</Button>}
                 {active && <Button variant="ghost" size="sm" onClick={() => onOpen(p.id)}>Open</Button>}
                 {!core && <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</Button>}
                 {!core && <Button variant="ghost" size="sm" danger disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</Button>}
-              </div>
-            </div>
+              </Flex>
+            </Flex>
           );
         })}
-        {shown.length === 0 && <div className="c-plugin-list__empty">No tools match.</div>}
-      </div>
+        {shown.length === 0 && <Box px="5" py="12" textAlign="center" color="ui.muted" fontSize="0.875rem">No tools match.</Box>}
+      </Box>
     </>
   );
 }

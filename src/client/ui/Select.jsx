@@ -71,7 +71,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
         transition="border-color .12s, box-shadow .12s" boxShadow={open ? '0 0 0 3px var(--chakra-colors-ui-ring)' : 'none'}
         _hover={{ borderColor: 'ui.primary' }}>
         <chakra.span flex="1" minW="0" textAlign="left" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={sel ? sel.label : undefined}>{sel ? sel.label : placeholder}</chakra.span>
-        <chakra.svg color="ui.muted" flex="none" transition="transform .14s ease" transform={open ? 'rotate(180deg)' : 'none'} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></chakra.svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: 'none', color: 'var(--chakra-colors-ui-muted)', transition: 'transform .14s ease', transform: open ? 'rotate(180deg)' : 'none' }}><polyline points="6 9 12 15 18 9" /></svg>
       </CButton>
       {open && (
         <Box ref={menuRef} role="listbox" aria-label={ariaLabel} position="absolute" zIndex="30" top="calc(100% + 0.375rem)" left="0"
