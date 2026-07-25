@@ -384,7 +384,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                       <Box borderTopWidth="1px" borderColor="ui.border" pt="5">
                         <Text fontSize="0.75rem" color="ui.muted" mb="3">{t('Settings stay in this browser. Connectors are saved on this machine.')}</Text>
                         {confirmClear ? (
-                          <Box borderWidth="1px" borderColor="ui.bad" borderRadius="forge" bg="rgba(192,57,43,.08)" p="3.5" maxW="24rem">
+                          <Box borderWidth="1px" borderColor="ui.bad" borderRadius="forge" bg="rgba(192,57,43,.08)" p="3.5" mb="8" maxW="24rem">
                             <Text fontSize="0.8125rem" color="ui.text" mb="3">{t('Delete all local settings for this browser? This cannot be undone.')}</Text>
                             <HStack gap="2">
                               <Button variant="primary" size="sm" bg="ui.bad" _hover={{ bg: 'ui.bad', opacity: 0.9 }} onClick={() => { resetSettings(); setConfirmClear(false); }}>{t('Delete everything')}</Button>
@@ -620,7 +620,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
               </Tabs.Root>
             </Dialog.Body>
             <Dialog.Footer borderTopWidth="1px" borderColor="ui.border" px="6" py="4" flex="none" justifyContent="flex-end">
-              <Button variant="primary" onClick={() => { core.toast(t('Saved'), 'success'); onClose(); }}>{t('Save')}</Button>
+              <Button variant="primary" size="sm" px="5" onClick={() => { core.toast(t('Saved'), 'success'); onClose(); }}>{t('Save')}</Button>
             </Dialog.Footer>
           </Dialog.Content>
         </Dialog.Positioner>
