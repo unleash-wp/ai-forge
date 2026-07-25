@@ -26,8 +26,8 @@ Three surfaces, one tool:
 
 | Surface | How you use it | Needs |
 | --- | --- | --- |
-| **Terminal** | `ai-forge changelog --since … --until … --milestone …` | `npm i -g @unleashwp/forge` |
-| **Claude Code / Codex** | register the MCP server, then ask in plain language | `npx @unleashwp/forge@latest mcp` |
+| **Terminal** | `ai-forge changelog --since … --until … --milestone …` | `npm i -g @unleashwp/ai-forge` |
+| **Claude Code / Codex** | register the MCP server, then ask in plain language | `npx @unleashwp/ai-forge@latest mcp` |
 | **Claude Desktop** | one-click `.mcpb` bundle, opens a window — no browser | build with `npm run mcpb:pack` |
 | **Browser UI** | `ai-forge serve` → a date-range picker at `http://localhost:4321` | ships pre-built in the package |
 

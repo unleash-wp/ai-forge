@@ -7,7 +7,7 @@ Below: from nothing to a WordPress release changelog in about a minute.
 ## 1. Install
 
 ```bash
-npm install -g @unleashwp/forge
+npm install -g @unleashwp/ai-forge
 ```
 
 Puts `ai-forge` on your PATH (`uwp` and `forge` are aliases). Plain Node ≥ 18, zero runtime dependencies; the browser UI ships pre-built.
@@ -15,7 +15,7 @@ Puts `ai-forge` on your PATH (`uwp` and `forge` are aliases). Plain Node ≥ 18,
 No install? Use `npx`:
 
 ```bash
-npx @unleashwp/forge@latest changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+npx @unleashwp/ai-forge@latest changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 ```
 
 ## 2. Generate a changelog
@@ -35,7 +35,7 @@ Prints a ready-to-edit **release-post template**: headline, count line, the two 
 | You want… | Do this |
 | --- | --- |
 | **A UI** | `ai-forge serve` → `http://localhost:4321` (date picker + Copy buttons) |
-| **Ask Claude Code / Codex** | `claude mcp add forge -- npx -y @unleashwp/forge@latest mcp`, then ask: *"WordPress 7.1 changelog for July 15–22, as a post."* |
+| **Ask Claude Code / Codex** | `claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp`, then ask: *"WordPress 7.1 changelog for July 15–22, as a post."* |
 | **A window in Claude Desktop** | `npm run mcpb:pack`, then install `unleashwp-ai-forge.mcpb` from Settings → Extensions |
 
 ## Optional: connect for more

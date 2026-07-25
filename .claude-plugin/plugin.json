@@ -6,7 +6,7 @@
   "mcpServers": {
     "forge": {
       "command": "npx",
-      "args": ["-y", "@unleashwp/forge@latest", "mcp"]
+      "args": ["-y", "@unleashwp/ai-forge@latest", "mcp"]
     }
   }
 }

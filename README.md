@@ -21,19 +21,19 @@ Do you use [Claude Code](https://claude.com/claude-code) or Codex? Then you don'
 
 ```text
 Install "UnleashWP AI Forge" for me and walk me through it step by step. It is an
-npm package called @unleashwp/forge (its command is "ai-forge"). Do the work
+npm package called @unleashwp/ai-forge (its command is "ai-forge"). Do the work
 yourself, run the commands, and after each step tell me in one plain sentence what
 happened. Stop and ask me whenever something needs a decision.
 
 Please do these steps in order:
 1. Check I have Node 18 or newer: run `node -v`. If it is missing or older, tell me
    how to get it from https://nodejs.org and stop there.
-2. Install Forge for me: `npm install -g @unleashwp/forge`. Then prove it worked by
+2. Install Forge for me: `npm install -g @unleashwp/ai-forge`. Then prove it worked by
    running `ai-forge -h`.
 3. Connect Forge to you, so from now on I can just ask you for changelogs:
-   - Claude Code: `claude mcp add forge -- npx -y @unleashwp/forge@latest mcp`
+   - Claude Code: `claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp`
    - Codex: add an MCP server with command "npx" and
-     args ["-y", "@unleashwp/forge@latest", "mcp"]
+     args ["-y", "@unleashwp/ai-forge@latest", "mcp"]
 4. Test it: run
    `ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post`
    and show me the result.
@@ -55,7 +55,7 @@ That's it. It checks your computer, installs Forge, hooks it up to your assistan
 Prefer to do it yourself? You need one free program first: **[Node.js](https://nodejs.org), version 18 or newer** (it runs tools like this). Then run:
 
 ```bash
-npm install -g @unleashwp/forge
+npm install -g @unleashwp/ai-forge
 ```
 
 Now you have a command called **`ai-forge`**. Try it:
