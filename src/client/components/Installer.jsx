@@ -1,6 +1,6 @@
 // First-run install wizard (blocking, 2 steps). Shown until /api/installed is set.
 import { useState } from 'react';
-import { fetchJSON } from '../core.jsx';
+import { fetchJSON, apiFetch } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL } from '../brand.js';
 import { useT } from '../i18n.jsx';
@@ -23,7 +23,7 @@ export default function Installer({ status, onDone }) {
   const browser = currentBrowser();
 
   function finish() {
-    fetch('/api/installed', { method: 'POST' }).then(() => onDone());
+    apiFetch('/api/installed', { method: 'POST' }).then(() => onDone());
   }
 
   function primary() {

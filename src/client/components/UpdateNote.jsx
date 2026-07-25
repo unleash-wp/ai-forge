@@ -2,11 +2,12 @@
 // downloads code - just links the release notes.
 import { useState, useEffect } from 'react';
 import { Box, Link, Text } from '@chakra-ui/react';
+import { apiFetch } from '../core.jsx';
 
 export default function UpdateNote() {
   const [updates, setUpdates] = useState([]);
   useEffect(() => {
-    fetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
+    apiFetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
   }, []);
   if (!updates.length) return null;
   return (
