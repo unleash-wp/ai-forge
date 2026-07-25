@@ -25,7 +25,7 @@ export default function Rail({ railRef, plugins, activeId, inPlugins, onSelect, 
       <Text fontSize="0.5938rem" fontWeight="600" letterSpacing=".12em" textTransform="uppercase" color="ui.muted" px="0.5" w={{ base: 'full', lg: 'auto' }}>{t('Tools')}</Text>
       {plugins.filter((p) => p.enabled !== false).map((p) => (
         <Tile key={p.id} active={p.id === activeId} ariaCurrent={p.id === activeId ? 'true' : undefined}
-          onClick={() => onSelect(p.id)} name={p.name} icon={<ToolIcon name={p.icon} size={18} />} />
+          onClick={() => onSelect(p.id)} name={t(p.name)} icon={<ToolIcon name={p.icon} size={18} />} />
       ))}
       <Tile active={inPlugins} ariaCurrent={inPlugins ? 'true' : undefined} onClick={onPlugins}
         name={t('Plugins')} icon={<PluginsIcon size={18} />} />
