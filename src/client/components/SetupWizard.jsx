@@ -262,8 +262,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   }
   useEffect(() => { if (open) checkUpdatesNow(); }, [open]);
 
-  function pickLang(v) { setLocale(v); core.toast('Saved', 'success'); }
-  function pickTz(v) { setTz(v); writePref('forge:tz', v); core.toast('Saved', 'success'); }
+  function pickLang(v) { setLocale(v); }
+  function pickTz(v) { setTz(v); writePref('forge:tz', v); }
   function resetSettings() {
     try {
       for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -619,6 +619,9 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                 </Box>
               </Tabs.Root>
             </Dialog.Body>
+            <Dialog.Footer borderTopWidth="1px" borderColor="ui.border" px="6" py="4" flex="none" justifyContent="flex-end">
+              <Button variant="primary" onClick={() => { core.toast(t('Saved'), 'success'); onClose(); }}>{t('Save')}</Button>
+            </Dialog.Footer>
           </Dialog.Content>
         </Dialog.Positioner>
       </Portal>
