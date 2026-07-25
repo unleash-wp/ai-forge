@@ -14,7 +14,8 @@
   position: relative;
   opacity: .75;
 
-  &:hover, &:focus-visible { opacity: 1; border-color: var(--muted); }
+  &:hover,
+  &:focus-visible { opacity: 1; border-color: var(--muted); }
 
   &::after {
     content: attr(data-tip);
@@ -38,5 +39,6 @@
     box-shadow: var(--shadow);
   }
 
-  &:hover::after, &:focus-visible::after { opacity: 1; visibility: visible; }
+  &:hover::after,
+  &:focus-visible::after { opacity: 1; visibility: visible; }
 }

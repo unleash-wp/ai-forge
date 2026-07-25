@@ -1,25 +1,23 @@
 // Button component variants. Base reset is the <button> element rule in
 // elements/_forms; these modifiers add the variant.
-.c-button {
-  &--primary {
-    background: var(--navy);
-    color: var(--white);
-    box-shadow: var(--shadow-sm);
+.c-button--primary {
+  background: var(--navy);
+  color: var(--white);
+  box-shadow: var(--shadow-sm);
 
-    &:hover { background: var(--yellow); color: var(--navy); }
-    &:disabled { opacity: .55; cursor: default; background: var(--navy); color: var(--white); transform: none; }
-  }
-
-  &--ghost {
-    background: transparent;
-    color: var(--primary);
-    border-color: var(--border);
-
-    &:hover { border-color: var(--primary); background: var(--ghost-hover); }
-  }
-
-  &--sm { padding: 0.625rem 1rem; font-size: 0.8438rem; }
-
-  &--ghost.c-button--sm { display: inline-flex; align-items: center; gap: 0.375rem; white-space: nowrap; }
-  &--ghost.c-button--sm.c-button--danger:hover { color: var(--bad); border-color: var(--bad); }
+  &:hover { background: var(--yellow); color: var(--navy); }
+  &:disabled { opacity: .55; cursor: default; background: var(--navy); color: var(--white); transform: none; }
 }
+
+.c-button--ghost {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--border);
+
+  &:hover { border-color: var(--primary); background: var(--ghost-hover); }
+}
+
+.c-button--sm { padding: 0.625rem 1rem; font-size: 0.8438rem; }
+
+.c-button--ghost.c-button--sm { display: inline-flex; align-items: center; gap: 0.375rem; white-space: nowrap; }
+.c-button--ghost.c-button--sm.c-button--danger:hover { color: var(--bad); border-color: var(--bad); }
