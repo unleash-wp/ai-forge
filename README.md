@@ -1,267 +1,99 @@
 # UnleashWP AI Forge
 
-A small, self-hosted **toolbelt for WordPress release and dev work**, by
-[UnleashWP](https://unleash-wp.com). The free core ships with the **Changelog
-Generator**: give it a date window and it counts and lists everything that landed
-in Core and Gutenberg - ready to drop into a release post.
+**The AI tool for WordPress, by [UnleashWP](https://unleash-wp.com).**
 
-> **New here?** Start with the **[Quick Start](QUICKSTART.md)** (a changelog in two
-> commands), then the full **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)**.
+Forge is a little helper you run on your own computer. You ask it about WordPress, and it does the boring work for you.
 
-Forge is a **plugin platform**. Every tool is a folder under `tools/`, so the
-community can add more without touching the shell - see
-[CONTRIBUTING.md](CONTRIBUTING.md). It runs as a plain Node server with a React
-UI; the CLI keeps **zero runtime dependencies**.
+Its first job: build the **changelog** for a WordPress release — the list of everything that changed between two dates, ready to paste into a release post. More tools will come; Forge is built to hold many.
 
-The Changelog Generator reads from:
+You can use it three ways: type one command, click buttons in your browser, or just **ask Claude or Codex** and let them run it for you.
 
-- **Gutenberg** → `github.com/WordPress/gutenberg` (branch `wp/<milestone>`)
-- **Core** → `github.com/WordPress/wordpress-develop` (git mirror of Core SVN)
-- **Core component + dev-note classification** → the docs-team dev-notes tracker
-  ([`WordPress/Documentation-Issue-Tracker`](https://github.com/WordPress/Documentation-Issue-Tracker)),
-  cookie-free GitHub JSON. Fallback when no tracker exists yet: the
-  [Automattic `mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg)
-  MCP (Trac is bot-walled for plain scripts).
+---
 
-Everything the CLI needs is on GitHub - **no Trac cookie, deterministic, runs in
-CI/Codex.**
+## 🪄 Easiest way: let Claude or Codex install it for you
 
-## Quick start for release coordinators
+Do you use [Claude Code](https://claude.com/claude-code) or Codex? Then you don't have to do anything yourself.
 
-**In a terminal** (the `ai-forge` command, with `uwp` as a short alias):
+**Copy the whole box below, paste it as your message, and send it.** Your assistant will install Forge, connect it, test it, and walk you through the rest — one step at a time.
+
+```text
+Install "UnleashWP AI Forge" for me and walk me through it step by step. It is an
+npm package called @unleashwp/forge (its command is "ai-forge"). Do the work
+yourself, run the commands, and after each step tell me in one plain sentence what
+happened. Stop and ask me whenever something needs a decision.
+
+Please do these steps in order:
+1. Check I have Node 18 or newer: run `node -v`. If it is missing or older, tell me
+   how to get it from https://nodejs.org and stop there.
+2. Install Forge for me: `npm install -g @unleashwp/forge`. Then prove it worked by
+   running `ai-forge -h`.
+3. Connect Forge to you, so from now on I can just ask you for changelogs:
+   - Claude Code: `claude mcp add forge -- npx -y @unleashwp/forge@latest mcp`
+   - Codex: add an MCP server with command "npx" and
+     args ["-y", "@unleashwp/forge@latest", "mcp"]
+4. Test it: run
+   `ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post`
+   and show me the result.
+5. Only if I say yes: help me add an optional GitHub token (for a higher rate
+   limit) and a wordpress.org cookie (for full ticket text). Otherwise skip this.
+6. Finish by telling me, in plain words, the three ways I can use Forge from now on:
+   a terminal command, a browser page (`ai-forge serve` at http://localhost:4321),
+   or simply asking you.
+
+Go one step at a time and keep it simple.
+```
+
+That's it. It checks your computer, installs Forge, hooks it up to your assistant, tests it, and shows you how to use it.
+
+---
+
+## 🧑‍💻 Other easy way: one command
+
+Prefer to do it yourself? You need one free program first: **[Node.js](https://nodejs.org), version 18 or newer** (it runs tools like this). Then run:
 
 ```bash
 npm install -g @unleashwp/forge
+```
+
+Now you have a command called **`ai-forge`**. Try it:
+
+```bash
 ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 ```
 
-That prints a ready-to-edit release-post template. Run `ai-forge serve` for a
-click-driven browser UI, or `ai-forge -h` for every command.
+This prints a ready-to-edit release post for WordPress 7.1 between those two dates. Change the dates and the milestone to whatever you need.
 
-**From Claude Code or Codex** - register Forge once as an MCP server, then ask in
-plain language:
+No account. No password. Nothing to sign up for. It just works.
 
-```bash
-claude mcp add forge -- npx -y @unleashwp/forge@latest mcp
-```
+---
 
-> "Give me the WordPress 7.1 release changelog for July 15–22, as a post."
+## How do I actually use it?
 
-The agent calls Forge's tools (`get_changelog`, `list_milestones`, …) and drafts
-the post grounded in the real PRs and tickets.
+Pick whatever feels comfortable:
 
-**In Claude Desktop** - install the one-click bundle: run `npm run mcpb:pack` to
-build `unleashwp-ai-forge.mcpb`, then open it from Settings → Extensions. It
-prompts for an optional GitHub token + wordpress.org cookie and needs no local
-Node.
+- **Type a command** — like the example above. Run `ai-forge -h` to see everything it can do.
+- **Click instead of type** — run `ai-forge serve`, then open **http://localhost:4321** in your browser. Pick your dates, press a button, copy the result.
+- **Just ask your AI** — once it's connected (the magic box above), say: *"Give me the WordPress 7.1 changelog for July 15 to 22, as a post."* Claude or Codex does the rest.
 
-## Why these sources
+---
 
-| Surface | Where changes live | This tool reads |
-| --- | --- | --- |
-| Gutenberg | GitHub PRs on `wp/<milestone>` | commits + `[Type]` labels |
-| Core | Trac tickets, committed to SVN | the `wordpress-develop` git mirror |
-| Core grouping | Trac ticket metadata | the dev-notes tracker JSON (join on ticket #) |
+## Do I need a GitHub token or a password?
 
-Core commit messages carry everything a release post needs - `Fixes #NNNNN`
-(closed Trac ticket), `Props alice, bob` (contributors), and
-`git-svn-id: …@62815` (changeset `r62815`) - so the mirror gives reliable
-counts and links without touching Trac. For component grouping the CLI joins
-each windowed ticket against the dev-notes tracker (which is already tagged with
-component + `dev-note`/`misc-dev-note`/`field-guide`). Tickets not in the
-tracker - newer than its snapshot, excluded components, or version bumps - land
-under **Uncategorized**.
+**No. Everything works without one.** Two things are *optional* and only make it a bit nicer:
 
-## Install
+- **A GitHub token** — lets Forge ask GitHub more often per hour. No password, no special permissions. Skip it unless Forge tells you it hit a limit.
+- **A wordpress.org login cookie** — turns on "deep mode", which adds the full ticket text to each change. Only if you want that extra detail.
 
-```bash
-npm install -g @unleashwp/forge   # the `ai-forge` command (alias: `uwp`)
-gh auth login                     # optional: raises the GitHub API limit to 5000/h
-```
+You can add both later, inside the app, on the **Settings → Connectors** screen. They stay on your own computer and are never shared.
 
-`ai-forge` is now on your PATH — no `node …` needed. The core CLI is
-dependency-free (plain Node ≥18, uses the global `fetch`); the browser UI
-(`ai-forge serve`) is a webpack/React bundle that ships pre-built in the package.
+---
 
-**For development**, clone the repo instead and build the UI once:
+## Want more?
 
-```bash
-git clone https://github.com/unleash-wp/ai-forge
-cd ai-forge && npm install   # builds dist/ via the prepare script
-node bin/ai-forge.mjs -h
-```
+- **[Quick Start](QUICKSTART.md)** — the short version of this page.
+- **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)** — every detail: install options, connectors, using Forge from Claude & Codex, and building your own tool.
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — add your own tool. Every tool is just a folder.
 
-## Usage
+---
 
-```bash
-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1
-```
-
-### Browser UI
-
-Prefer clicking a date range over typing flags. The browser UI is a webpack
-build (React + Chakra UI bundled into `dist/`), so it needs a one-time `npm install`
-(which builds it via the `prepare` script; or run `npm run build`). The CLI
-report path above needs neither.
-
-```bash
-npm install          # builds the UI bundle (dist/)
-uwp serve            # -> http://localhost:4321
-```
-
-### Claude Code & Codex (MCP)
-
-`uwp mcp` runs Forge as an MCP server over stdio, so an AI coding agent pulls
-release data live and keeps working with it. It exposes `get_changelog`,
-`list_milestones` and `list_branches` tools, plus **skills** (MCP prompts) like
-`write_release_post` that teach the agent to use them — run `uwp skills` to list
-them. Any plugin can add more.
-
-Both agents run Forge via `npx @unleashwp/forge@latest`, so it stays
-dependency-free and **one `npm publish` updates Claude Code and Codex together**
-— no reinstall.
-
-**Claude Code — as a plugin (recommended):**
-
-```
-/plugin marketplace add unleash-wp/ai-forge
-/plugin install forge@unleashwp-forge
-```
-
-The plugin auto-registers the `forge` MCP server; check with `/mcp`. Or add just
-the server directly:
-
-```bash
-claude mcp add forge -- npx -y @unleashwp/forge@latest mcp
-```
-
-**Codex:**
-
-```bash
-codex mcp add forge -- npx -y @unleashwp/forge@latest mcp
-```
-
-### Releasing (keeps both agents in sync)
-
-Forge ships from npm; both agents resolve `@latest` at launch, so publishing is
-the single update step.
-
-```bash
-npm version patch          # bump + tag
-npm publish                # @unleashwp/forge (public); prepublish builds + tests
-git push --follow-tags     # updates the Claude Code plugin (marketplace) too
-```
-
-`gh release create` from the same tag keeps the in-app "update available" check
-(which reads GitHub Releases) aligned with the published version.
-
-Pick the **since/until** dates, milestone and branches, hit **Generate**, and
-get: a big count of issues addressed, the summary stat cards, a **Sources** block
-with the exact Trac-query and Gutenberg-commits links (the parameter links to drop
-into the post so anyone can verify), and the changelog under two tabs -
-**Changelog** (Gutenberg + Core, every commit linked) and **Props** (the merged
-contributor list) - plus **Copy post** / **Copy Markdown** / **Download** buttons.
-The server binds to `127.0.0.1`, so nothing sensitive touches the browser.
-
-**Setup.** The **Setup** panel wires up two keys - each is your own (nothing is
-shared), stored locally in owner-only files (mode `600`) and sent only to GitHub
-/ WordPress.org. Both have a **Disconnect** button.
-
-- **GitHub** - raises your API limit from 60 to 5000 req/h. Works with **any**
-  GitHub account: you never need access to the WordPress org and the token needs
-  **no scopes** (it only reads public repos). One click if the `gh` CLI is logged
-  in (auto-detected); otherwise create a token (leave every scope unchecked) and
-  paste it once - it auto-saves and tests on paste. Saved to
-  `~/.config/wp-trac/github-token`. Skip it entirely and the tool still runs at
-  60 req/h.
-- **WordPress.org** - only for **deep** (full ticket descriptions). Quickest is
-  the one-click **import from your browser** (Chrome / Safari / Firefox / Edge,
-  macOS) - the local server reads `wporg_logged_in` + `wporg_sec` straight from
-  the browser's cookie store (Chrome/Edge prompt the Keychain to decrypt). Same
-  thing on the CLI: `uwp cookie-import <browser>`. Or paste the cookie manually.
-  A web page can't read it for you (it's HttpOnly), which is why the import runs
-  locally. Saved to `~/.config/wp-trac/cookie`.
-
-| Option | Meaning |
-| --- | --- |
-| `--since <date>` | Window start (`YYYY-MM-DD` or ISO 8601). Required. |
-| `--until <date>` | Window end. Required. |
-| `--milestone <x.y>` | Milestone; defaults Gutenberg branch to `wp/<x.y>`. |
-| `--gb-branch <ref>` | Override the Gutenberg branch. |
-| `--core-branch <ref>` | Override the `wordpress-develop` branch (default `trunk`). |
-| `--no-labels` | Skip Gutenberg label grouping (fewer API calls). |
-| `--post` | Emit a fill-in release-post template. |
-| `--deep` | Read full Trac ticket **descriptions** (one cookie-gated CSV request); fills Uncategorized + adds descriptions to `--json`. |
-| `--trac-cookie <file>` | File with the `WPORG_TRAC_COOKIE` value for `--deep` (or set the env var). |
-| `--json` | Emit raw JSON instead of Markdown. |
-
-### Reading depth
-
-- **Default (cookie-free):** ticket numbers, summaries, component, type, owner,
-  classification, full Core changeset messages, dev-note grouping. Enough for
-  most Beta posts, zero setup - this is what makes onboarding instant.
-- **`--deep` (one-time cookie):** adds the actual ticket **descriptions** for the
-  whole milestone in a single request, and gives every changeset its real Trac
-  component (no more Uncategorized). The description text lands in `--json`
-  (`core.ticketDetails`) for grounding the post. Trac blocks cookieless scripts,
-  so this needs your WordPress.org session cookie once - there is no cookie-free
-  way to read ticket bodies. Ticket *comments* are out of scope for the batch;
-  read those per-ticket via the `wporg-context` MCP if needed.
-
-### Output (Markdown, abridged)
-
-```
-# WordPress 7.1 release changes
-**Window:** 2026-07-15T00:00:00Z → 2026-07-22T23:59:59Z
-
-## Summary
-| Metric | Count |
-| Gutenberg commits (`wp/7.1`) | 74 |
-| Gutenberg merged PRs | 74 |
-| Core changesets (`trunk`) | 70 |
-| Core tickets closed | 37 |
-| Contributors (union) | 105 |
-
-## Gutenberg (`wp/7.1`)
-### Bug (51)
-- … ([#80576](…)) - Mamaduka
-## Core (`trunk`)
-- [r62830](…): XML-RPC: … - [#65682](…) - props josephscott, SergeyBiryukov
-## Contributors (105)
-…
-```
-
-## Use inside Claude Code / Codex
-
-A Claude Code skill ships in [`.claude/skills/wp-release-helper`](.claude/skills/wp-release-helper/SKILL.md).
-Run Claude Code from this repo and ask, e.g.:
-
-> Summarize what landed in 7.1 between July 15 and July 22 for the release post.
-
-The skill runs the CLI, then (if the `wporg-context` MCP is connected) enriches
-the Core section with Trac component grouping and assembles a release post
-scaffold - without inventing any counts or highlights.
-
-### Connect the Trac MCP (`wporg-context`) - optional fallback
-
-Only needed when a release has **no dev-notes tracker yet** (early in the
-cycle), or for live ticket detail / bbPress / BuddyPress. Otherwise the CLI
-groups Core from the tracker with no setup. The [Automattic
-`mcp-context-wporg`](https://github.com/Automattic/mcp-context-wporg) server is
-not on npm - clone + build:
-
-```bash
-git clone https://github.com/Automattic/mcp-context-wporg ~/Documents/mcp-context-wporg
-cd ~/Documents/mcp-context-wporg && npm install && npm run build
-claude mcp add -s user -e WPORG_TRAC_COOKIE='<your wp.org cookie>' \
-  wporg-context -- node ~/Documents/mcp-context-wporg/dist/index.js
-```
-
-`WPORG_TRAC_COOKIE` is your WordPress.org session cookie (Trac 403s bot traffic
-without it) - Automattic recommends a dedicated service account. MCP servers load
-at session start, so restart Claude Code after adding it; test with the server's
-`validate-auth` tool.
-
-## License
-
-GPL-2.0-or-later
+*An independent project by Benjamin Zekavica (Morvance). Not affiliated with the WordPress Foundation or Automattic Inc.*
