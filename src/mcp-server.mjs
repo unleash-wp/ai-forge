@@ -3,8 +3,8 @@
 // tools that tool plugins declare via `mcpTools` in their server.mjs. This is
 // the "Funkstelle": agents pull Forge's data live and keep working with it.
 //
-// Register it:
-//   Claude Code:  claude mcp add uwp -- uwp mcp
+// Register it (the server is named "forge"; the command it runs is `uwp mcp`):
+//   Claude Code:  claude mcp add forge -- uwp mcp
 //   Codex:        add an MCP server { command = "uwp", args = ["mcp"] }
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -16,16 +16,19 @@ const VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')
 const PROTOCOL = '2024-11-05';
 
 export async function startMcpServer() {
-  // Aggregate every plugin's declared MCP tools. First registration wins; a
-  // clashing name is skipped with a stderr note (stdout stays pure JSON-RPC).
+  // Aggregate every plugin's MCP tools and skills. Skills are exposed as MCP
+  // prompts. First registration wins; a clashing name is skipped with a stderr
+  // note (stdout stays pure JSON-RPC).
   const tools = new Map();
+  const prompts = new Map();
   for (const p of await loadPlugins()) {
     for (const tool of p.mcpTools || []) {
-      if (tools.has(tool.name)) {
-        process.stderr.write(`uwp mcp: duplicate tool "${tool.name}" from ${p.manifest.id} ignored\n`);
-        continue;
-      }
+      if (tools.has(tool.name)) { process.stderr.write(`uwp mcp: duplicate tool "${tool.name}" from ${p.manifest.id} ignored\n`); continue; }
       tools.set(tool.name, tool);
+    }
+    for (const skill of p.skills || []) {
+      if (prompts.has(skill.name)) { process.stderr.write(`uwp mcp: duplicate skill "${skill.name}" from ${p.manifest.id} ignored\n`); continue; }
+      prompts.set(skill.name, skill);
     }
   }
 
@@ -38,9 +41,24 @@ export async function startMcpServer() {
     if (id == null) return; // notification (e.g. notifications/initialized): no reply
 
     if (method === 'initialize') {
-      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {} }, serverInfo: { name: 'uwp', version: VERSION } });
+      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {}, prompts: {} }, serverInfo: { name: 'forge', version: VERSION } });
     }
     if (method === 'ping') return ok(id, {});
+    if (method === 'prompts/list') {
+      return ok(id, {
+        prompts: [...prompts.values()].map((s) => ({
+          name: s.name,
+          description: s.description || '',
+          arguments: s.arguments || [],
+        })),
+      });
+    }
+    if (method === 'prompts/get') {
+      const skill = prompts.get(params && params.name);
+      if (!skill) return fail(id, -32602, `unknown prompt: ${params && params.name}`);
+      const text = skill.build ? skill.build((params && params.arguments) || {}) : (skill.instructions || '');
+      return ok(id, { description: skill.description || '', messages: [{ role: 'user', content: { type: 'text', text } }] });
+    }
     if (method === 'tools/list') {
       return ok(id, {
         tools: [...tools.values()].map((t) => ({
@@ -81,5 +99,5 @@ export async function startMcpServer() {
     }
   });
   process.stdin.on('end', () => process.exit(0));
-  process.stderr.write(`uwp mcp: ready, ${tools.size} tool(s) over stdio\n`);
+  process.stderr.write(`uwp mcp: ready, ${tools.size} tool(s) + ${prompts.size} skill(s) over stdio\n`);
 }

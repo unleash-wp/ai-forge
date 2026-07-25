@@ -44,3 +44,15 @@ export const mcpTools = [
     run: async (args) => `you said: ${args.text}`,
   },
 ];
+
+// Skills: AI instructions your tool provides. Served as MCP prompts over
+// `uwp mcp` (so Claude Code / Codex can pull them) and printable with
+// `uwp skills <name>`. `build(args)` returns the prompt text. Delete if none.
+export const skills = [
+  {
+    name: 'my_tool_howto',
+    description: 'How to use my-tool for a task.',
+    arguments: [{ name: 'topic', description: 'What to do', required: false }],
+    build: (args) => `Use the my_tool_echo MCP tool to handle: ${args.topic || '<topic>'}.`,
+  },
+];
