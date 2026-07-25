@@ -110,7 +110,7 @@ export async function checkToken() {
 
 // REST headers with the resolved token applied (Bearer) when one exists.
 export function authedHeaders() {
-  const h = { Accept: 'application/vnd.github+json', 'User-Agent': 'wp-release-helper' };
+  const h = { Accept: 'application/vnd.github+json', 'User-Agent': 'ai-forge' };
   const { token } = resolveToken();
   if (token) h.Authorization = `Bearer ${token}`;
   return h;

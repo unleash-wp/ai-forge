@@ -12,16 +12,16 @@
   "homepage": "https://unleash-wp.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/unleash-wp/wp-release-helper"
+    "url": "https://github.com/unleash-wp/ai-forge"
   },
   "license": "GPL-2.0-or-later",
   "keywords": ["wordpress", "changelog", "release", "gutenberg", "trac"],
   "server": {
     "type": "node",
-    "entry_point": "bin/wp-release-helper.mjs",
+    "entry_point": "bin/ai-forge.mjs",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/bin/wp-release-helper.mjs", "mcp"],
+      "args": ["${__dirname}/bin/ai-forge.mjs", "mcp"],
       "env": {
         "GITHUB_TOKEN": "${user_config.github_token}",
         "WPORG_TRAC_COOKIE": "${user_config.trac_cookie}"

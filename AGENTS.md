@@ -8,7 +8,7 @@ Gutenberg. **Zero dependencies, plain Node ≥18** - nothing to install or build
 1. Ask the user (or infer) the **start date, end date, and milestone** (e.g. `7.1`).
 2. Run:
    ```bash
-   node bin/wp-release-helper.mjs changelog --since <start> --until <end> --milestone <x.y> --post
+   node bin/ai-forge.mjs changelog --since <start> --until <end> --milestone <x.y> --post
    ```
    Output modes:
    - `--post` → a ready-to-edit release-post template (headline, "N issues"
@@ -20,7 +20,7 @@ Gutenberg. **Zero dependencies, plain Node ≥18** - nothing to install or build
    summaries and metadata cookie-free, but not the ticket descriptions. To read
    them, add `--deep` (works in any environment, including Codex):
    ```bash
-   WPORG_TRAC_COOKIE='<wp.org cookie>' node bin/wp-release-helper.mjs \
+   WPORG_TRAC_COOKIE='<wp.org cookie>' node bin/ai-forge.mjs changelog \
      --since <start> --until <end> --milestone <x.y> --deep --json
    ```
    Descriptions land in `core.ticketDetails` and Uncategorized changesets get
@@ -36,16 +36,17 @@ Gutenberg. **Zero dependencies, plain Node ≥18** - nothing to install or build
 ## Optional
 
 - `gh auth login` raises the GitHub API rate limit from 60/h to 5000/h.
-- `node bin/wp-release-helper.mjs serve` opens a browser UI at
+- `node bin/ai-forge.mjs serve` opens a browser UI at
   http://localhost:4321 (date-range picker, Copy post / Copy Markdown).
 - `npm link` installs a short `uwp` command so you can run `uwp …` instead.
 
 ## Where things are
 
-- `bin/wp-release-helper.mjs` - CLI entry.
-- `src/report.mjs` - fetch + aggregate pipeline (shared by CLI and server).
-- `src/format.mjs` - Markdown report (`toMarkdown`) and post template (`toPost`).
-- `src/server.mjs` - the `serve` browser UI.
+- `bin/ai-forge.mjs` - CLI entry (dispatches `changelog`, `serve`, `mcp`, …).
+- `tools/changelog/lib/report.mjs` - fetch + aggregate pipeline.
+- `tools/changelog/lib/format.mjs` - Markdown report (`toMarkdown`) + post template (`toPost`).
+- `tools/changelog/server.mjs` - the changelog plugin (routes, MCP tools, CLI command).
+- `src/server.mjs` - the core `serve` shell; `src/mcp-server.mjs` - `mcp` (stdio).
 - Sources: Gutenberg = `WordPress/gutenberg`; Core = `WordPress/wordpress-develop`
   mirror; Core component grouping = `WordPress/Documentation-Issue-Tracker`
   dev-notes tracker (cookie-free GitHub JSON).

@@ -27,7 +27,7 @@ Ask for / confirm: start date, end date, milestone (e.g. `7.1`). Dates are
 ### 2. Run the CLI (does all counting deterministically)
 
 ```bash
-node bin/wp-release-helper.mjs --since <start> --until <end> --milestone <x.y>
+node bin/ai-forge.mjs --since <start> --until <end> --milestone <x.y>
 ```
 
 Add `--json` when you want to post-process, `--no-labels` to skip the Gutenberg
@@ -80,7 +80,7 @@ actually says:
    `core.ticketDetails`, and upgrades Uncategorized changesets to their real Trac
    component. Needs `WPORG_TRAC_COOKIE` (env) or `--trac-cookie <file>`.
    ```bash
-   WPORG_TRAC_COOKIE='…' node bin/wp-release-helper.mjs --since <s> --until <e> --milestone <x.y> --deep --json
+   WPORG_TRAC_COOKIE='…' node bin/ai-forge.mjs --since <s> --until <e> --milestone <x.y> --deep --json
    ```
 2. **Comments / live detail (optional):** for a specific ticket's discussion, use
    the `wporg-context` MCP `get-ticket {id}` (run `validate-auth` first).
