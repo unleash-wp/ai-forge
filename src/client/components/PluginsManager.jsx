@@ -6,6 +6,7 @@
 // after a server rebuild, gated behind the user's own action + a trust note.
 import { useState, useEffect, useRef } from 'react';
 import { ToolIcon } from '../icons.jsx';
+import { useT } from '../i18n.jsx';
 import { Button, Select, TextInput, Checkbox } from '../ui';
 import { Badge, Box, Flex, HStack, Link, Text, chakra } from '@chakra-ui/react';
 
@@ -30,6 +31,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
+  const t = useT();
 
   useEffect(() => {
     fetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
@@ -114,7 +116,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
       {plugins.length > 1 && (
         <Flex justify="space-between" align={{ base: 'stretch', md: 'center' }} gap="3" flexWrap="wrap" mb="3" direction={{ base: 'column', md: 'row' }}>
           <Flex display="inline-flex" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="0.625rem" p="1" gap="1">
-            {[['all', 'All', plugins.length], ['inactive', 'Inactive', inactiveCount]].map(([key, label, n]) => (
+            {[['all', t('All'), plugins.length], ['inactive', t('Inactive'), inactiveCount]].map(([key, label, n]) => (
               <chakra.button key={key} type="button" onClick={() => setFilter(key)} display="inline-flex" alignItems="center" gap="1.5" px="3.5" py="2" borderRadius="0.4375rem" fontSize="0.8125rem" fontWeight={filter === key ? '600' : '500'} cursor="pointer" transition="color .12s, background .12s" bg={filter === key ? 'ui.surface' : 'transparent'} color={filter === key ? 'ui.heading' : 'ui.muted'} boxShadow={filter === key ? 'sm' : 'none'} _hover={{ color: 'ui.text' }}>
                 {label} <chakra.span fontSize="0.6875rem" fontWeight="600" px="1.5" py="0.5" borderRadius="999px" color={filter === key ? 'ui.primary' : 'ui.muted'} bg={filter === key ? 'ui.ghostHover' : 'ui.tagbg'}>{n}</chakra.span>
               </chakra.button>
@@ -122,18 +124,18 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
           </Flex>
           <Flex align="center" gap="3" flexWrap="wrap" justify="flex-end">
             {updMsg && <Text fontSize="0.8125rem" color="ui.muted">{updMsg}</Text>}
-            <Button variant="ghost" size="sm" onClick={checkUpdates}>Check for updates</Button>
-            <TextInput maxW="18rem" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
+            <Button variant="ghost" size="sm" onClick={checkUpdates}>{t('Check for updates')}</Button>
+            <TextInput maxW="18rem" value={iq} onChange={(e) => setIq(e.target.value)} placeholder={t('Search installed tools…')} spellCheck="false" />
           </Flex>
         </Flex>
       )}
 
       {selectableIds.length > 0 && (
         <Flex align="center" gap="3" flexWrap="wrap" mb="3">
-          <HStack as="label" gap="2" fontSize="0.8125rem" color="ui.muted"><Checkbox checked={allSelected} onChange={toggleAll} /> Select all</HStack>
-          <Select value={bulk} onChange={setBulk} options={BULK_OPTIONS} placeholder="Bulk actions" ariaLabel="Bulk actions" disabled={!!busy} />
-          <Button variant="ghost" size="sm" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</Button>
-          {selected.size > 0 && <Text fontSize="0.8125rem" color="ui.muted">{selected.size} selected</Text>}
+          <HStack as="label" gap="2" fontSize="0.8125rem" color="ui.muted"><Checkbox checked={allSelected} onChange={toggleAll} /> {t('Select all')}</HStack>
+          <Select value={bulk} onChange={setBulk} options={BULK_OPTIONS} placeholder={t('Bulk actions')} ariaLabel={t('Bulk actions')} disabled={!!busy} />
+          <Button variant="ghost" size="sm" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>{t('Apply')}</Button>
+          {selected.size > 0 && <Text fontSize="0.8125rem" color="ui.muted">{t('%s selected', selected.size)}</Text>}
         </Flex>
       )}
 
@@ -151,23 +153,23 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
               <Box flex="1" minW="0">
                 <HStack gap="2">
                   <chakra.h3 m="0" fontSize="0.9375rem" fontWeight="600" color="ui.heading" letterSpacing="-.01em">{p.name}</chakra.h3>
-                  {core && <Badge colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem">Core</Badge>}
-                  {!active && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">Inactive</Badge>}
-                  {up && <Badge bg="navy" color="white" fontSize="0.625rem">Update available</Badge>}
+                  {core && <Badge colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem">{t('Core')}</Badge>}
+                  {!active && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">{t('Inactive')}</Badge>}
+                  {up && <Badge bg="navy" color="white" fontSize="0.625rem">{t('Update available')}</Badge>}
                 </HStack>
                 <Text mt="1" fontSize="0.8125rem" color="ui.muted" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{p.description}</Text>
-                <Text mt="1.5" fontSize="0.6875rem" color="ui.muted">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</Text>
+                <Text mt="1.5" fontSize="0.6875rem" color="ui.muted">{t('Version %s', p.version)} · {t('By %s', p.author || t('unknown'))} · {p.price === 'free' ? t('Free') : p.price}</Text>
               </Box>
               <Flex gap="2" flex="none" align="center" w={{ base: 'full', md: 'auto' }} pl={{ base: 'calc(2.75rem + 1rem)', md: '0' }}>
-                {up && !core && <Button variant="primary" size="sm" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>Update to {up.latest}</Button>}
-                {active && <Button variant="ghost" size="sm" onClick={() => onOpen(p.id)}>Open</Button>}
-                {!core && <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</Button>}
-                {!core && <Button variant="ghost" size="sm" danger disabled={!!busy} onClick={() => remove(p.id, p.name)}>Remove</Button>}
+                {up && !core && <Button variant="primary" size="sm" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>{t('Update to %s', up.latest)}</Button>}
+                {active && <Button variant="ghost" size="sm" onClick={() => onOpen(p.id)}>{t('Open')}</Button>}
+                {!core && <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? t('Deactivate') : t('Activate')}</Button>}
+                {!core && <Button variant="ghost" size="sm" danger disabled={!!busy} onClick={() => remove(p.id, p.name)}>{t('Remove')}</Button>}
               </Flex>
             </Flex>
           );
         })}
-        {shown.length === 0 && <Box px="5" py="12" textAlign="center" color="ui.muted" fontSize="0.875rem">No tools match.</Box>}
+        {shown.length === 0 && <Box px="5" py="12" textAlign="center" color="ui.muted" fontSize="0.875rem">{t('No tools match.')}</Box>}
       </Box>
     </>
   );

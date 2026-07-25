@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Badge, Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, SimpleGrid, Skeleton, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
-import { useT } from '../../src/client/i18n.jsx';
+import { useT, __ } from '../../src/client/i18n.jsx';
 import { Button as UButton, Select, Checkbox, TextInput } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
 
@@ -209,7 +209,7 @@ function DateRangePicker({ since, until, onChange }) {
 
   return (
     <Box position="relative" ref={wrapRef} display="flex" flexDir="column" gap="1.5">
-      <Text as="span" fontSize="0.7813rem" fontWeight="600" letterSpacing=".04em" textTransform="uppercase" color="ui.muted">Date range</Text>
+      <Text as="span" fontSize="0.7813rem" fontWeight="600" letterSpacing=".04em" textTransform="uppercase" color="ui.muted">{__('Date range')}</Text>
       <chakra.button type="button" aria-haspopup="true" aria-expanded={open} onClick={(ev) => { ev.stopPropagation(); setOpen((o) => !o); }}
         display="inline-flex" alignItems="center" justifyContent="space-between" gap="2" minW="14rem" px="3.5" py="2.5" textAlign="left"
         bg="ui.surface" color="ui.text" borderWidth="1px" borderColor={open ? 'ui.primary' : 'ui.border'} borderRadius="0.4375rem" cursor="pointer"
@@ -251,7 +251,7 @@ function StatCard({ n, label, counted }) {
       css={counted ? { boxShadow: 'inset 0 2.5px 0 var(--chakra-colors-yellow), var(--chakra-shadows-sm)' } : undefined}>
       <chakra.b display="block" fontSize="clamp(1.6rem, 1.4rem + 0.9vw, 2.1875rem)" fontWeight="700" color="ui.heading" lineHeight="1.05" fontVariantNumeric="tabular-nums">{n}</chakra.b>
       <Text display="block" color="ui.muted" fontSize="0.7813rem">{label}</Text>
-      {counted && <Badge mt="1.5" colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem" letterSpacing=".05em">in total</Badge>}
+      {counted && <Badge mt="1.5" colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem" letterSpacing=".05em">{__('in total')}</Badge>}
     </Box>
   );
 }
@@ -328,7 +328,7 @@ function Results({ data, since, until }) {
           <Tabs.Trigger value="devnotes" fontWeight="600">Dev Notes{devNotes ? <Badge ml="2" variant="subtle" colorPalette="brand">{devNotes.length}</Badge> : null}</Tabs.Trigger>
           <HStack ml="auto" gap="2" pb="2">
             <UButton variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</UButton>
-            <UButton variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />Download</UButton>
+            <UButton variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />{__('Download')}</UButton>
           </HStack>
         </Tabs.List>
 
@@ -355,7 +355,7 @@ function Results({ data, since, until }) {
             </Flex>
             <Flex align="center" gap="3" flexWrap="wrap">
               <CChk.Root checked={propsAt} colorPalette="brand" onCheckedChange={(d) => setPropsAt(d.checked === true)}>
-                <CChk.HiddenInput /><CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem">Add @ before names</CChk.Label>
+                <CChk.HiddenInput /><CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem">{__('Add @ before names')}</CChk.Label>
               </CChk.Root>
               <UButton variant="ghost" size="sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</UButton>
               <UButton variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />CSV</UButton>
@@ -492,9 +492,9 @@ export default function ChangelogTool() {
           <chakra.form onSubmit={submit}>
             <Flex flexWrap="wrap" gap={{ base: '4', lg: '6' }} align="flex-end">
               <Box flex="1.3 1 14rem"><DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} /></Box>
-              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>Milestone</chakra.label><Select block searchable ariaLabel="Milestone" value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="Select" /></Box>
-              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>Gutenberg branch</chakra.label><Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></Box>
-              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>Core branch</chakra.label><Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></Box>
+              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>{t('Milestone')}</chakra.label><Select block searchable ariaLabel={t('Milestone')} value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder={t('Select')} /></Box>
+              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>{t('Gutenberg branch')}</chakra.label><Select block searchable ariaLabel={t('Gutenberg branch')} value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder={t('Select')} /></Box>
+              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>{t('Core branch')}</chakra.label><Select block searchable ariaLabel={t('Core branch')} value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder={t('Select')} /></Box>
             </Flex>
             <Flex align={{ base: 'stretch', lg: 'center' }} justify="space-between" gap="4" mt="6" pt="4" borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
               <Flex align="center" gap={{ base: '4', lg: '6' }} flexWrap="wrap">
