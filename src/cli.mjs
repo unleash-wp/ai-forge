@@ -1,8 +1,4 @@
-import { authenticated } from './github.mjs';
-import { generate } from './report.mjs';
-import { fetchTicketDetails, resolveCookie } from './trac.mjs';
-import { applyDeepDetails } from './aggregate.mjs';
-import { toMarkdown, toPost } from './format.mjs';
+import { changelogOutput } from './changelog-cli.mjs';
 
 const HELP = `uwp (wp-release-helper) - summarize WordPress Core & Gutenberg changes for a release post.
 
@@ -12,6 +8,7 @@ Usage:
   uwp serve [--port <n>]            Open the browser UI.
   uwp cookie-import <browser>       Import the wordpress.org cookie from a local
                                     browser (chrome|safari|firefox|edge, macOS).
+  uwp <tool> [options]             Run a tool's own command (listed under -h).
 
 Options:
   --since <date>        Start of window (YYYY-MM-DD or ISO 8601). Required.
@@ -64,8 +61,27 @@ export async function run(argv) {
     return;
   }
 
+  // Plugin terminal commands: `uwp <command> …` dispatches to a tool that
+  // exports `commands` from its server.mjs. Only word-like first args can be a
+  // command, so date positionals (`uwp 2026-07-15 …`) skip the plugin load.
+  const sub = args._[0];
+  if (sub && /^[a-z][a-z0-9-]*$/.test(sub) && sub !== 'serve' && sub !== 'cookie-import') {
+    const { loadPlugins } = await import('./plugins.mjs');
+    for (const p of await loadPlugins()) {
+      const cmd = (p.commands || []).find((c) => c.name === sub);
+      if (cmd) { await cmd.run(args, { log: console.log, error: console.error }); return; }
+    }
+  }
+
   if (args.help) {
     console.log(HELP);
+    const { loadPlugins } = await import('./plugins.mjs');
+    const cmds = (await loadPlugins()).flatMap((p) => p.commands || []);
+    if (cmds.length) {
+      console.log('Tool commands:');
+      for (const c of cmds) console.log(`  uwp ${c.name.padEnd(16)} ${c.summary || ''}`);
+      console.log('');
+    }
     return;
   }
 
@@ -76,38 +92,21 @@ export async function run(argv) {
     throw new Error('--since and --until are required');
   }
 
-  if (!authenticated()) {
-    console.error('uwp: no GitHub token (gh not logged in) - using 60 req/h anonymous limit.');
-  }
-
-  const { meta, report } = await generate({
+  // The top-level form is a thin alias for the changelog tool's own command.
+  const out = await changelogOutput({
     since,
     until,
     milestone: args.milestone ?? null,
     gbBranch: args['gb-branch'],
     coreBranch: args['core-branch'],
-    labels: args.labels !== false,
-    devNotes: args['dev-notes'] !== false,
-  });
-
-  if (meta.trackerMissing) {
-    console.error(`uwp: no dev-notes tracker for ${meta.milestone} - Core stays flat (use --deep or the wporg-context MCP to group).`);
-  }
-
-  if (args.deep) {
-    const cookie = resolveCookie({ cookieFile: args['trac-cookie'] });
-    const details = await fetchTicketDetails({ milestone: meta.milestone, cookie });
-    applyDeepDetails(report, details);
-    console.error(`uwp: --deep read ${details.size} Trac tickets (with descriptions).`);
-  }
-
-  if (args.json) {
-    console.log(JSON.stringify({ meta, ...report }, null, 2));
-  } else if (args.post) {
-    console.log(toPost(report, meta));
-  } else {
-    console.log(toMarkdown(report, meta));
-  }
+    labels: args.labels,
+    devNotes: args['dev-notes'],
+    deep: args.deep,
+    tracCookie: args['trac-cookie'],
+    json: args.json,
+    post: args.post,
+  }, { warn: console.error });
+  console.log(out);
 }
 
 // Minimal flag parser: --key value, --key=value, --flag, --no-flag, and positionals.

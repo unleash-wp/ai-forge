@@ -13,3 +13,17 @@ async function hello(req, res, url, ctx) {
 export const routes = [
   { method: 'GET', path: '/api/my-tool/hello', handler: hello },
 ];
+
+// Terminal commands: export `commands` and `uwp <name> …` runs your tool from
+// the CLI - great for scripting or feeding data to Claude Code / Codex. Each
+// gets (args, ctx); args is the parsed flags (args._ holds positionals), ctx is
+// { log, error }. Print your result with ctx.log. Delete if you have no CLI.
+export const commands = [
+  {
+    name: 'my-tool',
+    summary: 'What this command prints (shown in `uwp -h`).',
+    run: async (args, ctx) => {
+      ctx.log(JSON.stringify({ ok: true, args: args._ }, null, 2));
+    },
+  },
+];

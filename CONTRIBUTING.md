@@ -114,6 +114,22 @@ export const routes = [
 Import shared logic from `../../src/`. Credential/setup routes stay in the core
 shell because every tool shares them.
 
+**Terminal commands.** Export `commands` and your tool is runnable from the CLI
+as `uwp <name> …` — handy for scripting or feeding data to Claude Code / Codex.
+Each command gets `(args, ctx)`: `args` is the parsed flags (`args._` holds
+positionals), `ctx` is `{ log, error }`. They show up under `uwp -h`.
+
+```js
+export const commands = [
+  { name: 'my-tool', summary: 'What it prints.',
+    run: async (args, ctx) => ctx.log(JSON.stringify({ ok: true, args: args._ })) },
+];
+```
+
+The core Changelog tool does this: `uwp changelog --since <date> --until <date>
+[--milestone x.y] [--post|--json]` (the bare `uwp --since …` form is a
+back-compat alias for it).
+
 ### Register + run
 
 Scaffold from the template with `npm run new-tool -- <id> [Display Name]` (copies
