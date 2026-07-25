@@ -1,0 +1,14 @@
+{
+  "No changelog yet": "Noch kein Changelog",
+  "Pick a date range and a milestone, then Generate. You get the counts, the source links, the grouped changelog, and the props.": "Wähle einen Zeitraum und einen Meilenstein, dann Generieren. Du bekommst die Zahlen, die Quell-Links, den gruppierten Changelog und die Props.",
+  "Generate": "Generieren",
+  "Reset": "Zurücksetzen",
+  "Group Gutenberg": "Gutenberg gruppieren",
+  "Group Core": "Core gruppieren",
+  "Dev notes only": "Nur Dev Notes",
+  "Full descriptions": "Volle Beschreibungen",
+  "Group Gutenberg changes by label.": "Gutenberg-Änderungen nach Label gruppieren.",
+  "Group Core changes by component.": "Core-Änderungen nach Komponente gruppieren.",
+  "Show only Core dev-note tickets.": "Nur Core-Dev-Note-Tickets anzeigen.",
+  "Show each change's full text from GitHub.": "Vollen Text jeder Änderung von GitHub anzeigen."
+}

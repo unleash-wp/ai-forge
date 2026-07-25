@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { fetchJSON, useCore } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL } from '../brand.js';
+import { useI18n, availableLocales, LOCALE_NAMES, LOCALE_FLAGS } from '../i18n.jsx';
 import { Button, TextInput, Select } from '../ui';
 import { Box, CloseButton, Dialog, Flex, Heading, HStack, Link, Portal, SimpleGrid, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 
@@ -36,10 +37,11 @@ const FORGE_CMD = 'node bin/wp-release-helper.mjs --since <start> --until <end> 
 // Flag emoji from a 2-letter country code (regional indicator letters).
 const flagOf = (cc) => cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
 
-const LANGUAGES = [
-  { value: 'en', label: flagOf('GB') + '  English' },
-  { value: 'de', label: flagOf('DE') + '  Deutsch' },
-];
+// Language options are derived from the loaded languages/*.json catalogs.
+const LANGUAGES = availableLocales().map((code) => ({
+  value: code,
+  label: flagOf(LOCALE_FLAGS[code] || 'GB') + '  ' + (LOCALE_NAMES[code] || code.toUpperCase()),
+}));
 
 // Current UTC offset for a zone, e.g. "+01:00" (empty-safe).
 function utcOffset(zone) {
@@ -225,7 +227,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const [busy, setBusy] = useState('');
 
   // General
-  const [lang, setLang] = useState(() => readPref('forge:lang', 'en'));
+  const { locale, setLocale } = useI18n();
   const [tz, setTz] = useState(() => readPref('forge:tz', browserTz()));
 
   // Updates
@@ -254,11 +256,11 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   }
   useEffect(() => { if (open) checkUpdatesNow(); }, [open]);
 
-  function pickLang(v) { setLang(v); writePref('forge:lang', v); core.toast('Saved', 'success'); }
+  function pickLang(v) { setLocale(v); core.toast('Saved', 'success'); }
   function pickTz(v) { setTz(v); writePref('forge:tz', v); core.toast('Saved', 'success'); }
   function resetSettings() {
     try { localStorage.removeItem('forge:lang'); localStorage.removeItem('forge:tz'); } catch { /* blocked */ }
-    setLang('en'); setTz(browserTz()); core.toast('Settings cleared', 'success');
+    setLocale('en'); setTz(browserTz()); core.toast('Settings cleared', 'success');
   }
 
   function copyStr(text, id) {
@@ -354,7 +356,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                     <Stack gap="5" maxW="26rem">
                       <Box>
                         <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">Language</chakra.label>
-                        <Select block ariaLabel="Language" value={lang} onChange={pickLang} options={LANGUAGES} />
+                        <Select block ariaLabel="Language" value={locale} onChange={pickLang} options={LANGUAGES} />
                       </Box>
                       <Box>
                         <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">Timezone</chakra.label>
@@ -493,7 +495,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                         </Stack>
                       </Box>
 
-                      <Box pb="2">
+                      <Box pb="8">
                         <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3">More help</Heading>
                         <SimpleGrid columns={{ base: 1, sm: 3 }} gap="3">
                           {HELP_LINKS.map((l) => (

@@ -12,7 +12,7 @@ export function Checkbox({ checked, onChange, disabled, ...rest }) {
       {...rest}
     >
       <CChk.HiddenInput />
-      <CChk.Control />
+      <CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} />
     </CChk.Root>
   );
 }

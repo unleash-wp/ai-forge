@@ -4,8 +4,9 @@
 // the changelog body stays an HTML string (React can't mount components inside
 // dangerouslySetInnerHTML) styled by the `changelogCss` block below.
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Badge, Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, SimpleGrid, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
+import { Badge, Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, SimpleGrid, Skeleton, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
+import { useT } from '../../src/client/i18n.jsx';
 import { Button as UButton, Select, Checkbox, TextInput } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
 
@@ -354,7 +355,7 @@ function Results({ data, since, until }) {
             </Flex>
             <Flex align="center" gap="3" flexWrap="wrap">
               <CChk.Root checked={propsAt} colorPalette="brand" onCheckedChange={(d) => setPropsAt(d.checked === true)}>
-                <CChk.HiddenInput /><CChk.Control /><CChk.Label fontSize="0.875rem">Add @ before names</CChk.Label>
+                <CChk.HiddenInput /><CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem">Add @ before names</CChk.Label>
               </CChk.Root>
               <UButton variant="ghost" size="sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</UButton>
               <UButton variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />CSV</UButton>
@@ -383,8 +384,25 @@ function Results({ data, since, until }) {
 }
 
 // ---- The tool ----
+// Loading placeholder shown while the changelog is being fetched.
+function ResultsSkeleton() {
+  return (
+    <Box mt="8">
+      <Flex align="baseline" gap="4" mb="8" flexWrap="wrap"><Skeleton h="3rem" w="7rem" /><Skeleton h="1rem" w="18rem" /></Flex>
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap="3" mb="8">
+        {[0, 1, 2, 3].map((i) => <Skeleton key={i} h="4.75rem" borderRadius="forge" />)}
+      </SimpleGrid>
+      <Skeleton h="2.5rem" w="22rem" maxW="100%" mb="5" />
+      <Stack gap="2.5">
+        {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} h="2.75rem" borderRadius="sm" />)}
+      </Stack>
+    </Box>
+  );
+}
+
 export default function ChangelogTool() {
   const core = useCore();
+  const t = useT();
   const [since, setSince] = useState('');
   const [until, setUntil] = useState('');
   const [milestones, setMilestones] = useState([]);
@@ -459,10 +477,10 @@ export default function ChangelogTool() {
 
   const fieldLabel = { fontSize: '0.7813rem', fontWeight: '600', letterSpacing: '.04em', textTransform: 'uppercase', color: 'ui.muted', mb: '1.5', display: 'block' };
   const CHECKS = [
-    [labels, setLabels, 'Group Gutenberg', 'Group Gutenberg changes by label.'],
-    [devNotes, setDevNotes, 'Group Core', 'Group Core changes by component.'],
-    [devOnly, setDevOnly, 'Dev notes only', 'Show only Core dev-note tickets.'],
-    [full, setFull, 'Full descriptions', "Show each change's full text from GitHub."],
+    [labels, setLabels, t('Group Gutenberg'), t('Group Gutenberg changes by label.')],
+    [devNotes, setDevNotes, t('Group Core'), t('Group Core changes by component.')],
+    [devOnly, setDevOnly, t('Dev notes only'), t('Show only Core dev-note tickets.')],
+    [full, setFull, t('Full descriptions'), t("Show each change's full text from GitHub.")],
   ];
 
   return (
@@ -482,29 +500,30 @@ export default function ChangelogTool() {
               <Flex align="center" gap={{ base: '4', lg: '6' }} flexWrap="wrap">
                 {CHECKS.map(([val, set, label, tip]) => (
                   <CChk.Root key={label} checked={val} colorPalette="brand" onCheckedChange={(d) => set(d.checked === true)}>
-                    <CChk.HiddenInput /><CChk.Control /><CChk.Label fontSize="0.875rem" fontWeight="500" whiteSpace="nowrap"><Hint tip={tip}>{label}</Hint></CChk.Label>
+                    <CChk.HiddenInput /><CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem" fontWeight="500" whiteSpace="nowrap"><Hint tip={tip}>{label}</Hint></CChk.Label>
                   </CChk.Root>
                 ))}
               </Flex>
               <Flex align="center" gap="4" justify={{ base: 'flex-end', lg: 'initial' }}>
-                <chakra.button type="button" onClick={reset} bg="none" border="0" color="ui.muted" fontSize="0.8125rem" cursor="pointer" textDecoration="underline" p="1" _hover={{ color: 'navy' }}>Reset</chakra.button>
-                <UButton variant="primary" type="submit" disabled={busy} px="7.5" fontSize="1rem" fontWeight="700">Generate</UButton>
+                <chakra.button type="button" onClick={reset} bg="none" border="0" color="ui.muted" fontSize="0.8125rem" cursor="pointer" textDecoration="underline" p="1" _hover={{ color: 'navy' }}>{t('Reset')}</chakra.button>
+                <UButton variant="primary" type="submit" disabled={busy} px="7.5" fontSize="1rem" fontWeight="700">{t('Generate')}</UButton>
               </Flex>
             </Flex>
           </chakra.form>
         )}
       </Box>
 
-      {status && <Flex align="center" gap="2.5" my="6" mx="0.5" color="ui.muted" minH="1.25rem" fontSize="0.9688rem" role="status" aria-live="polite">{status.startsWith('__spin__') ? status.slice(8) : status}</Flex>}
+      {status && <Flex align="center" gap="2.5" my="6" mx="0.5" color="ui.muted" minH="1.25rem" fontSize="0.9688rem" role="status" aria-live="polite">{status.startsWith('__spin__') ? <><Spinner size="sm" borderWidth="2px" color="navy" flex="none" /><chakra.span>{status.slice(8)}</chakra.span></> : status}</Flex>}
 
       {data ? <Results data={data} since={since} until={until} />
-        : (!status && (
-          <Box mt="8"><Box textAlign="center" py="16" px="5">
-            <chakra.img src="/brand/bulb.svg" alt="" w="3.5rem" h="3.5rem" opacity="0.95" mb="4" mx="auto" />
-            <Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">No changelog yet</Heading>
-            <Text mx="auto" maxW="48ch" color="ui.muted" fontSize="0.9688rem" lineHeight="1.6">Pick a date range and a milestone, then Generate. You get the counts, the source links, the grouped changelog, and the props.</Text>
-          </Box></Box>
-        ))}
+        : busy ? <ResultsSkeleton />
+          : (!status && (
+            <Box mt="8"><Box textAlign="center" py="16" px="5">
+              <chakra.img src="/brand/bulb.svg" alt="" w="3.5rem" h="3.5rem" opacity="0.95" mb="4" mx="auto" />
+              <Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">{t('No changelog yet')}</Heading>
+              <Text mx="auto" maxW="48ch" color="ui.muted" fontSize="0.9688rem" lineHeight="1.6">{t('Pick a date range and a milestone, then Generate. You get the counts, the source links, the grouped changelog, and the props.')}</Text>
+            </Box></Box>
+          ))}
     </>
   );
 }

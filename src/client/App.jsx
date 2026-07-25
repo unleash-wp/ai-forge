@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Box, Grid, Heading, Text } from '@chakra-ui/react';
 import { CoreContext, useToast } from './core.jsx';
+import { applyFilters, doAction, hooks } from './hooks.js';
 import REGISTRY from './registry.js';
 import Header from './components/Header.jsx';
 import Rail from './components/Rail.jsx';
@@ -32,7 +33,8 @@ export default function App() {
   // (Re)load the plugin list; keep the active tool valid (enabled), else fall back.
   const loadPluginList = useCallback(() => {
     return fetch('/api/plugins').then((r) => r.json()).then((d) => {
-      const list = d.plugins || [];
+      // Plugins can add, hide or reorder tools in the rail via this filter.
+      const list = applyFilters('forge.plugins', d.plugins || []);
       setPlugins(list);
       setActiveId((cur) => {
         if (cur === PLUGINS_VIEW) return cur;
@@ -60,10 +62,13 @@ export default function App() {
 
   const openSetup = useCallback(() => setWizardOpen(true), []);
 
+  // Let tools react when they become the active tool.
+  useEffect(() => { if (activeId && activeId !== PLUGINS_VIEW) doAction('forge.tool.open', activeId); }, [activeId]);
+
   const inPlugins = activeId === PLUGINS_VIEW;
   const active = plugins.find((p) => p.id === activeId);
   const ActiveTool = activeId && !inPlugins ? REGISTRY[activeId] : null;
-  const coreApi = { toast, openSetup, status, refreshStatus };
+  const coreApi = { toast, openSetup, status, refreshStatus, hooks };
 
   return (
     <CoreContext.Provider value={coreApi}>
