@@ -1,4 +1,4 @@
-# Contributing to UnleashWP Forge
+# Contributing to UnleashWP AI Forge
 
 Forge is a small, self-hosted toolbelt for WordPress release and dev work. The
 free core is a plain Node server plus a React browser UI, and every tool is a

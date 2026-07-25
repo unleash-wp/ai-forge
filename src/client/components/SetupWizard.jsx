@@ -465,7 +465,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                     <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" p="4">
                       <Flex align="center" justify="space-between" gap="3" flexWrap="wrap">
                         <Box>
-                          <chakra.span fontWeight="700" fontSize="0.9375rem" color="ui.heading">UnleashWP Forge</chakra.span>
+                          <chakra.span fontWeight="700" fontSize="0.9375rem" color="ui.heading">UnleashWP AI Forge</chakra.span>
                           <Text fontSize="0.8125rem" color="ui.muted">{t('Version %s', version || '…')}</Text>
                         </Box>
                         <BusyBtn busy={checking} variant="ghost" onClick={checkUpdatesNow}>{checking ? t('Checking…') : t('Check for updates')}</BusyBtn>
