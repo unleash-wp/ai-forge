@@ -94,12 +94,20 @@ The shell owns the header, rail, setup wizard and toast; don't re-render those.
 ### 3. `server.mjs` - optional backend
 
 Export `routes`; the registry mounts them. Namespace paths under
-`/api/<your-id>/` to avoid clashes.
+`/api/<your-id>/` to avoid clashes. Each handler gets `(req, res, url, ctx)`,
+where `ctx` gives you `json(res, status, obj)`, `query` (a `URLSearchParams`),
+and `await body()` (the parsed JSON request body):
 
 ```js
 export const routes = [
   { method: 'GET', path: '/api/my-tool/hello',
-    handler: async (req, res, url, ctx) => ctx.json(res, 200, { ok: true }) },
+    handler: async (req, res, url, ctx) =>
+      ctx.json(res, 200, { hello: ctx.query.get('who') || 'world' }) },
+  { method: 'POST', path: '/api/my-tool/save',
+    handler: async (req, res, url, ctx) => {
+      const { value } = await ctx.body();
+      ctx.json(res, 200, { saved: value });
+    } },
 ];
 ```
 
@@ -108,10 +116,13 @@ shell because every tool shares them.
 
 ### Register + run
 
-`npm run build`, restart `serve`, and your tool appears in the rail. Discovery is
-automatic (server: `src/plugins.mjs`; client:
-`import.meta.webpackContext`). Folders starting with `_` (like `_template`) are
-skipped.
+Scaffold from the template with `npm run new-tool -- <id> [Display Name]` (copies
+`tools/_template` to `tools/<id>/` and patches the manifest), or copy the folder
+by hand. Then `npm run build` (or `npm run watch` for a rebuild-on-save loop),
+restart `serve`, and your tool appears in the rail. Discovery is automatic
+(server: `src/plugins.mjs`; client: `import.meta.webpackContext`). Folders
+starting with `_` (like `_template`) are skipped, and a tool whose manifest
+`coreVersion` the running core does not satisfy is skipped with a console note.
 
 ## Frontend & styles
 

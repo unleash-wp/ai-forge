@@ -6,7 +6,7 @@
 // TextInput, TextArea, Checkbox, Select (a searchable, keyboard-accessible
 // dropdown) - and the tool icons from ../../src/client/icons.jsx, so your tool
 // matches the rest of Forge. Talk to the shell through useCore():
-//   { toast(msg), openSetup(), status, refreshStatus() }
+//   { toast(msg), openSetup(), status, refreshStatus(), hooks }
 //
 // Styling is Chakra UI v3 (see CONTRIBUTING.md, "Frontend & styles"): compose
 // Chakra primitives and style with the `ui.*` semantic tokens + colorPalette

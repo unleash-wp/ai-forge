@@ -9,6 +9,29 @@ import { dirname, join } from 'node:path';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const TOOLS = join(DIR, '..', 'tools');
+const CORE_VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')).version;
+
+// Compare two "x.y.z" strings: -1 if a < b, 0 if equal, 1 if a > b.
+function cmpVersion(a, b) {
+  const pa = String(a).split('.').map(Number), pb = String(b).split('.').map(Number);
+  for (let i = 0; i < 3; i++) { const x = pa[i] || 0, y = pb[i] || 0; if (x !== y) return x < y ? -1 : 1; }
+  return 0;
+}
+
+// Does the running core satisfy a manifest's `coreVersion` (e.g. ">=0.1.0")?
+// Supports >=, >, <=, <, = and a bare version (treated as >=). Unknown formats
+// and a missing/"*" range never block — the check only rejects clear mismatches.
+export function satisfiesCore(range, core = CORE_VERSION) {
+  if (!range || range === '*') return true;
+  const m = String(range).match(/^\s*(>=|<=|>|<|=)?\s*([0-9]+(?:\.[0-9]+){0,2})\s*$/);
+  if (!m) return true;
+  const op = m[1] || '>=', c = cmpVersion(core, m[2]);
+  if (op === '>') return c > 0;
+  if (op === '<=') return c <= 0;
+  if (op === '<') return c < 0;
+  if (op === '=') return c === 0;
+  return c >= 0;
+}
 
 export async function loadPlugins() {
   const plugins = [];
@@ -24,6 +47,10 @@ export async function loadPlugins() {
       manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
     } catch (err) {
       console.error(`plugin "${id}": ignored, bad plugin.json (${err.message})`);
+      continue;
+    }
+    if (!satisfiesCore(manifest.coreVersion)) {
+      console.error(`plugin "${id}": needs core ${manifest.coreVersion}, running ${CORE_VERSION} - skipped`);
       continue;
     }
     let mod = null;
