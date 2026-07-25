@@ -82,7 +82,7 @@ export default function Installer({ status, onDone }) {
                 <HStack gap="2" color="ui.goodInk" fontWeight="500" fontSize="0.875rem" mb="3"><chakra.span>✓</chakra.span> {t('GitHub ready')} · {ghStatus.source === 'gh' ? t('detected from the gh CLI') : t('saved token')} · 5000/h</HStack>
               ) : (
                 <Box>
-                  <chakra.ol mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">{t('Detected automatically if the')} <Code>gh</Code> {t('CLI is logged in, or')} <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('create a token')}</Link> {t('(leave every scope unchecked) and paste it:')}</chakra.li></chakra.ol>
+                  <chakra.ol mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">{t('Detected automatically if the')} <Code>gh</Code> {t('CLI is logged in, or')} <Link href="https://github.com/settings/tokens/new?description=ai-forge&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('create a token')}</Link> {t('(leave every scope unchecked) and paste it:')}</chakra.li></chakra.ol>
                   <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0"><TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder={t('ghp_… or github_pat_…  (optional, skip for 60/h)')} autoComplete="off" spellCheck="false" /></chakra.form>
                   <Text as="span" fontSize="0.7813rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>
                 </Box>

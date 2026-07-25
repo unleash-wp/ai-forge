@@ -8,7 +8,7 @@ release-post changelog for Core + Gutenberg. Zero dependencies, plain Node ≥18
 1. **Get the window + milestone** - start date, end date, milestone (e.g. `7.1`).
 2. **Run the tool** (no install needed - it's zero-dep):
    ```bash
-   node bin/wp-release-helper.mjs changelog --since <start> --until <end> --milestone <x.y> --post
+   node bin/ai-forge.mjs changelog --since <start> --until <end> --milestone <x.y> --post
    ```
    - `--post` prints a fill-in release-post template (headline, count line,
      source links, highlights placeholder + the grouped changelog).
@@ -22,7 +22,7 @@ release-post changelog for Core + Gutenberg. Zero dependencies, plain Node ≥18
    grounding rules there: every prose highlight must trace to a real PR/ticket you
    read; never invent features or estimate counts.
 
-For a click-driven UI instead of flags: `node bin/wp-release-helper.mjs serve`
+For a click-driven UI instead of flags: `node bin/ai-forge.mjs serve`
 (→ http://localhost:4321, date-range picker + Copy buttons).
 
 ## Good to know

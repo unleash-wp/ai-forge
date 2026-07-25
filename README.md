@@ -83,9 +83,9 @@ dependency-free (plain Node ≥18, uses the global `fetch`); the browser UI
 **For development**, clone the repo instead and build the UI once:
 
 ```bash
-git clone https://github.com/unleash-wp/wp-release-helper
-cd wp-release-helper && npm install   # builds dist/ via the prepare script
-node bin/wp-release-helper.mjs -h
+git clone https://github.com/unleash-wp/ai-forge
+cd ai-forge && npm install   # builds dist/ via the prepare script
+node bin/ai-forge.mjs -h
 ```
 
 ## Usage
@@ -121,7 +121,7 @@ dependency-free and **one `npm publish` updates Claude Code and Codex together**
 **Claude Code — as a plugin (recommended):**
 
 ```
-/plugin marketplace add unleash-wp/wp-release-helper
+/plugin marketplace add unleash-wp/ai-forge
 /plugin install forge@unleashwp-forge
 ```
 

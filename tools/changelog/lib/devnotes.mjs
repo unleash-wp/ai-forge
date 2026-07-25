@@ -51,7 +51,7 @@ export async function fetchTracker(milestone) {
 }
 
 async function fetchRaw(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'wp-release-helper' } });
+  const res = await fetch(url, { headers: { 'User-Agent': 'ai-forge' } });
   if (!res.ok) throw new Error(`raw ${res.status} ${url}`);
   return res.json();
 }

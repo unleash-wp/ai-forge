@@ -2,7 +2,7 @@
   "name": "forge",
   "description": "UnleashWP AI Forge — WordPress release tooling. Exposes Forge's MCP tools (get_changelog, list_milestones, list_branches) and skills (write_release_post) so you can pull release data live and keep working with it.",
   "author": { "name": "UnleashWP" },
-  "homepage": "https://github.com/unleash-wp/wp-release-helper",
+  "homepage": "https://github.com/unleash-wp/ai-forge",
   "mcpServers": {
     "forge": {
       "command": "npx",

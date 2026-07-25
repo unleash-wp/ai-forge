@@ -8,11 +8,11 @@ shell.
 ## Run it locally
 
 ```bash
-git clone https://github.com/unleash-wp/wp-release-helper
-cd wp-release-helper
+git clone https://github.com/unleash-wp/ai-forge
+cd ai-forge
 npm install        # installs build deps + builds the UI bundle (dist/)
 npm run build      # rebuild the bundle after any client change
-node bin/wp-release-helper.mjs serve   # -> http://localhost:4321
+node bin/ai-forge.mjs serve   # -> http://localhost:4321
 ```
 
 The core CLI (`bin/` + `src/*.mjs`) has **zero runtime dependencies**. React,

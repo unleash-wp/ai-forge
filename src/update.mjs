@@ -22,7 +22,7 @@ function cmp(a, b) {
 }
 
 async function latestRelease(owner, repo, token) {
-  const headers = { 'User-Agent': 'wp-release-helper', Accept: 'application/vnd.github+json' };
+  const headers = { 'User-Agent': 'ai-forge', Accept: 'application/vnd.github+json' };
   if (token) headers.Authorization = 'Bearer ' + token;
   const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, { headers });
   if (r.status === 404) return null; // no releases published yet
