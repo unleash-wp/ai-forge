@@ -5,6 +5,9 @@ A small, self-hosted **toolbelt for WordPress release and dev work**, by
 Generator**: give it a date window and it counts and lists everything that landed
 in Core and Gutenberg - ready to drop into a release post.
 
+> **New here?** Start with the **[Quick Start](QUICKSTART.md)** (a changelog in two
+> commands), then the full **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)**.
+
 Forge is a **plugin platform**. Every tool is a folder under `tools/`, so the
 community can add more without touching the shell - see
 [CONTRIBUTING.md](CONTRIBUTING.md). It runs as a plain Node server with a React

@@ -27,6 +27,7 @@
     "watch": "webpack --mode development --watch",
     "new-tool": "node scripts/new-tool.mjs",
     "mcpb:pack": "npm run build && npx -y @anthropic-ai/mcpb pack . unleashwp-ai-forge.mcpb",
+    "wiki:publish": "bash scripts/publish-wiki.sh",
     "test": "node --test",
     "prepare": "webpack --mode production",
     "prepublishOnly": "npm run build && node --test"

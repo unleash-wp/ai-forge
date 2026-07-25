@@ -10,6 +10,8 @@ node_modules/
 test/
 scripts/
 scratchpad/
+wiki/
+QUICKSTART.md
 *.mcpb
 *.log
 .DS_Store
