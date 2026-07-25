@@ -1,3 +1,8 @@
+// Core connector: the GitHub token. Owns the credential store (path/save/delete/
+// resolve, gh-CLI fallback, disconnect marker, status/probe) so the Core shell can
+// drive setup without importing a tool. It also exports the shared *authenticated
+// fetch primitive* (authedHeaders / githubFetch / nextLink / apiJson) so tool
+// plugins run REST queries through one auth path instead of re-implementing it.
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -93,7 +98,7 @@ export function authenticated() {
 export async function checkToken() {
   const { token, source } = resolveToken();
   if (!token) return { ok: false, message: 'No token - GitHub API limited to 60 req/h.' };
-  const res = await fetch('https://api.github.com/rate_limit', { headers: headers() });
+  const res = await fetch('https://api.github.com/rate_limit', { headers: authedHeaders() });
   if (res.status === 401) return { ok: false, message: 'GitHub rejected the token (401 - expired or wrong value).' };
   if (!res.ok) return { ok: false, message: `GitHub ${res.status} ${res.statusText}.` };
   const d = await res.json();
@@ -101,22 +106,28 @@ export async function checkToken() {
   return { ok: true, source, message: `Token works - ${core.limit}/h limit (${core.remaining} left).` };
 }
 
-function headers() {
+// --- Shared authenticated-fetch primitive (used by tool plugins) ---------------
+
+// REST headers with the resolved token applied (Bearer) when one exists.
+export function authedHeaders() {
   const h = { Accept: 'application/vnd.github+json', 'User-Agent': 'wp-release-helper' };
   const { token } = resolveToken();
   if (token) h.Authorization = `Bearer ${token}`;
   return h;
 }
 
-function nextLink(linkHeader) {
+// The `Link: …; rel="next"` URL for cursor pagination, or null at the last page.
+export function nextLink(linkHeader) {
   if (!linkHeader) return null;
   const part = linkHeader.split(',').find((s) => s.includes('rel="next"'));
   const m = part && part.match(/<([^>]+)>/);
   return m ? m[1] : null;
 }
 
-async function getJson(url) {
-  const res = await fetch(url, { headers: headers() });
+// Authenticated GET returning { data, link }. Throws on non-2xx with a hint that
+// distinguishes rate limits (403) from missing repos/branches (404).
+export async function githubFetch(url) {
+  const res = await fetch(url, { headers: authedHeaders() });
   if (!res.ok) {
     let hint = '';
     if (res.status === 403) {
@@ -132,91 +143,6 @@ async function getJson(url) {
 
 // Single GET against the REST API; returns parsed JSON (throws on non-2xx, e.g. 404).
 export async function apiJson(path) {
-  const { data } = await getJson(`https://api.github.com/${path}`);
+  const { data } = await githubFetch(`https://api.github.com/${path}`);
   return data;
-}
-
-// All commits on `branch` of `repo` within [since, until] (ISO 8601), following pagination.
-export async function commits(repo, branch, since, until) {
-  const start = new URL(`https://api.github.com/repos/${repo}/commits`);
-  start.searchParams.set('sha', branch);
-  start.searchParams.set('since', since);
-  start.searchParams.set('until', until);
-  start.searchParams.set('per_page', '100');
-
-  const out = [];
-  let url = start.toString();
-  while (url) {
-    const { data, link } = await getJson(url);
-    out.push(...data);
-    url = nextLink(link);
-  }
-  return out;
-}
-
-// Branch names via the git protocol (git ls-remote). This is NOT subject to the
-// REST API rate limit, so the milestone/branch pickers keep working even when the
-// token is throttled. Returns every head; ranking below floats trunk + wp/*.
-function gitLsRemote(repo) {
-  const out = execFileSync('git', ['ls-remote', '--heads', `https://github.com/${repo}.git`],
-    { encoding: 'utf8', timeout: 20000, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
-  const names = [];
-  for (const line of out.split('\n')) {
-    const m = /\srefs\/heads\/(.+)$/.exec(line);
-    if (m) names.push(m[1]);
-  }
-  return names;
-}
-
-// REST fallback (used only if git is unavailable / ls-remote fails).
-async function branchesViaRest(repo) {
-  const names = new Set();
-  if (repo.endsWith('/gutenberg')) {
-    try {
-      const refs = await apiJson(`repos/${repo}/git/matching-refs/heads/wp/`);
-      for (const r of refs) names.add(r.ref.replace('refs/heads/', ''));
-    } catch { /* ignore */ }
-    names.add('trunk');
-  }
-  let url = `https://api.github.com/repos/${repo}/branches?per_page=100`;
-  let pages = 0;
-  while (url && pages < 4) {
-    const { data, link } = await getJson(url);
-    for (const b of data) names.add(b.name);
-    url = nextLink(link);
-    pages++;
-  }
-  return names;
-}
-
-// Branch names for a repo, trunk first, then wp/x.y and version branches ahead of
-// the long tail so the picker is useful. git ls-remote first (no rate limit).
-export async function branches(repo) {
-  let names;
-  try {
-    const list = gitLsRemote(repo);
-    if (list.length) names = new Set(list);
-  } catch { /* fall back to REST */ }
-  if (!names) names = await branchesViaRest(repo);
-  const rank = (n) => (n === 'trunk' ? 0 : /^(wp\/|\d+\.\d)/.test(n) ? 1 : 2);
-  return [...names].sort((a, b) => rank(a) - rank(b) || b.localeCompare(a));
-}
-
-// Label names for a list of issue/PR numbers, fetched with a bounded concurrency pool.
-export async function labelsFor(repo, numbers, concurrency = 8) {
-  const result = new Map();
-  let i = 0;
-  async function worker() {
-    while (i < numbers.length) {
-      const n = numbers[i++];
-      try {
-        const { data } = await getJson(`https://api.github.com/repos/${repo}/issues/${n}/labels`);
-        result.set(n, data.map((l) => l.name));
-      } catch {
-        result.set(n, []);
-      }
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(concurrency, numbers.length) }, worker));
-  return result;
 }

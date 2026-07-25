@@ -2,7 +2,7 @@
 // latest GitHub Release of its updateSource. Read-only - it only surfaces a
 // "update available" note with a link. It never downloads or runs remote code
 // (that would be a security hole); the user updates via git / their own flow.
-import { resolveToken } from './github.mjs';
+import { resolveToken } from './connectors/github-token.mjs';
 
 function parseSource(src) {
   const m = /^github:([^/]+)\/(.+)$/.exec(src || '');

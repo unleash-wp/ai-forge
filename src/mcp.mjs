@@ -8,8 +8,8 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { resolveCookie } from './trac.mjs';
-import { resolveToken } from './github.mjs';
+import { resolveCookie } from './connectors/wporg-cookie.mjs';
+import { resolveToken } from './connectors/github-token.mjs';
 
 // Where the built server lives: FORGE_WPORG_MCP, else the default clone path.
 export function mcpServerPath() {
