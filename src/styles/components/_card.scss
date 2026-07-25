@@ -1,0 +1,7 @@
+// Neutral elevated surface. Composed with .sources and .wizard.
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}

@@ -82,7 +82,7 @@ export default function App() {
         <Rail railRef={railRef} plugins={plugins} activeId={activeId} inPlugins={inPlugins} onSelect={setActiveId} onPlugins={() => setActiveId(PLUGINS_VIEW)} />
         <main>
           <UpdateNote />
-          <div className="tool-head">
+          <div className="workspace-head">
             <h1>{inPlugins ? 'Plugins' : (active ? active.name : 'WP Changelog')}</h1>
             <p>{inPlugins ? 'Tools installed on this Forge. Every tool is a plugin. Add your own.' : (active ? active.description : '')}</p>
           </div>

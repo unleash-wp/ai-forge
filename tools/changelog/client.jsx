@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useCore } from '../../src/client/core.jsx';
 import { Button, Select, Checkbox } from '../../src/client/ui';
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
+import './client.scss'; // this tool's co-located styles (bundled into main.css)
 
 const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
@@ -49,27 +50,27 @@ function sortGroups(obj, uncatLast) {
   });
 }
 function groupHeadHtml(label, url, who) {
-  const inner = url ? '<a class="grouplink" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + IC.ext + '</a>' : label;
-  return '<h2>' + inner + ' <span class="who">(' + esc(who) + ')</span></h2>';
+  const inner = url ? '<a class="changelog-group__link" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + IC.ext + '</a>' : label;
+  return '<h2>' + inner + ' <span class="byline">(' + esc(who) + ')</span></h2>';
 }
 function gbItem(c) {
   const ref = c.pr
     ? '<a class="ref" href="' + GB + '/pull/' + c.pr + '" target="_blank" rel="noopener">#' + c.pr + '</a>'
     : (c.sha ? '<a class="ref" href="' + GB + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : '');
-  return '<li>' + (ref ? ref + ' ' : '') + codefmt(c.subject) + ' <span class="who">by ' + esc(c.author) + '</span></li>';
+  return '<li>' + (ref ? ref + ' ' : '') + codefmt(c.subject) + ' <span class="byline">by ' + esc(c.author) + '</span></li>';
 }
-function gbGroup(cat, items) { return '<h3 class="grp">' + esc(cat) + ' <span class="n">(' + items.length + ')</span></h3><ul class="list">' + items.map(gbItem).join('') + '</ul>'; }
+function gbGroup(cat, items) { return '<h3 class="changelog-group__subhead">' + esc(cat) + ' <span class="changelog-group__count">(' + items.length + ')</span></h3><ul class="changelog-list">' + items.map(gbItem).join('') + '</ul>'; }
 function coreItem(c) {
   const ref = c.changeset
     ? '<a class="ref" href="' + TRAC + '/changeset/' + c.changeset + '" target="_blank" rel="noopener">r' + c.changeset + '</a>'
     : (c.sha ? '<a class="ref" href="' + CORE_GH + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : esc(c.shortSha));
   const tix = (c.tickets || []).map((n) => '<a class="ref" href="' + TRAC + '/ticket/' + n + '" target="_blank" rel="noopener">#' + n + '</a>').join(' ');
   const cls = c.classification ? ' <span class="tag">' + esc(c.classification) + '</span>' : '';
-  const props = c.props && c.props.length ? ' <span class="who">by ' + esc(c.props.join(', ')) + '</span>' : '';
+  const props = c.props && c.props.length ? ' <span class="byline">by ' + esc(c.props.join(', ')) + '</span>' : '';
   const desc = c.description ? '<div class="desc">' + codefmt(c.description.replace(/\s+/g, ' ').trim()) + '</div>' : '';
   return '<li>' + ref + ' ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + desc + '</li>';
 }
-function coreGroup(comp, items) { return '<h3 class="grp">' + esc(comp) + ' <span class="n">(' + items.length + ')</span></h3><ul class="list">' + items.map(coreItem).join('') + '</ul>'; }
+function coreGroup(comp, items) { return '<h3 class="changelog-group__subhead">' + esc(comp) + ' <span class="changelog-group__count">(' + items.length + ')</span></h3><ul class="changelog-list">' + items.map(coreItem).join('') + '</ul>'; }
 
 // Build the changelog list bodies (pure links + text, no React handlers) as HTML.
 function changelogBodyHtml(data) {
@@ -77,18 +78,18 @@ function changelogBodyHtml(data) {
   const s = data.sources || {};
   let cl = '';
   if (report.gutenberg.byCategory || report.gutenberg.commits.length) {
-    cl += '<section class="group">' + groupHeadHtml('Gutenberg', s.gutenberg, meta.gbBranch);
+    cl += '<section class="changelog-group">' + groupHeadHtml('Gutenberg', s.gutenberg, meta.gbBranch);
     if (report.gutenberg.byCategory) sortGroups(report.gutenberg.byCategory).forEach((g) => { cl += gbGroup(g[0], g[1]); });
-    else cl += '<ul class="list">' + report.gutenberg.commits.map(gbItem).join('') + '</ul>';
+    else cl += '<ul class="changelog-list">' + report.gutenberg.commits.map(gbItem).join('') + '</ul>';
     cl += '</section>';
   }
-  cl += '<section class="group">' + groupHeadHtml('Core', s.trac, meta.coreBranch);
+  cl += '<section class="changelog-group">' + groupHeadHtml('Core', s.trac, meta.coreBranch);
   if (report.core.tracker) {
     cl += '<p class="note">Grouped via <code>' + esc(report.core.tracker.slug) + '</code> dev-notes tracker.</p>';
     sortGroups(report.core.byComponent, true).forEach((g) => { cl += coreGroup(g[0], g[1]); });
   } else {
     if (meta.trackerMissing) cl += '<p class="note">No dev-notes tracker for this milestone. Core stays ungrouped.</p>';
-    cl += '<ul class="list">' + report.core.commits.map(coreItem).join('') + '</ul>';
+    cl += '<ul class="changelog-list">' + report.core.commits.map(coreItem).join('') + '</ul>';
   }
   cl += '</section>';
   return cl;
@@ -125,14 +126,14 @@ function DateRangePicker({ since, until, onChange }) {
   const startDow = new Date(view.getFullYear(), view.getMonth(), 1).getDay();
   const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
   const cells = [];
-  for (let i = 0; i < startDow; i++) cells.push(<button key={'e' + i} type="button" className="cal-cell empty" tabIndex={-1} />);
+  for (let i = 0; i < startDow; i++) cells.push(<button key={'e' + i} type="button" className="calendar__cell calendar__cell--empty" tabIndex={-1} />);
   for (let day = 1; day <= days; day++) {
     const ds = view.getFullYear() + '-' + pad(view.getMonth() + 1) + '-' + pad(day);
-    let cls = 'cal-cell';
-    if (ds > tISO) cls += ' disabled';
-    if (ds === tISO) cls += ' today';
-    if (s && e) { if (ds === s) cls += ' start'; if (ds === e) cls += ' end'; if (ds > s && ds < e) cls += ' inrange'; }
-    else if (s && ds === s) cls += ' start end';
+    let cls = 'calendar__cell';
+    if (ds > tISO) cls += ' calendar__cell--disabled';
+    if (ds === tISO) cls += ' calendar__cell--today';
+    if (s && e) { if (ds === s) cls += ' calendar__cell--start'; if (ds === e) cls += ' calendar__cell--end'; if (ds > s && ds < e) cls += ' calendar__cell--inrange'; }
+    else if (s && ds === s) cls += ' calendar__cell--start calendar__cell--end';
     const disabled = ds > tISO;
     cells.push(
       <button key={ds} type="button" className={cls} data-d={ds}
@@ -153,27 +154,27 @@ function DateRangePicker({ since, until, onChange }) {
   }
 
   return (
-    <div className="rangewrap" ref={wrapRef}>
-      <span className="flabel">Date range</span>
-      <button type="button" className="rangebtn" aria-haspopup="true" aria-expanded={open}
+    <div className="daterange" ref={wrapRef}>
+      <span className="daterange__label">Date range</span>
+      <button type="button" className="daterange__button" aria-haspopup="true" aria-expanded={open}
         onClick={(ev) => { ev.stopPropagation(); setOpen((o) => !o); }}>
         <span>{since && until ? fmtRange(since, until) : 'Pick dates'}</span>
-        <CalendarIcon size={16} className="range-cal" />
+        <CalendarIcon size={16} className="daterange__cal-icon" />
       </button>
       {open && (
-        <div className="cal" onClick={(ev) => ev.stopPropagation()}>
-          <div className="cal-presets">
+        <div className="calendar" onClick={(ev) => ev.stopPropagation()}>
+          <div className="calendar__presets">
             {[['7 days', 7], ['14 days', 14], ['30 days', 30]].map((p) => (
-              <button key={p[1]} type="button" className="preset" onClick={() => preset(p[1])}>{p[0]}</button>
+              <button key={p[1]} type="button" className="calendar__preset" onClick={() => preset(p[1])}>{p[0]}</button>
             ))}
           </div>
-          <div className="cal-head">
-            <button type="button" className="cal-nav" aria-label="Previous month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}><ArrowLeft size={18} /></button>
-            <div className="cal-title">{MON[view.getMonth()] + ' ' + view.getFullYear()}</div>
-            <button type="button" className="cal-nav" aria-label="Next month" disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}><ArrowRight size={18} /></button>
+          <div className="calendar__head">
+            <button type="button" className="calendar__nav" aria-label="Previous month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}><ArrowLeft size={18} /></button>
+            <div className="calendar__title">{MON[view.getMonth()] + ' ' + view.getFullYear()}</div>
+            <button type="button" className="calendar__nav" aria-label="Next month" disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}><ArrowRight size={18} /></button>
           </div>
-          <div className="cal-dow"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
-          <div className="cal-grid" onMouseLeave={() => { if (pendStart && hoverDay !== pendStart) setHoverDay(pendStart); }}>{cells}</div>
+          <div className="calendar__dow"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+          <div className="calendar__grid" onMouseLeave={() => { if (pendStart && hoverDay !== pendStart) setHoverDay(pendStart); }}>{cells}</div>
         </div>
       )}
     </div>
@@ -224,11 +225,11 @@ function Results({ data, since, until }) {
     const arr = all.map((n) => "\t'" + withAt(n).replace(/'/g, "\\'") + "',");
     copy('array(\n' + arr.join('\n') + '\n)', 'PHP array copied');
   }
-  const stat = (n, l, counted) => <div className={'stat' + (counted ? ' counted' : '')} key={l}><b className="tnum">{n}</b><span>{l}</span>{counted && <span className="stat-tag">in total</span>}</div>;
+  const stat = (n, l, counted) => <div className={'stat' + (counted ? ' stat--counted' : '')} key={l}><b className="tnum">{n}</b><span>{l}</span>{counted && <span className="stat__tag">in total</span>}</div>;
 
   return (
     <div className="results">
-      <div className="rhead">
+      <div className="results__head">
         <div className="lead-metric"><b className="tnum">{dn ? issues : changes}</b><span>{(dn ? 'dev notes / field guide tickets, ' : 'changes landed across Core and Gutenberg, ') + fmtRange(since, until)}{!dn && <button type="button" className="info" data-tip={t.gutenbergCommits + ' Gutenberg changes + ' + t.coreChangesets + ' Core changesets'} aria-label={t.gutenbergCommits + ' Gutenberg changes plus ' + t.coreChangesets + ' Core changesets'} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button>}</span></div>
         <div className="stats">
           {!dn && stat(t.gutenbergCommits, 'Gutenberg changes', true)}
@@ -243,16 +244,16 @@ function Results({ data, since, until }) {
       )}
 
       <div className="tabs" role="tablist">
-        <button className={'tab' + (tab === 'changelog' ? ' active' : '')} onClick={() => setTab('changelog')}>Changelog<span className="cbadge">{changes}</span></button>
-        <button className={'tab' + (tab === 'props' ? ' active' : '')} onClick={() => setTab('props')}>Props<span className="cbadge">{all.length}</span></button>
-        <button className={'tab' + (tab === 'devnotes' ? ' active' : '')} onClick={() => setTab('devnotes')}>Dev Notes{devNotes ? <span className="cbadge">{devNotes.length}</span> : null}</button>
-        <div className="tabtools">
+        <button className={'tab' + (tab === 'changelog' ? ' tab--active' : '')} onClick={() => setTab('changelog')}>Changelog<span className="tab__badge">{changes}</span></button>
+        <button className={'tab' + (tab === 'props' ? ' tab--active' : '')} onClick={() => setTab('props')}>Props<span className="tab__badge">{all.length}</span></button>
+        <button className={'tab' + (tab === 'devnotes' ? ' tab--active' : '')} onClick={() => setTab('devnotes')}>Dev Notes{devNotes ? <span className="tab__badge">{devNotes.length}</span> : null}</button>
+        <div className="tabs__tools">
           <Button variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</Button>
           <Button variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />Download</Button>
         </div>
       </div>
 
-      <div className={'panel' + (tab === 'changelog' ? '' : ' hidden')}>
+      <div className={'panel' + (tab === 'changelog' ? '' : ' panel--hidden')}>
         {data.sources && (
           <section className="card sources">
             <h2>Sources <em>link these in the post so anyone can verify</em></h2>
@@ -264,29 +265,29 @@ function Results({ data, since, until }) {
         <details><summary>Raw Markdown</summary><pre>{data.markdown}</pre></details>
       </div>
 
-      <div className={'panel' + (tab === 'props' ? '' : ' hidden')}>
-        <div className="propshead">
+      <div className={'panel' + (tab === 'props' ? '' : ' panel--hidden')}>
+        <div className="props__head">
           <div className="props-metric"><b className="tnum">{all.length}</b><span>contributors with props this window</span></div>
-          <div className="props-actions">
-            <label className="atbox"><Checkbox checked={propsAt} onChange={(e) => setPropsAt(e.target.checked)} /> Add @ before names</label>
+          <div className="props__actions">
+            <label className="props__at"><Checkbox checked={propsAt} onChange={(e) => setPropsAt(e.target.checked)} /> Add @ before names</label>
             <Button variant="ghost" size="sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</Button>
             <Button variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />CSV</Button>
             <Button variant="ghost" size="sm" onClick={copyPhp}><Ic html={IC.md} />PHP array</Button>
           </div>
         </div>
-        <p className="propslist">{propsLine}</p>
-        {propsAt && <p className="note props-hint">Slack handles usually match the wp.org username, but not always. Double-check before pinging.</p>}
+        <p className="props__list">{propsLine}</p>
+        {propsAt && <p className="note props__hint">Slack handles usually match the wp.org username, but not always. Double-check before pinging.</p>}
       </div>
 
-      <div className={'panel' + (tab === 'devnotes' ? '' : ' hidden')}>
+      <div className={'panel' + (tab === 'devnotes' ? '' : ' panel--hidden')}>
         <p className="note">Published dev notes for {meta.milestone ? <b>{meta.milestone}</b> : 'this milestone'}, from <a href={'https://make.wordpress.org/core/tag/dev-notes-' + String(meta.milestone || '').replace(/\./g, '-') + '/'} target="_blank" rel="noopener">make.wordpress.org/core</a> (the tagged Field Guide source).</p>
         {devNotes === null ? <p className="note"><span className="spin" /> Loading dev notes…</p>
           : devNotes.length === 0 ? <div className="empty"><h3>No dev notes yet</h3><p>make.wordpress.org has no <code>dev-notes-{String(meta.milestone || '').replace(/\./g, '-')}</code> posts yet. They land as the release nears.</p></div>
-          : <ul className="devnotes-list">{devNotes.map((n, i) => (
+          : <ul className="devnotes">{devNotes.map((n, i) => (
               <li key={i}>
                 <a href={n.url} target="_blank" rel="noopener">{n.title}</a>
-                <span className="dn-date">{n.date}</span>
-                {n.excerpt && <p className="dn-excerpt">{n.excerpt}…</p>}
+                <span className="devnotes__date">{n.date}</span>
+                {n.excerpt && <p className="devnotes__excerpt">{n.excerpt}…</p>}
               </li>
             ))}</ul>}
       </div>
@@ -295,7 +296,7 @@ function Results({ data, since, until }) {
 }
 function SrcRow({ url, text, onCopy }) {
   return (
-    <div className="srcrow">
+    <div className="sources__row">
       <a href={url} target="_blank" rel="noopener" dangerouslySetInnerHTML={{ __html: text }} />
       <Button variant="ghost" size="sm" onClick={onCopy}><Ic html={IC.link} />Copy link</Button>
     </div>
@@ -381,23 +382,23 @@ export default function ChangelogTool() {
 
   return (
     <>
-      <section className={'filters' + (loaded ? '' : ' loading')}>
-        {!loaded && <div className="filters-loading"><span className="spin" /> Loading milestones and branches…</div>}
+      <section className={'filters' + (loaded ? '' : ' filters--loading')}>
+        {!loaded && <div className="filters__loading"><span className="spin" /> Loading milestones and branches…</div>}
         <form className="query" onSubmit={submit}>
-          <div className="qfields">
+          <div className="query__fields">
             <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
             <label>Milestone<Select block searchable ariaLabel="Milestone" value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="Select" /></label>
             <label>Gutenberg branch<Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></label>
             <label>Core branch<Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></label>
           </div>
-          <div className="qactions">
-            <div className="checks">
+          <div className="query__actions">
+            <div className="query__checks">
               <label><Checkbox checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <button type="button" className="info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." aria-label="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
               <label><Checkbox checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <button type="button" className="info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." aria-label="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
               <label><Checkbox checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <button type="button" className="info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." aria-label="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
               <label><Checkbox checked={full} onChange={(e) => setFull(e.target.checked)} /> Full descriptions <button type="button" className="info" data-tip="Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast." aria-label="Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
             </div>
-            <div className="go"><button className="reset-link" type="button" onClick={reset}>Reset</button><Button variant="primary" type="submit" disabled={busy}>Generate</Button></div>
+            <div className="query__go"><button className="query__reset" type="button" onClick={reset}>Reset</button><Button variant="primary" type="submit" disabled={busy}>Generate</Button></div>
           </div>
         </form>
       </section>

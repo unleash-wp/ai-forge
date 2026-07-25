@@ -66,20 +66,20 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const showTracSetup = !trac.set || editTrac;
 
   return (
-    <section className={'card wizard' + (open ? ' open' : '')}>
-      <button className="wiz-close" type="button" onClick={onClose} aria-label="Close setup">&times;</button>
+    <section className={'card wizard' + (open ? ' wizard--open' : '')}>
+      <button className="wizard__close" type="button" onClick={onClose} aria-label="Close setup">&times;</button>
       <h2>Setup</h2>
-      <p className="lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own. Nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
-      <div className="steps">
-        <div className={'step' + (gh.set ? ' done' : '')}>
-          <div className="num"><span className="d">1</span></div>
+      <p className="wizard__lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own. Nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
+      <div className="wizard__steps">
+        <div className={'wizard__step' + (gh.set ? ' wizard__step--done' : '')}>
+          <div className="wizard__num"><span className="wizard__num-digit">1</span></div>
           <div>
             <h3>GitHub <em>lifts the API limit from 60 to 5000 requests an hour</em></h3>
             {gh.set && (
-              <div className="connected"><span>✓</span> Connected · {ghSrc} · 5000/h
+              <div className="wizard__connected"><span>✓</span> Connected · {ghSrc} · 5000/h
                 {gh.source === 'file'
-                  ? <button className="disc-btn" type="button" onClick={disconnectGh}>Disconnect</button>
-                  : <span className="disc-note">{gh.source === 'gh' ? 'auto-detected from the gh CLI' : 'set by env var'}</span>}
+                  ? <button className="wizard__disconnect" type="button" onClick={disconnectGh}>Disconnect</button>
+                  : <span className="wizard__disc-note">{gh.source === 'gh' ? 'auto-detected from the gh CLI' : 'set by env var'}</span>}
               </div>
             )}
             {showGhSetup && (
@@ -89,54 +89,54 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
                 <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ margin: 0 }}>
                   <TextInput type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder="ghp_… or github_pat_…" autoComplete="off" spellCheck="false" />
                 </form>
-                <div className="rowbtns">
+                <div className="wizard__actions">
                   <Button variant="primary" size="sm" onClick={saveGh}>Save &amp; connect</Button>
                   <Button variant="ghost" size="sm" onClick={testGh}>Test</Button>
-                  <span className={'msg' + (ghMsg.kind ? ' ' + ghMsg.kind : '')}>{ghMsg.text}</span>
+                  <span className={'msg' + (ghMsg.kind ? ' msg--' + ghMsg.kind : '')}>{ghMsg.text}</span>
                 </div>
               </div>
             )}
             {gh.set && gh.source !== 'env' && !editGh && (
-              <button className="expander" onClick={() => setEditGh(true)}>{gh.source === 'gh' ? 'Use your own token instead' : 'Use a different token'}</button>
+              <button className="wizard__expander" onClick={() => setEditGh(true)}>{gh.source === 'gh' ? 'Use your own token instead' : 'Use a different token'}</button>
             )}
           </div>
         </div>
-        <div className={'step' + (trac.set ? ' done' : '')}>
-          <div className="num"><span className="d">2</span></div>
+        <div className={'wizard__step' + (trac.set ? ' wizard__step--done' : '')}>
+          <div className="wizard__num"><span className="wizard__num-digit">2</span></div>
           <div>
             <h3>WordPress.org <em>only needed for “deep” (full ticket descriptions)</em></h3>
             {trac.set && (
-              <div className="connected"><span>✓</span> Cookie saved · {trac.source}
+              <div className="wizard__connected"><span>✓</span> Cookie saved · {trac.source}
                 {trac.source === 'file'
-                  ? <button className="disc-btn" type="button" onClick={disconnectCookie}>Disconnect</button>
-                  : <span className="disc-note">set by env var</span>}
+                  ? <button className="wizard__disconnect" type="button" onClick={disconnectCookie}>Disconnect</button>
+                  : <span className="wizard__disc-note">set by env var</span>}
               </div>
             )}
             {showTracSetup && (
               <div>
                 <p>A web page can't read this cookie for you (it's HttpOnly). Quickest is to import it straight from the browser you're logged into:</p>
                 {browser && (
-                  <div className="quickimport">
-                    <span className="qi-label">Quick import <span className="qi-note">(macOS)</span></span>
-                    <div className="qi-btns"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></div>
+                  <div className="quick-import">
+                    <span className="quick-import__label">Quick import <span className="quick-import__note">(macOS)</span></span>
+                    <div className="quick-import__buttons"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></div>
                   </div>
                 )}
-                <details className="qi-manual"><summary>Or paste it manually</summary>
+                <details className="quick-import__manual"><summary>Or paste it manually</summary>
                   <ol>
                     <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
                     <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
                   </ol>
                   <TextArea rows="3" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="wporg_logged_in=…; wporg_sec=…" />
                 </details>
-                <div className="rowbtns">
+                <div className="wizard__actions">
                   <Button variant="primary" size="sm" onClick={saveCookie}>Save &amp; connect</Button>
                   <Button variant="ghost" size="sm" onClick={testCookie}>Test</Button>
-                  <span className={'msg' + (ckMsg.kind ? ' ' + ckMsg.kind : '')}>{ckMsg.text}</span>
+                  <span className={'msg' + (ckMsg.kind ? ' msg--' + ckMsg.kind : '')}>{ckMsg.text}</span>
                 </div>
               </div>
             )}
             {trac.set && trac.source === 'file' && !editTrac && (
-              <button className="expander" onClick={() => setEditTrac(true)}>Replace the cookie</button>
+              <button className="wizard__expander" onClick={() => setEditTrac(true)}>Replace the cookie</button>
             )}
           </div>
         </div>

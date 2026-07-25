@@ -1,0 +1,23 @@
+// Shared "import the cookie from your browser" block (setup + installer).
+.quick-import {
+  margin: 0 0 var(--s3);
+
+  &__label {
+    display: block;
+    font-size: 0.7813rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  &__note { font-weight: 400; color: var(--muted); }
+
+  &__buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  &__manual {
+    margin: 0 0 var(--s3);
+
+    summary { font-size: 0.7813rem; color: var(--muted); cursor: pointer; }
+    > ol { margin-top: var(--s2); }
+  }
+}

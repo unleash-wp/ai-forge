@@ -1,0 +1,28 @@
+// Panel that wraps the query form. --loading swaps the form for a spinner row.
+@use '../tools/mixins' as *;
+
+.filters {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-sm);
+  padding: var(--s5) var(--s6);
+  margin-bottom: var(--s6);
+
+  @include mq('lg') { padding: var(--s5) var(--s4); }
+
+  &__loading {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+    padding: var(--s7) 0;
+  }
+
+  &--loading {
+    .filters__loading { display: flex; }
+    > form { display: none; }
+  }
+}

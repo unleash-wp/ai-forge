@@ -1,0 +1,23 @@
+// Copy/download confirmation toast, centred at the bottom.
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translate(-50%, 1rem);
+  z-index: 300;
+  background: var(--navy);
+  color: #fff;
+  padding: 0.6875rem 1.125rem;
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-lg);
+  font: 600 0.8438rem/1 var(--font);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+
+  &--show { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { transition: opacity .2s ease; }
+}

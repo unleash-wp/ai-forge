@@ -1,0 +1,120 @@
+// Setup panel (card in the workspace): two numbered credential steps.
+.wizard {
+  display: none;
+  padding: var(--s6);
+  margin-bottom: var(--s5);
+  position: relative;
+
+  &--open { display: block; }
+
+  h2 {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--heading);
+    margin: 0 0 var(--s1);
+    letter-spacing: -.01em;
+  }
+
+  &__close {
+    position: absolute;
+    top: var(--s5);
+    right: var(--s5);
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 0.3125rem;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    font: 400 1.25rem/1 var(--font);
+
+    &:hover { border-color: var(--navy); color: var(--navy); }
+  }
+
+  &__lead { color: var(--muted); font-size: 0.875rem; margin: 0 0 var(--s6); max-width: 70ch; }
+
+  &__steps { display: grid; gap: var(--s6); }
+
+  &__step {
+    display: grid;
+    grid-template-columns: 2.125rem 1fr;
+    gap: var(--s4);
+
+    h3 {
+      margin: 0.25rem 0 var(--s1);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--heading);
+
+      em { font-style: normal; color: var(--muted); font-weight: 500; font-size: 0.8125rem; }
+    }
+
+    p { margin: 0 0 var(--s3); font-size: 0.875rem; color: var(--muted); max-width: 66ch; }
+    ol { margin: var(--s2) 0 var(--s3) 1.125rem; padding: 0; font-size: 0.8125rem; color: var(--muted); }
+    li { margin: var(--s1) 0; }
+
+    &--done {
+      .wizard__num {
+        background: var(--good);
+        &::after { content: "✓"; }
+      }
+      .wizard__num-digit { display: none; }
+    }
+  }
+
+  &__num {
+    width: 2.125rem;
+    height: 2.125rem;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    display: grid;
+    place-items: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  &__connected {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    font-size: 0.875rem;
+    color: var(--good-ink);
+    font-weight: 500;
+    flex-wrap: wrap;
+  }
+
+  &__disconnect {
+    margin-left: 0.375rem;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 500;
+    font-size: 0.7813rem;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover { color: var(--bad); }
+  }
+
+  &__disc-note { margin-left: 0.375rem; color: var(--muted); font-weight: 400; font-size: 0.7813rem; }
+
+  &__actions { display: flex; gap: var(--s2); align-items: center; margin-top: var(--s3); flex-wrap: wrap; }
+
+  &__expander {
+    margin-top: var(--s2);
+    font-size: 0.7813rem;
+    color: var(--muted);
+    cursor: pointer;
+    background: none;
+    border: 0;
+    padding: 0;
+    text-decoration: underline;
+  }
+}

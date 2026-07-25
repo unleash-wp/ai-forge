@@ -3,14 +3,14 @@ import { LOGO_FULL } from '../brand.js';
 
 export default function Header({ headerRef, scrolled, ghSet, tracSet, onToggleSetup }) {
   return (
-    <header ref={headerRef} className={scrolled ? 'scrolled' : ''}>
-      <div className="bar">
+    <header ref={headerRef} className={'header' + (scrolled ? ' header--scrolled' : '')}>
+      <div className="header__bar">
         <a className="logo" href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP" dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
-        <span className="divider" />
-        <a href="#" className="product" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Forge</a>
-        <div className="pills">
-          <button className={'pill ' + (ghSet ? 'ok' : 'off')} onClick={onToggleSetup}><span className="ic" />GitHub</button>
-          <button className={'pill ' + (tracSet ? 'ok' : 'off')} onClick={onToggleSetup}><span className="ic" />Trac</button>
+        <span className="header__divider" />
+        <a href="#" className="header__product" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Forge</a>
+        <div className="header__pills">
+          <button className={'pill ' + (ghSet ? 'pill--ok' : 'pill--off')} onClick={onToggleSetup}><span className="pill__ic" />GitHub</button>
+          <button className={'pill ' + (tracSet ? 'pill--ok' : 'pill--off')} onClick={onToggleSetup}><span className="pill__ic" />Trac</button>
         </div>
       </div>
     </header>

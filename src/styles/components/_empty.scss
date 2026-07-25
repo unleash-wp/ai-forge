@@ -1,0 +1,9 @@
+// Empty state (no changelog yet, no dev notes yet).
+.empty {
+  text-align: center;
+  padding: var(--s8) var(--s5);
+
+  img { width: 3.5rem; height: 3.5rem; opacity: .95; margin-bottom: var(--s4); }
+  h3 { margin: 0 0 var(--s2); font-size: 1.125rem; color: var(--heading); font-weight: 700; }
+  p { margin: 0 auto; max-width: 48ch; font-size: 0.9688rem; color: var(--muted); line-height: 1.6; }
+}

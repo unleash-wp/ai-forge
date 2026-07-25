@@ -59,26 +59,26 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
   const activeId = open && active >= 0 && shown[active] ? base + '-opt-' + active : undefined;
 
   return (
-    <div className={'ui-select' + (block ? ' block' : '') + (open ? ' open' : '') + (disabled ? ' disabled' : '')} ref={ref} onKeyDown={onKeyDown}>
-      <button ref={btnRef} type="button" className="ui-select-btn" disabled={disabled} aria-label={ariaLabel}
+    <div className={'select' + (block ? ' select--block' : '') + (open ? ' select--open' : '') + (disabled ? ' select--disabled' : '')} ref={ref} onKeyDown={onKeyDown}>
+      <button ref={btnRef} type="button" className="select__button" disabled={disabled} aria-label={ariaLabel}
         aria-haspopup="listbox" aria-expanded={open} aria-activedescendant={!searchable ? activeId : undefined}
         onClick={() => setOpen((o) => !o)}>
         <span title={sel ? sel.label : undefined}>{sel ? sel.label : placeholder}</span>
-        <svg className="ui-select-caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+        <svg className="select__caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
       </button>
       {open && (
-        <div className="ui-select-menu" role="listbox" aria-label={ariaLabel} ref={menuRef}>
+        <div className="select__menu" role="listbox" aria-label={ariaLabel} ref={menuRef}>
           {searchable && (
-            <input ref={searchRef} className="ui-select-search" value={query} placeholder="Search…" spellCheck="false" aria-label="Filter options"
+            <input ref={searchRef} className="select__search" value={query} placeholder="Search…" spellCheck="false" aria-label="Filter options"
               aria-activedescendant={activeId} onChange={(e) => setQuery(e.target.value)} onClick={(e) => e.stopPropagation()} />
           )}
           {shown.map((o, i) => (
             <button key={o.value} id={base + '-opt-' + i} data-idx={i} type="button" role="option" aria-selected={o.value === value} title={o.label}
-              className={'ui-select-opt' + (o.value === value ? ' sel' : '') + (i === active ? ' active' : '')}
+              className={'select__option' + (o.value === value ? ' select__option--selected' : '') + (i === active ? ' select__option--active' : '')}
               onMouseEnter={() => setActive(i)} onClick={() => pick(o)}>{o.label}</button>
           ))}
-          {shown.length === 0 && <div className="ui-select-note">No matches</div>}
-          {filtered.length > OPT_CAP && <div className="ui-select-note">+{filtered.length - OPT_CAP} more, refine search</div>}
+          {shown.length === 0 && <div className="select__note">No matches</div>}
+          {filtered.length > OPT_CAP && <div className="select__note">+{filtered.length - OPT_CAP} more, refine search</div>}
         </div>
       )}
     </div>

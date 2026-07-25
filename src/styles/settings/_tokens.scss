@@ -1,0 +1,30 @@
+// ITCSS · Settings — design tokens as CSS custom properties.
+// No selectors that emit box rules here; only :root variables (light + dark).
+// Everything downstream references these via var(--x); never hard-code a colour.
+:root {
+  --navy: #203159; --navy-deep: #0f131f; --yellow: #fcbe00; --ink: #292b2e;
+  --slate: #727f9f; --slate-2: #35415b;
+  --paper: #ffffff; --paper-alt: #f2f4f7; --paper-faded: #eceef5; --hairline: #e3e7f0;
+  --bg: #eef1f6; --surface: #ffffff; --sunk: #f5f7fa; --border: #e3e7f0;
+  --heading: var(--navy); --text: #2b3242; --muted: #55607a;
+  --primary: var(--navy); --accent: var(--yellow); --link: var(--navy);
+  --tagbg: #eceef5; --tagfg: var(--navy); --good: #1a8f57; --good-ink: #157a45; --bad: #c0392b;
+  --shadow-sm: 0 1px 2px rgba(32, 49, 89, .06);
+  --shadow: 0 6px 24px rgba(32, 49, 89, .09);
+  --shadow-lg: 0 18px 48px rgba(32, 49, 89, .16);
+  --ring: rgba(32, 49, 89, .26); --ghost-hover: rgba(32, 49, 89, .06); --range-fill: #e7ebf5;
+  // 4pt spacing scale
+  --s1: 0.25rem; --s2: 0.5rem; --s3: 0.75rem; --s4: 1rem; --s5: 1.5rem; --s6: 2rem; --s7: 3rem; --s8: 4rem;
+  --r: 0.3125rem; --r-sm: 0.3125rem;
+  --font: "Ubuntu", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1218; --surface: #171b24; --sunk: #1e232e; --border: #2a3040;
+    --heading: #eaf0ff; --text: #dbe2ef; --muted: #94a1bd; --primary: #7c93ff; --link: #a9bcff;
+    --tagbg: #232b40; --tagfg: #b9c7ff; --good-ink: #4bd08a;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4); --shadow: 0 6px 24px rgba(0, 0, 0, .4); --shadow-lg: 0 18px 48px rgba(0, 0, 0, .55);
+    --ring: rgba(124, 147, 255, .42); --ghost-hover: rgba(124, 147, 255, .12); --range-fill: #26314d;
+  }
+}
