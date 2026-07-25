@@ -1,6 +1,6 @@
 # The Changelog Tool
 
-The free core tool. Give it a date window and a milestone; it produces a grounded release-post changelog for WordPress Core + Gutenberg.
+The first plugin Forge ships with (bundled, free) — one tool on the platform, not a core feature. Give it a date window and a milestone; it produces a grounded release-post changelog for WordPress Core + Gutenberg.
 
 ## Command
 

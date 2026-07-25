@@ -1,6 +1,8 @@
 # Quick Start — UnleashWP AI Forge
 
-From nothing to a WordPress release changelog in about a minute. No account, token or cookie required to start.
+Forge is UnleashWP's AI tool + **plugin platform** for WordPress. It ships with one plugin today — the **Changelog Generator** — so this guide installs Forge and uses that first plugin. No account, token or cookie required to start.
+
+Below: from nothing to a WordPress release changelog in about a minute.
 
 ## 1. Install
 

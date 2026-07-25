@@ -1,10 +1,10 @@
 # UnleashWP AI Forge
 
-**Turn a date window into a release-post changelog for WordPress Core + Gutenberg** — in your terminal, in Claude Code / Codex, or as a window inside Claude Desktop.
+**UnleashWP's AI tool for WordPress** — a self-hosted **plugin platform** that also **bridges to your AI** (Claude Code, Claude Desktop, Codex), by [UnleashWP](https://unleash-wp.com).
 
-Forge is a small, self-hosted **toolbelt for WordPress release and dev work**, by [UnleashWP](https://unleash-wp.com). The free core ships with the **Changelog Generator**: give it a start date, an end date and a milestone, and it counts and lists everything that landed in Core and Gutenberg — ready to drop into a release post.
+Forge is the platform: a shell that hosts **tools (plugins)** and connects them to your AI assistant over MCP. Every tool is a folder under `tools/`, so the community can add more without touching the core. The CLI has **zero runtime dependencies** (plain Node ≥ 18).
 
-It is also a **plugin platform**: every tool is a folder under `tools/`, so the community can add more without touching the shell. The CLI has **zero runtime dependencies** (plain Node ≥ 18).
+It ships with **one plugin to start — the Changelog Generator**: give it a start date, an end date and a milestone, and it counts and lists everything that landed in Core and Gutenberg, ready to drop into a release post. It's the first plugin, not the whole of Forge — more will follow.
 
 ---
 

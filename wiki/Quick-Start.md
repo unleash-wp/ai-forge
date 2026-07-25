@@ -1,6 +1,6 @@
 # Quick Start
 
-From nothing to a WordPress release changelog in about a minute.
+Forge is UnleashWP's AI tool + **plugin platform** for WordPress; it ships with one plugin today, the **Changelog Generator**. This guide installs Forge and uses that first plugin — from nothing to a WordPress release changelog in about a minute.
 
 ## 1. Install
 

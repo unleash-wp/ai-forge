@@ -2,11 +2,14 @@
 
 **The AI tool for WordPress, by [UnleashWP](https://unleash-wp.com).**
 
-Forge is a little helper you run on your own computer. You ask it about WordPress, and it does the boring work for you.
+Forge is a small program you run on your own computer. It is two things at once:
 
-Its first job: build the **changelog** for a WordPress release — the list of everything that changed between two dates, ready to paste into a release post. More tools will come; Forge is built to hold many.
+- **A home for WordPress tools.** Every tool is a plugin. You keep the ones you want; Forge runs them and gives them one clean interface.
+- **A bridge to your AI.** Forge plugs into Claude Code, Claude Desktop and Codex, so your assistant can use those tools directly and hand you the results.
 
-You can use it three ways: type one command, click buttons in your browser, or just **ask Claude or Codex** and let them run it for you.
+It comes with **one plugin to start: the Changelog Generator** — it builds the list of everything that changed in a WordPress release between two dates, ready to paste into a release post. More plugins will follow; the changelog is just the first, not the whole of Forge.
+
+This page shows you how to install Forge and try that first plugin. You can use it three ways: type one command, click buttons in your browser, or just **ask Claude or Codex**.
 
 ---
 
