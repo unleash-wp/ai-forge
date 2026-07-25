@@ -68,8 +68,13 @@ export function startServer({ port = 4321, quiet = false } = {}) {
         const body = JSON.parse(await readBody(req) || '{}');
         const id = (body.id || '').trim();
         if (!id) throw new Error('missing id');
-        if (id === 'changelog' && !body.enabled) throw new Error('the core Changelog tool cannot be deactivated');
         const set = readDisabled();
+        // Every tool is a normal plugin — no tool is "core". The only guard is a
+        // footgun one: you can't deactivate your last active tool (an empty app).
+        if (!body.enabled) {
+          const active = (await pluginsReady).filter((p) => !set.has(p.manifest.id));
+          if (active.length <= 1 && active.some((p) => p.manifest.id === id)) throw new Error('cannot deactivate your only active tool');
+        }
         if (body.enabled) set.delete(id); else set.add(id);
         writeDisabled(set);
         json(res, 200, { ok: true });
@@ -79,7 +84,7 @@ export function startServer({ port = 4321, quiet = false } = {}) {
       return;
     }
     // Bulk management: apply one action (activate/deactivate/update/remove) to
-    // many tools, then rebuild once at the end. Skips the core Changelog tool.
+    // many tools, then rebuild once at the end. Won't empty out the last tool.
     if (url.pathname === '/api/plugins/bulk' && req.method === 'POST') {
       try {
         const { action, ids } = JSON.parse(await readBody(req) || '{}');
@@ -87,15 +92,20 @@ export function startServer({ port = 4321, quiet = false } = {}) {
         const plugins = await pluginsReady;
         const errors = [];
         let needBuild = false;
+        // Track counts so bulk never leaves zero active / zero installed tools.
+        const disabled0 = readDisabled();
+        const installed = new Set(plugins.map((p) => p.manifest.id));
+        const active = new Set([...installed].filter((x) => !disabled0.has(x)));
         for (const id of list) {
-          if (id === 'changelog') { errors.push('changelog: core tool skipped'); continue; }
           try {
-            if (action === 'activate' || action === 'deactivate') {
-              const set = readDisabled();
-              if (action === 'deactivate') set.add(id); else set.delete(id);
-              writeDisabled(set);
+            if (action === 'deactivate') {
+              if (active.has(id) && active.size <= 1) { errors.push(id + ': only active tool, skipped'); continue; }
+              const set = readDisabled(); set.add(id); writeDisabled(set); active.delete(id);
+            } else if (action === 'activate') {
+              const set = readDisabled(); set.delete(id); writeDisabled(set); active.add(id);
             } else if (action === 'remove') {
-              uninstall(id); clearDisabled(id); needBuild = true;
+              if (installed.size <= 1) { errors.push(id + ': only installed tool, skipped'); continue; }
+              uninstall(id); clearDisabled(id); installed.delete(id); active.delete(id); needBuild = true;
             } else if (action === 'update') {
               const p = plugins.find((x) => x.manifest.id === id);
               if (p && p.manifest.updateSource) { await installFromSource(p.manifest.updateSource); needBuild = true; }
@@ -156,7 +166,7 @@ export function startServer({ port = 4321, quiet = false } = {}) {
     if (url.pathname === '/api/plugins/uninstall' && req.method === 'POST') {
       try {
         const id = (JSON.parse(await readBody(req) || '{}').id || '').trim();
-        if (id === 'changelog') throw new Error('the core Changelog tool cannot be removed');
+        if ((await pluginsReady).length <= 1) throw new Error('cannot remove your only installed tool');
         uninstall(id);
         clearDisabled(id); // a fresh reinstall should come back active
         await rebuild();
