@@ -4,7 +4,7 @@
 // GitHub / WordPress.org. Chakra handles backdrop, focus trap and Escape.
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { fetchJSON, apiFetch, useCore } from '../core.jsx';
+import { fetchJSON, apiFetch, useCore, connectorStatus } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
 import { useI18n, __, availableLocales, LOCALE_NAMES, LOCALE_FLAGS } from '../i18n.jsx';
@@ -30,12 +30,6 @@ const ICON_HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 const ICON_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
-
-// Register Forge as an MCP server so Claude Code / Codex can query its tools
-// (get_changelog, list_milestones, list_branches) live. Claude Code has a CLI
-// for it; Codex points its MCP config at the same `uwp mcp` command.
-const MCP_CMD_CLAUDE = 'claude mcp add forge -- npx -y @unleashwp/forge@latest mcp';
-const MCP_CMD_CODEX = 'codex mcp add forge -- npx -y @unleashwp/forge@latest mcp';
 
 // Flag emoji from a 2-letter country code (regional indicator letters).
 const flagOf = (cc) => cc.toUpperCase().replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
@@ -254,8 +248,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .catch(() => {});
   }, [open]);
 
-  const gh = status ? status.github : { set: false };
-  const trac = status ? status.trac : { set: false };
+  const gh = connectorStatus(status, 'github-token');
+  const trac = connectorStatus(status, 'wporg-cookie');
   const version = (status && status.version) || '';
   const browser = currentBrowser();
   const toggle = (id) => setOpenId((o) => (o === id ? null : id));
@@ -341,6 +335,64 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .finally(() => setBusy(''));
   }
 
+  // Per-connector presentation (icon + name + one-line description). The list,
+  // order, kind, required flag and command all come from the Core registry via
+  // status.connectors; this only supplies how each id looks and what its panel is.
+  const PRESENT = {
+    'github-token': { icon: ICON_GITHUB, name: 'GitHub', desc: t('Raises the API limit to 5,000 requests per hour.') },
+    'wporg-cookie': { icon: ICON_WORDPRESS, name: 'WordPress.org', desc: t('Adds full ticket text for deep mode.') },
+    claude: { icon: ICON_CLAUDE, name: 'Claude Code', desc: t('Register Forge as an MCP server in %s.', 'Claude Code') },
+    codex: { icon: ICON_CODEX, name: 'Codex', desc: t('Add Forge as an MCP server in %s.', 'Codex') },
+  };
+
+  function renderBody(c) {
+    if (c.id === 'github-token') {
+      return gh.set ? (
+        <HStack justify="space-between" gap="3" flexWrap="wrap">
+          <Text fontSize="0.8125rem" color="ui.muted">{t('Connected with %s.', t(ghSourceLabel(gh.source)))}</Text>
+          {gh.source !== 'env' && <DisconnectBtn onClick={disconnectGh} />}
+        </HStack>
+      ) : (
+        <Stack gap="3">
+          {gh.ghAvailable && <BusyBtn busy={busy === 'gh-cli'} onClick={connectGh} alignSelf="flex-start">{t('Connect with GitHub CLI')}</BusyBtn>}
+          <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0">
+            <HStack gap="2" align="center">
+              <Box flex="1"><TextInput type="password" size="sm" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder={gh.ghAvailable ? t('Or paste a token') : t('Paste a GitHub token')} autoComplete="off" spellCheck="false" /></Box>
+              <BusyBtn busy={busy === 'gh-token'} variant="ghost" onClick={saveGh} flex="none">{t('Connect')}</BusyBtn>
+            </HStack>
+          </chakra.form>
+          <HStack justify="space-between" gap="3">
+            <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Create a token ↗')}</Link>
+            {ghMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>}
+          </HStack>
+        </Stack>
+      );
+    }
+    if (c.id === 'wporg-cookie') {
+      return trac.set ? (
+        <HStack justify="space-between" gap="3" flexWrap="wrap">
+          <Text fontSize="0.8125rem" color="ui.muted">{trac.source === 'env' ? t('Cookie saved (environment variable).') : t('Cookie saved.')}</Text>
+          {trac.source === 'file' && <DisconnectBtn onClick={disconnectCookie} />}
+        </HStack>
+      ) : (
+        <Stack gap="3">
+          {browser && <BusyBtn busy={busy === 'wp-import'} onClick={importCookie} alignSelf="flex-start">{t('Import from %s', BROWSER_NAMES[browser])}</BusyBtn>}
+          <chakra.form onSubmit={(e) => e.preventDefault()} m="0">
+            <HStack gap="2" align="center">
+              <Box flex="1"><TextInput size="sm" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="Or paste wporg_logged_in=…; wporg_sec=…" spellCheck="false" /></Box>
+              <BusyBtn busy={busy === 'wp-cookie'} variant="ghost" onClick={saveCookie} flex="none">{t('Connect')}</BusyBtn>
+            </HStack>
+          </chakra.form>
+          {ckMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>}
+        </Stack>
+      );
+    }
+    if (c.kind === 'command') {
+      return <CmdPanel id={c.id} cmd={c.command} copiedId={copiedId} onCopy={() => copyCmd(c.id, c.command)} />;
+    }
+    return null;
+  }
+
   return (
     <Dialog.Root open={open} onOpenChange={(e) => { if (!e.open) onClose(); }} size="xl" placement="center">
       <Portal>
@@ -406,58 +458,16 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                     <TabTitle>{t('Connectors')}</TabTitle>
                     <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex register Forge as an MCP server to query it live.')}</TabIntro>
                     <Stack gap="3">
-
-                      <ConnectorCard icon={ICON_GITHUB} name="GitHub" required desc={t('Raises the API limit to 5,000 requests per hour.')} status={gh.set} open={openId === 'gh'} onToggle={() => toggle('gh')}>
-                        {gh.set ? (
-                          <HStack justify="space-between" gap="3" flexWrap="wrap">
-                            <Text fontSize="0.8125rem" color="ui.muted">{t('Connected with %s.', t(ghSourceLabel(gh.source)))}</Text>
-                            {gh.source !== 'env' && <DisconnectBtn onClick={disconnectGh} />}
-                          </HStack>
-                        ) : (
-                          <Stack gap="3">
-                            {gh.ghAvailable && <BusyBtn busy={busy === 'gh-cli'} onClick={connectGh} alignSelf="flex-start">{t('Connect with GitHub CLI')}</BusyBtn>}
-                            <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0">
-                              <HStack gap="2" align="center">
-                                <Box flex="1"><TextInput type="password" size="sm" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder={gh.ghAvailable ? t('Or paste a token') : t('Paste a GitHub token')} autoComplete="off" spellCheck="false" /></Box>
-                                <BusyBtn busy={busy === 'gh-token'} variant="ghost" onClick={saveGh} flex="none">{t('Connect')}</BusyBtn>
-                              </HStack>
-                            </chakra.form>
-                            <HStack justify="space-between" gap="3">
-                              <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Create a token ↗')}</Link>
-                              {ghMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>}
-                            </HStack>
-                          </Stack>
-                        )}
-                      </ConnectorCard>
-
-                      <ConnectorCard icon={ICON_WORDPRESS} name="WordPress.org" required desc={t('Adds full ticket text for deep mode.')} status={trac.set} open={openId === 'trac'} onToggle={() => toggle('trac')}>
-                        {trac.set ? (
-                          <HStack justify="space-between" gap="3" flexWrap="wrap">
-                            <Text fontSize="0.8125rem" color="ui.muted">{trac.source === 'env' ? t('Cookie saved (environment variable).') : t('Cookie saved.')}</Text>
-                            {trac.source === 'file' && <DisconnectBtn onClick={disconnectCookie} />}
-                          </HStack>
-                        ) : (
-                          <Stack gap="3">
-                            {browser && <BusyBtn busy={busy === 'wp-import'} onClick={importCookie} alignSelf="flex-start">{t('Import from %s', BROWSER_NAMES[browser])}</BusyBtn>}
-                            <chakra.form onSubmit={(e) => e.preventDefault()} m="0">
-                              <HStack gap="2" align="center">
-                                <Box flex="1"><TextInput size="sm" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="Or paste wporg_logged_in=…; wporg_sec=…" spellCheck="false" /></Box>
-                                <BusyBtn busy={busy === 'wp-cookie'} variant="ghost" onClick={saveCookie} flex="none">{t('Connect')}</BusyBtn>
-                              </HStack>
-                            </chakra.form>
-                            {ckMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>}
-                          </Stack>
-                        )}
-                      </ConnectorCard>
-
-                      <ConnectorCard icon={ICON_CLAUDE} name="Claude Code" desc={t('Register Forge as an MCP server in %s.', 'Claude Code')} open={openId === 'claude'} onToggle={() => toggle('claude')}>
-                        <CmdPanel id="claude" cmd={MCP_CMD_CLAUDE} copiedId={copiedId} onCopy={() => copyCmd('claude', MCP_CMD_CLAUDE)} />
-                      </ConnectorCard>
-
-                      <ConnectorCard icon={ICON_CODEX} name="Codex" desc={t('Add Forge as an MCP server in %s.', 'Codex')} open={openId === 'codex'} onToggle={() => toggle('codex')}>
-                        <CmdPanel id="codex" cmd={MCP_CMD_CODEX} copiedId={copiedId} onCopy={() => copyCmd('codex', MCP_CMD_CODEX)} />
-                      </ConnectorCard>
-
+                      {((status && status.connectors) || []).map((c) => {
+                        const p = PRESENT[c.id];
+                        if (!p) return null;
+                        const ok = c.kind === 'credential' ? !!(c.status && c.status.set) : undefined;
+                        return (
+                          <ConnectorCard key={c.id} icon={p.icon} name={p.name} required={c.required} desc={p.desc} status={ok} open={openId === c.id} onToggle={() => toggle(c.id)}>
+                            {renderBody(c)}
+                          </ConnectorCard>
+                        );
+                      })}
                     </Stack>
                   </Tabs.Content>
 

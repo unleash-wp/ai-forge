@@ -1,6 +1,6 @@
 // First-run install wizard (blocking, 2 steps). Shown until /api/installed is set.
 import { useState } from 'react';
-import { fetchJSON, apiFetch } from '../core.jsx';
+import { fetchJSON, apiFetch, connectorStatus } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL } from '../brand.js';
 import { useT } from '../i18n.jsx';
@@ -19,7 +19,8 @@ export default function Installer({ status, onDone }) {
   const [ckMsg, setCkMsg] = useState({ text: '', kind: '' });
   const [escape, setEscape] = useState(false);
 
-  const ghDetected = !!(status && status.github && status.github.set);
+  const ghStatus = connectorStatus(status, 'github-token');
+  const ghDetected = !!ghStatus.set;
   const browser = currentBrowser();
 
   function finish() {
@@ -78,7 +79,7 @@ export default function Installer({ status, onDone }) {
               <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Connect GitHub')}</Heading>
               <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">{t('Raises your API limit from 60 to 5000 requests an hour. Works with')} <b>{t('any')}</b> {t('GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.')}</Text>
               {ghDetected ? (
-                <HStack gap="2" color="ui.goodInk" fontWeight="500" fontSize="0.875rem" mb="3"><chakra.span>✓</chakra.span> {t('GitHub ready')} · {status.github.source === 'gh' ? t('detected from the gh CLI') : t('saved token')} · 5000/h</HStack>
+                <HStack gap="2" color="ui.goodInk" fontWeight="500" fontSize="0.875rem" mb="3"><chakra.span>✓</chakra.span> {t('GitHub ready')} · {ghStatus.source === 'gh' ? t('detected from the gh CLI') : t('saved token')} · 5000/h</HStack>
               ) : (
                 <Box>
                   <chakra.ol mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">{t('Detected automatically if the')} <Code>gh</Code> {t('CLI is logged in, or')} <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('create a token')}</Link> {t('(leave every scope unchecked) and paste it:')}</chakra.li></chakra.ol>
