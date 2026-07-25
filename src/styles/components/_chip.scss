@@ -10,14 +10,14 @@
   border-radius: 999px;
 
   &--off { color: var(--muted); background: var(--tagbg); }
-}
 
-// The "update available" chip is a link variant (navy fill) when rendered as <a>.
-a.c-chip--up {
-  text-transform: none;
-  letter-spacing: 0;
-  color: #fff;
-  background: var(--navy);
+  // "Update available" stands out as a filled navy chip.
+  &--up {
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--white);
+    background: var(--navy);
 
-  &:hover { color: #fff; background: var(--slate-2); }
+    &:hover { color: var(--white); background: var(--slate-2); }
+  }
 }

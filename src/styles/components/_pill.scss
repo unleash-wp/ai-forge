@@ -30,7 +30,7 @@
 
   &.is-ok .c-pill__ic {
     background: var(--good);
-    color: #fff;
+    color: var(--white);
 
     &::after { content: "✓"; }
   }

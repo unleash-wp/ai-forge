@@ -37,7 +37,7 @@ export function startServer({ port = 4321 } = {}) {
         res.writeHead(200, { 'Content-Type': (isCss ? 'text/css' : 'application/javascript') + '; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(body);
       } catch {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.writeHead(500, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
         res.end('Bundle missing - run `npm run build`.');
       }
       return;
@@ -288,7 +288,7 @@ export function startServer({ port = 4321 } = {}) {
       }
     }
 
-    res.writeHead(404);
+    res.writeHead(404, { 'Cache-Control': 'no-store' });
     res.end('Not found');
   });
 
