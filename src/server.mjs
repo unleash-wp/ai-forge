@@ -17,7 +17,7 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 const VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')).version;
 
-export function startServer({ port = 4321 } = {}) {
+export function startServer({ port = 4321, quiet = false } = {}) {
   // Load tool plugins; reloadable so install/uninstall picks up changes without
   // a server restart (the client rebuild + reload picks up the new bundle).
   let pluginsReady = loadPlugins();
@@ -315,6 +315,7 @@ export function startServer({ port = 4321 } = {}) {
     throw err;
   });
   server.listen(port, '127.0.0.1', () => {
+    if (quiet) return; // internal server for `uwp mcp` — stdout is reserved for JSON-RPC
     console.log(`uwp browser UI  ->  http://localhost:${port}`);
     if (!authenticated()) console.log('uwp: no gh token. GitHub API limited to 60 req/h (add one in Setup).');
     console.log('Press Ctrl+C to stop.');
