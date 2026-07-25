@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Badge, Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, SimpleGrid, Skeleton, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
-import { useT, __ } from '../../src/client/i18n.jsx';
+import { useT, useI18n, __ } from '../../src/client/i18n.jsx';
 import { Button as UButton, Select, Checkbox, TextInput } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
 
@@ -14,6 +14,19 @@ const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
 const CORE_GH = 'https://github.com/WordPress/wordpress-develop';
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+// First weekday for a locale: 0 = Sunday, 1 = Monday. US English starts on
+// Sunday; Germany and the rest of Europe start on Monday. Uses Intl week info
+// when the browser exposes it, with a locale-prefix fallback for older ones.
+function weekStartFor(locale) {
+  try {
+    const loc = new Intl.Locale(locale);
+    const info = loc.weekInfo || (typeof loc.getWeekInfo === 'function' ? loc.getWeekInfo() : null);
+    if (info && info.firstDay) return info.firstDay % 7; // Intl: 1..7 (Mon..Sun) -> 1..0
+  } catch { /* older browser: fall through */ }
+  return String(locale || '').toLowerCase().startsWith('en') ? 0 : 1;
+}
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const codefmt = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -156,6 +169,9 @@ function DateRangePicker({ since, until, onChange }) {
   const [pendStart, setPendStart] = useState(null);
   const [hoverDay, setHoverDay] = useState(null);
   const wrapRef = useRef(null);
+  const { locale } = useI18n();
+  const weekStart = weekStartFor(locale);
+  const weekDays = WEEKDAYS.slice(weekStart).concat(WEEKDAYS.slice(0, weekStart));
 
   useEffect(() => {
     if (!open) return;
@@ -177,9 +193,10 @@ function DateRangePicker({ since, until, onChange }) {
   } else { s = since; e = until; }
 
   const startDow = new Date(view.getFullYear(), view.getMonth(), 1).getDay();
+  const lead = (startDow - weekStart + 7) % 7;
   const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
   const cells = [];
-  for (let i = 0; i < startDow; i++) cells.push(<chakra.button key={'e' + i} type="button" className="cal-cell is-empty" tabIndex={-1} />);
+  for (let i = 0; i < lead; i++) cells.push(<chakra.button key={'e' + i} type="button" className="cal-cell is-empty" tabIndex={-1} />);
   for (let day = 1; day <= days; day++) {
     const ds = view.getFullYear() + '-' + pad(view.getMonth() + 1) + '-' + pad(day);
     let cls = 'cal-cell';
@@ -233,7 +250,7 @@ function DateRangePicker({ since, until, onChange }) {
             <chakra.button type="button" aria-label={__('Next month')} disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} css={navBtn}><ArrowRight size={18} /></chakra.button>
           </Flex>
           <Grid templateColumns="repeat(7, minmax(0, 1fr))" gap="0.5" mb="1">
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => <Text key={d} textAlign="center" fontSize="0.6875rem" fontWeight="600" color="ui.muted" py="1">{__(d)}</Text>)}
+            {weekDays.map((d) => <Text key={d} textAlign="center" fontSize="0.6875rem" fontWeight="600" color="ui.muted" py="1">{__(d)}</Text>)}
           </Grid>
           <Grid templateColumns="repeat(7, minmax(0, 1fr))" autoRows="2.25rem" gap="0.5"
             onMouseLeave={() => { if (pendStart && hoverDay !== pendStart) setHoverDay(pendStart); }}>{cells}</Grid>
@@ -480,8 +497,8 @@ export default function ChangelogTool() {
   const CHECKS = [
     [labels, setLabels, t('Group Gutenberg'), t('Group Gutenberg changes by label.')],
     [devNotes, setDevNotes, t('Group Core'), t('Group Core changes by component.')],
-    [devOnly, setDevOnly, t('Dev notes only'), t('Show only Core dev-note tickets.')],
-    [full, setFull, t('Full descriptions'), t("Show each change's full text from GitHub.")],
+    [devOnly, setDevOnly, t('Dev notes'), t('Show only Core dev-note tickets.')],
+    [full, setFull, t('Descriptions'), t("Show each change's full text from GitHub.")],
   ];
 
   return (

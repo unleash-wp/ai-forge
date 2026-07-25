@@ -4,6 +4,7 @@
 // `searchable` adds a filter box; keyboard: Up/Down/Home/End/Enter/Escape.
 import { useState, useRef, useEffect, useId } from 'react';
 import { Box, Input, chakra } from '@chakra-ui/react';
+import { __ } from '../i18n.jsx';
 
 const OPT_CAP = 100;
 const CButton = chakra('button');
@@ -78,7 +79,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
           minW="full" maxW="24rem" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="0.5rem"
           boxShadow="lg" p="1.5" display="flex" flexDir="column" gap="0.5" maxH="18rem" overflowY="auto">
           {searchable && (
-            <Input ref={searchRef} value={query} placeholder="Search…" spellCheck="false" aria-label="Filter options"
+            <Input ref={searchRef} value={query} placeholder={__('Search…')} spellCheck="false" aria-label={__('Filter options')}
               aria-activedescendant={activeId} onChange={(e) => setQuery(e.target.value)} onClick={(e) => e.stopPropagation()}
               flex="none" position="sticky" top="0" mb="1" px="2.5" py="1.5" bg="ui.sunk" borderWidth="1px" borderColor="ui.border"
               borderRadius="0.375rem" fontSize="0.8125rem" _focus={{ bg: 'ui.surface', borderColor: 'ui.primary' }} />
