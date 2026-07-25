@@ -119,17 +119,17 @@ const changelogCss = {
   '& a': { color: 'ui.primary' },
 };
 
-// ---- Info tooltip (CSS-only, via data-tip) ----
-function Info({ tip }) {
+// ---- Hover hint (CSS-only popover, via data-tip) ----
+// No icon: the wrapped text is itself the trigger. A dotted underline signals
+// it's hoverable; the popover card appears on hover / keyboard focus.
+function Hint({ tip, underline = true, children }) {
   return (
-    <chakra.button type="button" aria-label={tip} data-tip={tip} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-      display="inline-grid" placeItems="center" w="0.875rem" h="0.875rem" borderWidth="1px" borderColor="ui.border"
-      borderRadius="full" color="ui.muted" fontSize="0.5625rem" fontWeight="600" cursor="help" position="relative" opacity="0.75"
-      _hover={{ opacity: 1, borderColor: 'ui.muted' }}
+    <chakra.span tabIndex={0} aria-label={tip} data-tip={tip} position="relative" cursor="help"
+      textDecoration={underline ? 'underline' : undefined} textDecorationStyle="dotted" textDecorationColor="ui.border" textUnderlineOffset="3px"
       css={{
         '&::after': { content: 'attr(data-tip)', position: 'absolute', top: 'calc(100% + 0.4375rem)', left: 0, bg: 'ui.surface', color: 'ui.text', borderWidth: '1px', borderColor: 'ui.border', p: '2', borderRadius: 'sm', font: '400 0.75rem/1.4 var(--chakra-fonts-body)', width: '13rem', textAlign: 'left', whiteSpace: 'normal', opacity: 0, visibility: 'hidden', pointerEvents: 'none', transition: 'opacity .12s, visibility .12s', zIndex: 40, boxShadow: 'md' },
-        '&:hover::after': { opacity: 1, visibility: 'visible' },
-      }}>i</chakra.button>
+        '&:hover::after, &:focus-visible::after': { opacity: 1, visibility: 'visible' },
+      }}>{children}</chakra.span>
   );
 }
 
@@ -305,7 +305,9 @@ function Results({ data, since, until }) {
     <Box mt="8">
       <Flex align="baseline" gap="4" mb="8" flexWrap="wrap">
         <chakra.b {...bigNum} fontSize="clamp(2.5rem, 1.9rem + 2.6vw, 3.5rem)" css={{ '&::after': underline }}>{dn ? issues : changes}</chakra.b>
-        <Text color="ui.muted" fontSize="0.9375rem">{(dn ? 'dev notes / field guide tickets, ' : 'changes landed across Core and Gutenberg, ') + fmtRange(since, until)}{!dn && <> <Info tip={t.gutenbergCommits + ' Gutenberg changes + ' + t.coreChangesets + ' Core changesets'} /></>}</Text>
+        <Text color="ui.muted" fontSize="0.9375rem">{dn
+          ? 'dev notes / field guide tickets, ' + fmtRange(since, until)
+          : <Hint tip={t.gutenbergCommits + ' Gutenberg changes + ' + t.coreChangesets + ' Core changesets'} underline={false}>{'changes landed across Core and Gutenberg, ' + fmtRange(since, until)}</Hint>}</Text>
       </Flex>
       <SimpleGrid columns={{ base: 2, md: 4 }} gap="3" mb="8">
         {!dn && <StatCard n={t.gutenbergCommits} label="Gutenberg changes" counted />}
@@ -480,7 +482,7 @@ export default function ChangelogTool() {
               <Flex align="center" gap={{ base: '4', lg: '6' }} flexWrap="wrap">
                 {CHECKS.map(([val, set, label, tip]) => (
                   <CChk.Root key={label} checked={val} colorPalette="brand" onCheckedChange={(d) => set(d.checked === true)}>
-                    <CChk.HiddenInput /><CChk.Control /><CChk.Label fontSize="0.875rem" fontWeight="500" whiteSpace="nowrap">{label} <Info tip={tip} /></CChk.Label>
+                    <CChk.HiddenInput /><CChk.Control /><CChk.Label fontSize="0.875rem" fontWeight="500" whiteSpace="nowrap"><Hint tip={tip}>{label}</Hint></CChk.Label>
                   </CChk.Root>
                 ))}
               </Flex>
