@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { fetchJSON } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL } from '../brand.js';
+import { useT } from '../i18n.jsx';
 import { Button, TextInput, TextArea } from '../ui';
 import { Box, Code, Flex, Heading, HStack, Link, Text, chakra } from '@chakra-ui/react';
 
@@ -10,6 +11,7 @@ const msgColor = (k) => (k === 'good' ? 'ui.goodInk' : k === 'bad' ? 'ui.bad' : 
 const linkBtn = { background: 'none', border: '0', color: 'ui.muted', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.8125rem', fontFamily: 'body' };
 
 export default function Installer({ status, onDone }) {
+  const t = useT();
   const [step, setStep] = useState(1);
   const [gh, setGh] = useState('');
   const [cookie, setCookie] = useState('');
@@ -28,7 +30,7 @@ export default function Installer({ status, onDone }) {
     if (step === 1) {
       const t = gh.trim();
       if (t) {
-        setGhMsg({ text: 'saving…', kind: '' });
+        setGhMsg({ text: t('saving…'), kind: '' });
         fetchJSON('/api/github-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: t }) })
           .then(({ data }) => {
             if (data && data.error) setGhMsg({ text: data.error, kind: 'bad' });
@@ -38,26 +40,26 @@ export default function Installer({ status, onDone }) {
       return;
     }
     const c = cookie.trim();
-    if (!c) { setCkMsg({ text: 'Paste your cookie to finish, or continue anyway below.', kind: 'bad' }); setEscape(true); return; }
-    setCkMsg({ text: 'saving and testing…', kind: '' });
+    if (!c) { setCkMsg({ text: t('Paste your cookie to finish, or continue anyway below.'), kind: 'bad' }); setEscape(true); return; }
+    setCkMsg({ text: t('saving and testing…'), kind: '' });
     fetchJSON('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie: c }) })
       .then(({ ok, data }) => {
-        if (!ok) { setCkMsg({ text: data.error || 'could not save', kind: 'bad' }); setEscape(true); return; }
+        if (!ok) { setCkMsg({ text: data.error || t('could not save'), kind: 'bad' }); setEscape(true); return; }
         return fetchJSON('/api/cookie/test', { method: 'POST' }).then(({ data: d }) => {
           if (d.ok) finish();
-          else { setCkMsg({ text: d.message || 'Trac could not validate the cookie.', kind: 'bad' }); setEscape(true); }
+          else { setCkMsg({ text: d.message || t('Trac could not validate the cookie.'), kind: 'bad' }); setEscape(true); }
         });
       });
   }
 
   function importCookie() {
-    setCkMsg({ text: 'Importing from ' + browser + '… (approve any Keychain prompt)', kind: '' });
+    setCkMsg({ text: t('Importing from %s… (approve any Keychain prompt)', browser), kind: '' });
     fetchJSON('/api/cookie/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ browser }) })
       .then(({ data }) => {
         if (data.saved) finish();
         else { setCkMsg({ text: data.message, kind: 'bad' }); setEscape(true); }
       })
-      .catch(() => { setCkMsg({ text: 'Import failed.', kind: 'bad' }); setEscape(true); });
+      .catch(() => { setCkMsg({ text: t('Import failed.'), kind: 'bad' }); setEscape(true); });
   }
 
   return (
@@ -72,15 +74,15 @@ export default function Installer({ status, onDone }) {
         <Box p="6">
           {step === 1 && (
             <Box>
-              <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">Step 1 of 2</Text>
-              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">Connect GitHub</Heading>
-              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.</Text>
+              <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">{t('Step 1 of 2')}</Text>
+              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Connect GitHub')}</Heading>
+              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">{t('Raises your API limit from 60 to 5000 requests an hour. Works with')} <b>{t('any')}</b> {t('GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.')}</Text>
               {ghDetected ? (
-                <HStack gap="2" color="ui.goodInk" fontWeight="500" fontSize="0.875rem" mb="3"><chakra.span>✓</chakra.span> GitHub ready · {status.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token'} · 5000/h</HStack>
+                <HStack gap="2" color="ui.goodInk" fontWeight="500" fontSize="0.875rem" mb="3"><chakra.span>✓</chakra.span> {t('GitHub ready')} · {status.github.source === 'gh' ? t('detected from the gh CLI') : t('saved token')} · 5000/h</HStack>
               ) : (
                 <Box>
-                  <chakra.ol mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">Detected automatically if the <Code>gh</Code> CLI is logged in, or <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">create a token</Link> (leave every scope unchecked) and paste it:</chakra.li></chakra.ol>
-                  <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0"><TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder="ghp_… or github_pat_…  (optional, skip for 60/h)" autoComplete="off" spellCheck="false" /></chakra.form>
+                  <chakra.ol mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">{t('Detected automatically if the')} <Code>gh</Code> {t('CLI is logged in, or')} <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('create a token')}</Link> {t('(leave every scope unchecked) and paste it:')}</chakra.li></chakra.ol>
+                  <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0"><TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder={t('ghp_… or github_pat_…  (optional, skip for 60/h)')} autoComplete="off" spellCheck="false" /></chakra.form>
                   <Text as="span" fontSize="0.7813rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>
                 </Box>
               )}
@@ -88,33 +90,33 @@ export default function Installer({ status, onDone }) {
           )}
           {step === 2 && (
             <Box>
-              <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">Step 2 of 2</Text>
-              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">Connect WordPress.org</Heading>
-              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">Needed for <b>deep</b>: full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</Text>
+              <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">{t('Step 2 of 2')}</Text>
+              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Connect WordPress.org')}</Heading>
+              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">{t('Needed for')} <b>{t('deep')}</b>{t(': full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.')}</Text>
               {browser && (
                 <Box mb="3">
-                  <chakra.span display="block" fontSize="0.7813rem" fontWeight="600" color="ui.text" mb="2">Quick import from your browser <chakra.span fontWeight="400" color="ui.muted">(you must be logged in there)</chakra.span></chakra.span>
-                  <HStack flexWrap="wrap" gap="2"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></HStack>
+                  <chakra.span display="block" fontSize="0.7813rem" fontWeight="600" color="ui.text" mb="2">{t('Quick import from your browser')} <chakra.span fontWeight="400" color="ui.muted">{t('(you must be logged in there)')}</chakra.span></chakra.span>
+                  <HStack flexWrap="wrap" gap="2"><Button variant="ghost" size="sm" onClick={importCookie}>{t('Import from %s', BROWSER_NAMES[browser])}</Button></HStack>
                 </Box>
               )}
               <chakra.details mb="3">
-                <chakra.summary fontSize="0.7813rem" color="ui.muted" cursor="pointer">Or paste it manually</chakra.summary>
+                <chakra.summary fontSize="0.7813rem" color="ui.muted" cursor="pointer">{t('Or paste it manually')}</chakra.summary>
                 <chakra.ol mt="2" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted">
-                  <chakra.li my="1"><Link href="https://wordpress.org/" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Log in to wordpress.org</Link>.</chakra.li>
-                  <chakra.li my="1">DevTools → Application → Cookies → <Code>wordpress.org</Code> → copy <Code>wporg_logged_in</Code> + <Code>wporg_sec</Code> as <Code>name=value; name=value</Code>.</chakra.li>
+                  <chakra.li my="1"><Link href="https://wordpress.org/" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('Log in to wordpress.org')}</Link>.</chakra.li>
+                  <chakra.li my="1">{t('DevTools → Application → Cookies →')} <Code>wordpress.org</Code> {t('→ copy')} <Code>wporg_logged_in</Code> + <Code>wporg_sec</Code> {t('as')} <Code>name=value; name=value</Code>.</chakra.li>
                 </chakra.ol>
                 <TextArea rows="3" value={cookie} onChange={(e) => setCookie(e.target.value)} placeholder="wporg_logged_in=…; wporg_sec=…" />
               </chakra.details>
               <Text as="span" fontSize="0.7813rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>
               {escape && (
-                <Box mt="4" pt="4" borderTop="1px solid" borderColor="ui.border" fontSize="0.8125rem" color="ui.muted">Trac isn't reachable right now (bot wall or expired cookie). You can <chakra.button type="button" onClick={finish} css={linkBtn}>continue anyway</chakra.button>. The tool runs cookie-free and you can add the cookie later in Setup.</Box>
+                <Box mt="4" pt="4" borderTop="1px solid" borderColor="ui.border" fontSize="0.8125rem" color="ui.muted">{t("Trac isn't reachable right now (bot wall or expired cookie). You can")} <chakra.button type="button" onClick={finish} css={linkBtn}>{t('continue anyway')}</chakra.button>{t('. The tool runs cookie-free and you can add the cookie later in Setup.')}</Box>
               )}
             </Box>
           )}
         </Box>
         <Flex align="center" gap="3" px="6" py="4" borderTop="1px solid" borderColor="ui.border">
-          {step !== 1 && <chakra.button type="button" onClick={() => setStep(1)} css={linkBtn}>Back</chakra.button>}
-          <Box ml="auto"><Button variant="primary" onClick={primary}>{step === 1 ? 'Continue' : 'Finish setup'}</Button></Box>
+          {step !== 1 && <chakra.button type="button" onClick={() => setStep(1)} css={linkBtn}>{t('Back')}</chakra.button>}
+          <Box ml="auto"><Button variant="primary" onClick={primary}>{step === 1 ? t('Continue') : t('Finish setup')}</Button></Box>
         </Flex>
       </Box>
     </Flex>
