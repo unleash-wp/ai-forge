@@ -25,8 +25,8 @@ const ICON_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const ICON_UNLINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>';
 const ICON_PLUG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>';
 const ICON_SLIDERS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>';
-const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-const ICON_INFO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+const ICON_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>';
+const ICON_HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 const ICON_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
@@ -346,7 +346,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
             <Dialog.Header borderBottomWidth="1px" borderColor="ui.border" px="6" py="4" flex="none">
               <Dialog.Title fontSize="1.25rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Settings')}</Dialog.Title>
               <Dialog.CloseTrigger asChild>
-                <CloseButton size="sm" position="absolute" top="3.5" right="4" color="ui.muted" _hover={{ color: 'navy', bg: 'ui.ghostHover' }} />
+                <CloseButton size="sm" aria-label={t('Close')} position="absolute" top="3.5" right="4" color="ui.muted" _hover={{ color: 'navy', bg: 'ui.ghostHover' }} />
               </Dialog.CloseTrigger>
             </Dialog.Header>
             <Dialog.Body p="0" flex="1" minH="0" display="flex">
@@ -354,9 +354,9 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                 <Tabs.List flex="none" minW="12.5rem" bg="ui.sunk" borderRightWidth="1px" borderColor="ui.border" p="3" gap="0.5" display="flex" flexDirection="column" alignItems="stretch">
                   <TabItem value="general" icon={ICON_SLIDERS} label={t('General')} />
                   <TabItem value="connectors" icon={ICON_PLUG} label={t('Connectors')} />
-                  <TabItem value="updates" icon={ICON_DOWNLOAD} label={t('Updates')} />
+                  <TabItem value="updates" icon={ICON_REFRESH} label={t('Updates')} />
                   <TabItem value="help" icon={ICON_HELP} label={t('Help')} />
-                  <TabItem value="credits" icon={ICON_INFO} label={t('Credits')} />
+                  <TabItem value="credits" icon={ICON_HEART} label={t('Credits')} />
                 </Tabs.List>
 
                 <Box flex="1" minW="0" overflowY="auto" px="6" pt="6" pb="10">
