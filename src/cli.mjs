@@ -46,7 +46,7 @@ export async function run(argv) {
 
   if (args._[0] === 'cookie-import') {
     const { importWporgCookie } = await import('./cookie-import.mjs');
-    const { saveCookie, validateCookie } = await import('./trac.mjs');
+    const { saveCookie, validateCookie } = await import('./connectors/wporg-cookie.mjs');
     const browser = args.browser ?? args._[1];
     if (!browser) throw new Error('usage: ai-forge cookie-import <chrome|safari|firefox|edge>');
     const cookie = importWporgCookie(browser); // value stays local; never printed

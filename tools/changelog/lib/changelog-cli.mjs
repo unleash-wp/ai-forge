@@ -1,9 +1,10 @@
 // Shared changelog terminal output. Used by the top-level `uwp --since …` path
 // (kept for back-compat) and the `uwp changelog` plugin command, so the two can
 // never drift. Returns the string to print; side-channel notes go to `warn`.
-import { authenticated } from '../../../src/github.mjs';
+import { authenticated } from '../../../src/connectors/github-token.mjs';
 import { generate } from './report.mjs';
-import { fetchTicketDetails, resolveCookie } from '../../../src/trac.mjs';
+import { fetchTicketDetails } from './trac-tickets.mjs';
+import { resolveCookie } from '../../../src/connectors/wporg-cookie.mjs';
 import { applyDeepDetails } from './aggregate.mjs';
 import { toMarkdown, toPost } from './format.mjs';
 
