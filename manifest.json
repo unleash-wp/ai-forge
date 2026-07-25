@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "unleashwp-ai-forge",
   "display_name": "UnleashWP AI Forge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Turn a date window into a release-post changelog for WordPress Core + Gutenberg, right inside Claude Desktop.",
   "long_description": "UnleashWP AI Forge is a hub for WordPress release tooling. This bundle registers Forge as an MCP server so Claude can call its tools live — get_changelog, list_milestones, list_branches, show_changelog — and open the full Forge app as a window. Optional credentials raise the GitHub API limit and enable deep mode (full Trac ticket text).",
   "author": {
