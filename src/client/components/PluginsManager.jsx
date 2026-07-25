@@ -84,7 +84,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
 
   const shown = plugins
     .filter((p) => (filter === 'inactive' ? p.enabled === false : true))
-    .filter((p) => (p.name + ' ' + (p.description || '')).toLowerCase().includes(iq.trim().toLowerCase()));
+    .filter((p) => (t(p.name) + ' ' + t(p.description || '')).toLowerCase().includes(iq.trim().toLowerCase()));
   const selectableIds = shown.filter((p) => p.id !== 'changelog').map((p) => p.id);
   const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selected.has(id));
 
@@ -152,12 +152,12 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
               <Flex display="grid" placeItems="center" w="2.75rem" h="2.75rem" flex="none" borderRadius="0.6875rem" color="white" bg={active ? 'linear-gradient(145deg, #2a3f6f, #0f131f)' : 'ui.slate'} boxShadow={active ? '0 2px 8px rgba(32,49,89,.28), inset 0 1px 0 rgba(255,255,255,.08)' : 'none'} css={{ '& svg': { width: '1.3125rem', height: '1.3125rem' } }}><ToolIcon name={p.icon} size={20} /></Flex>
               <Box flex="1" minW="0">
                 <HStack gap="2">
-                  <chakra.h3 m="0" fontSize="0.9375rem" fontWeight="600" color="ui.heading" letterSpacing="-.01em">{p.name}</chakra.h3>
+                  <chakra.h3 m="0" fontSize="0.9375rem" fontWeight="600" color="ui.heading" letterSpacing="-.01em">{t(p.name)}</chakra.h3>
                   {core && <Badge colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem">{t('Core')}</Badge>}
                   {!active && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">{t('Inactive')}</Badge>}
                   {up && <Badge bg="navy" color="white" fontSize="0.625rem">{t('Update available')}</Badge>}
                 </HStack>
-                <Text mt="1" fontSize="0.8125rem" color="ui.muted" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{p.description}</Text>
+                <Text mt="1" fontSize="0.8125rem" color="ui.muted" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{t(p.description)}</Text>
                 <Text mt="1.5" fontSize="0.6875rem" color="ui.muted">{t('Version %s', p.version)} · {t('By %s', p.author || t('unknown'))} · {p.price === 'free' ? t('Free') : p.price}</Text>
               </Box>
               <Flex gap="2" flex="none" align="center" w={{ base: 'full', md: 'auto' }} pl={{ base: 'calc(2.75rem + 1rem)', md: '0' }}>

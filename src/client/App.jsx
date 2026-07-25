@@ -86,10 +86,10 @@ export default function App() {
           <Box mb="6">
             <Heading as="h1" fontWeight="700" color="ui.heading" letterSpacing="-.02em" mb="1.5"
               fontSize={{ base: '1.375rem', lg: 'clamp(1.5rem, 1.28rem + 1.1vw, 1.75rem)' }}>
-              {inPlugins ? t('Plugins') : (active ? active.name : 'Changelog')}
+              {inPlugins ? t('Plugins') : (active ? t(active.name) : 'Changelog')}
             </Heading>
             <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
-              {inPlugins ? t('Tools installed on UnleashWP Forge. Every tool is a plugin. Add your own.') : (active ? active.description : '')}
+              {inPlugins ? t('Tools installed on UnleashWP Forge. Every tool is a plugin. Add your own.') : (active ? t(active.description) : '')}
             </Text>
           </Box>
           {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}
