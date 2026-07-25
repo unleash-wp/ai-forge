@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Changelog</title>
+<style>
+  :root {
+    --bg: var(--color-background-primary, #ffffff);
+    --fg: var(--color-text-primary, #1a2033);
+    --muted: var(--color-text-secondary, #6b7280);
+    --border: var(--color-border-primary, #e3e7f0);
+    --surface: var(--color-background-secondary, #f5f7fa);
+    --navy: #203159;
+    --navy-fg: #ffffff;
+    --accent: #fcbe00;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 20px;
+    font: 400 14px/1.55 "Ubuntu", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--fg);
+  }
+  h1 { font-size: 1.35rem; font-weight: 700; margin: 0 0 2px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: .8125rem; margin: 0 0 18px; }
+  .count { display: flex; align-items: baseline; gap: 10px; margin: 0 0 16px; flex-wrap: wrap; }
+  .count b { font-size: 2.5rem; font-weight: 700; line-height: 1; letter-spacing: -.03em; position: relative; }
+  .count b::after { content: ""; position: absolute; left: 0; bottom: -4px; width: 100%; height: 5px; background: var(--accent); border-radius: 3px; }
+  .count span { color: var(--muted); font-size: .9rem; }
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 18px; }
+  @media (max-width: 460px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+  .card { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; background: var(--surface); }
+  .card .n { font-size: 1.4rem; font-weight: 700; line-height: 1; }
+  .card .l { color: var(--muted); font-size: .72rem; margin-top: 4px; }
+  .sources { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0 0 18px; font-size: .8125rem; }
+  .sources a { color: var(--navy); font-weight: 600; text-decoration: none; }
+  .sources a:hover { text-decoration: underline; }
+  .body { border-top: 1px solid var(--border); padding-top: 14px; }
+  .body h2 { font-size: 1rem; font-weight: 700; margin: 18px 0 6px; }
+  .body h3 { font-size: .875rem; font-weight: 700; margin: 14px 0 4px; color: var(--muted); }
+  .body ul { margin: 4px 0; padding-left: 18px; }
+  .body li { margin: 2px 0; }
+  .body a { color: var(--navy); text-decoration: none; }
+  .body a:hover { text-decoration: underline; }
+  .toolbar { display: flex; gap: 8px; margin: 0 0 16px; }
+  button {
+    font: inherit; font-weight: 600; font-size: .8125rem; cursor: pointer;
+    border: 1px solid var(--navy); background: var(--navy); color: var(--navy-fg);
+    padding: 7px 14px; border-radius: 6px;
+  }
+  button.ghost { background: transparent; color: var(--navy); }
+  button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+  .state { color: var(--muted); padding: 28px 0; text-align: center; }
+</style>
+</head>
+<body>
+  <div id="app"><div class="state">Loading changelog…</div></div>
+<script>
+(function () {
+  var nextId = 1, pending = {}, lastArgs = null;
+
+  function rpc(method, params, wantResult) {
+    var id = wantResult ? nextId++ : undefined;
+    window.parent.postMessage({ jsonrpc: "2.0", id: id, method: method, params: params || {} }, "*");
+    if (wantResult) return new Promise(function (res) { pending[id] = res; });
+  }
+
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+  function inline(s) {
+    return esc(s)
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, t, u) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + t + "</a>"; })
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  }
+  // Minimal Markdown -> HTML for the changelog body (headings, lists, paragraphs).
+  function md(src) {
+    var out = [], inList = false;
+    (src || "").split("\n").forEach(function (line) {
+      var m;
+      if ((m = /^###\s+(.*)/.exec(line))) { if (inList) { out.push("</ul>"); inList = false; } out.push("<h3>" + inline(m[1]) + "</h3>"); }
+      else if ((m = /^##\s+(.*)/.exec(line))) { if (inList) { out.push("</ul>"); inList = false; } out.push("<h2>" + inline(m[1]) + "</h2>"); }
+      else if ((m = /^[-*]\s+(.*)/.exec(line))) { if (!inList) { out.push("<ul>"); inList = true; } out.push("<li>" + inline(m[1]) + "</li>"); }
+      else if (line.trim() === "") { if (inList) { out.push("</ul>"); inList = false; } }
+      else { if (inList) { out.push("</ul>"); inList = false; } out.push("<p>" + inline(line) + "</p>"); }
+    });
+    if (inList) out.push("</ul>");
+    return out.join("");
+  }
+
+  function card(n, l) { return '<div class="card"><div class="n">' + esc(n) + '</div><div class="l">' + esc(l) + "</div></div>"; }
+
+  function render(d) {
+    if (!d) { document.getElementById("app").innerHTML = '<div class="state">No changelog data.</div>'; return; }
+    var t = d.totals || {}, s = d.sources || {};
+    var html = "";
+    html += "<h1>Changelog</h1>";
+    html += '<p class="sub">' + esc(d.since || "") + " – " + esc(d.until || "") + (d.milestone ? " · " + esc(d.milestone) : "") + "</p>";
+    html += '<div class="count"><b>' + esc(t.total || 0) + "</b><span>changes across Core and Gutenberg</span></div>";
+    html += '<div class="cards">' + card(t.gutenberg || 0, "Gutenberg") + card(t.core || 0, "Core changesets") + card(t.tickets || 0, "Core tickets") + card(t.contributors || 0, "Contributors") + "</div>";
+    html += '<div class="toolbar"><button id="copy">Copy Markdown</button><button id="refresh" class="ghost">Refresh</button></div>';
+    if (s.trac || s.gutenberg) {
+      html += '<div class="sources">';
+      if (s.trac) html += '<a href="' + esc(s.trac) + '" target="_blank" rel="noopener">Core Trac tickets ↗</a>';
+      if (s.gutenberg) html += '<a href="' + esc(s.gutenberg) + '" target="_blank" rel="noopener">Gutenberg commits ↗</a>';
+      html += "</div>";
+    }
+    html += '<div class="body">' + md(d.markdown || "") + "</div>";
+    document.getElementById("app").innerHTML = html;
+
+    document.getElementById("copy").onclick = function () {
+      navigator.clipboard.writeText(d.markdown || "").then(function () { this.textContent = "Copied"; }.bind(this)).catch(function () {});
+    };
+    document.getElementById("refresh").onclick = function () {
+      document.getElementById("app").innerHTML = '<div class="state">Refreshing…</div>';
+      rpc("tools/call", { name: "show_changelog", arguments: lastArgs || {} }, true).then(function (r) {
+        render(r && r.structuredContent);
+        reportSize();
+      });
+    };
+    reportSize();
+  }
+
+  function reportSize() {
+    rpc("ui/notifications/size-changed", { height: document.documentElement.scrollHeight });
+  }
+
+  window.addEventListener("message", function (e) {
+    var msg = e.data;
+    if (!msg || msg.jsonrpc !== "2.0") return;
+    if (msg.id != null && pending[msg.id]) { var r = pending[msg.id]; delete pending[msg.id]; r(msg.result); return; }
+    if (msg.method === "ui/notifications/tool-input") { lastArgs = msg.params && msg.params.arguments; }
+    else if (msg.method === "ui/notifications/tool-result") { render(msg.params && msg.params.structuredContent); }
+  });
+
+  // Handshake: initialize, then announce ready.
+  rpc("ui/initialize", {
+    protocolVersion: "2026-01-26",
+    capabilities: { appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] } },
+    clientInfo: { name: "UnleashWP AI Forge — Changelog", version: "1.0.0" }
+  }, true).then(function (res) {
+    var vars = res && res.hostContext && res.hostContext.styles && res.hostContext.styles.variables;
+    if (vars) for (var k in vars) document.documentElement.style.setProperty(k, vars[k]);
+    rpc("ui/notifications/initialized", {});
+    reportSize();
+  });
+})();
+</script>
+</body>
+</html>

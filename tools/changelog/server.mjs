@@ -2,6 +2,9 @@
 // A plugin exposes `routes`; the core registry (src/plugins.mjs) mounts them.
 // This one owns the report + branch endpoints; credential/setup routes stay in
 // the core shell because every tool shares them.
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { generate } from '../../src/report.mjs';
 import { changelogOutput } from '../../src/changelog-cli.mjs';
 import { toMarkdown, toPost, sourceUrls } from '../../src/format.mjs';
@@ -126,7 +129,59 @@ export const routes = [
 // data live. stdout is reserved for JSON-RPC, so notes go to stderr.
 const mcpWarn = (m) => process.stderr.write(m + '\n');
 
+// MCP App: an interactive ui:// panel the host (Claude Desktop / Codex) renders
+// in a sandboxed iframe. show_changelog links to it and returns structuredContent
+// that the panel renders — no browser involved.
+const APP_HTML = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'app.html'), 'utf8');
+
+export const uiResources = [
+  {
+    uri: 'ui://forge/changelog',
+    name: 'changelog',
+    description: 'Interactive changelog panel for a date window.',
+    html: APP_HTML,
+    permissions: { clipboardWrite: {} },
+  },
+];
+
+// Build the compact, structured payload the changelog panel renders.
+async function changelogData(a) {
+  const { meta, report } = await generate({ since: a.since, until: a.until, milestone: a.milestone ?? null });
+  const s = sourceUrls(meta);
+  const tot = report.totals || {};
+  return {
+    since: a.since, until: a.until, milestone: meta.milestone || null,
+    totals: {
+      gutenberg: tot.gutenbergCommits || 0,
+      core: tot.coreChangesets || 0,
+      tickets: tot.coreTickets || 0,
+      contributors: tot.contributors || 0,
+      total: (tot.gutenbergCommits || 0) + (tot.coreChangesets || 0),
+    },
+    sources: { trac: s.trac, gutenberg: s.gutenberg },
+    markdown: toMarkdown(report, meta),
+  };
+}
+
 export const mcpTools = [
+  {
+    name: 'show_changelog',
+    description: 'Open the interactive changelog panel for a date window (renders in the conversation).',
+    ui: 'ui://forge/changelog',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        since: { type: 'string', description: 'Start date (YYYY-MM-DD)' },
+        until: { type: 'string', description: 'End date (YYYY-MM-DD)' },
+        milestone: { type: 'string', description: 'Release milestone x.y (optional)' },
+      },
+      required: ['since', 'until'],
+    },
+    run: async (a) => {
+      const structured = await changelogData(a);
+      return { text: `${structured.totals.total} changes for ${a.since} to ${a.until}.`, structured };
+    },
+  },
   {
     name: 'get_changelog',
     description: 'Release-post changelog for WordPress Core + Gutenberg over a date window.',

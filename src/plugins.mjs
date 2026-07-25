@@ -68,6 +68,7 @@ export async function loadPlugins() {
       commands: (mod && mod.commands) || [],
       mcpTools: (mod && mod.mcpTools) || [],
       skills: (mod && mod.skills) || [],
+      uiResources: (mod && mod.uiResources) || [],
     });
   }
   return plugins;

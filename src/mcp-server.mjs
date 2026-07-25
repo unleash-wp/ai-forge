@@ -21,6 +21,7 @@ export async function startMcpServer() {
   // note (stdout stays pure JSON-RPC).
   const tools = new Map();
   const prompts = new Map();
+  const uiResources = new Map(); // MCP Apps: ui:// HTML panels a tool can render in
   for (const p of await loadPlugins()) {
     for (const tool of p.mcpTools || []) {
       if (tools.has(tool.name)) { process.stderr.write(`uwp mcp: duplicate tool "${tool.name}" from ${p.manifest.id} ignored\n`); continue; }
@@ -29,6 +30,10 @@ export async function startMcpServer() {
     for (const skill of p.skills || []) {
       if (prompts.has(skill.name)) { process.stderr.write(`uwp mcp: duplicate skill "${skill.name}" from ${p.manifest.id} ignored\n`); continue; }
       prompts.set(skill.name, skill);
+    }
+    for (const res of p.uiResources || []) {
+      if (uiResources.has(res.uri)) { process.stderr.write(`uwp mcp: duplicate app "${res.uri}" from ${p.manifest.id} ignored\n`); continue; }
+      uiResources.set(res.uri, res);
     }
   }
 
@@ -41,9 +46,25 @@ export async function startMcpServer() {
     if (id == null) return; // notification (e.g. notifications/initialized): no reply
 
     if (method === 'initialize') {
-      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {}, prompts: {} }, serverInfo: { name: 'forge', version: VERSION } });
+      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {}, prompts: {}, resources: {} }, serverInfo: { name: 'forge', version: VERSION } });
     }
     if (method === 'ping') return ok(id, {});
+    // MCP Apps: the ui:// HTML panels tools render in (rendered in a sandboxed
+    // iframe by Claude Desktop / Codex, not a browser).
+    if (method === 'resources/list') {
+      return ok(id, {
+        resources: [...uiResources.values()].map((r) => ({
+          uri: r.uri, name: r.name, description: r.description || '', mimeType: 'text/html;profile=mcp-app',
+        })),
+      });
+    }
+    if (method === 'resources/read') {
+      const r = uiResources.get(params && params.uri);
+      if (!r) return fail(id, -32602, `unknown resource: ${params && params.uri}`);
+      const content = { uri: r.uri, mimeType: 'text/html;profile=mcp-app', text: r.html };
+      if (r.csp || r.permissions) content._meta = { ui: { ...(r.csp ? { csp: r.csp } : {}), ...(r.permissions ? { permissions: r.permissions } : {}) } };
+      return ok(id, { contents: [content] });
+    }
     if (method === 'prompts/list') {
       return ok(id, {
         prompts: [...prompts.values()].map((s) => ({
@@ -61,11 +82,16 @@ export async function startMcpServer() {
     }
     if (method === 'tools/list') {
       return ok(id, {
-        tools: [...tools.values()].map((t) => ({
-          name: t.name,
-          description: t.description || '',
-          inputSchema: t.inputSchema || { type: 'object', properties: {} },
-        })),
+        tools: [...tools.values()].map((t) => {
+          const entry = {
+            name: t.name,
+            description: t.description || '',
+            inputSchema: t.inputSchema || { type: 'object', properties: {} },
+          };
+          // MCP Apps: link the tool to its ui:// panel so the host renders it.
+          if (t.ui) entry._meta = { ui: { resourceUri: t.ui, visibility: ['model', 'app'] } };
+          return entry;
+        }),
       });
     }
     if (method === 'tools/call') {
@@ -73,6 +99,13 @@ export async function startMcpServer() {
       if (!tool) return fail(id, -32602, `unknown tool: ${params && params.name}`);
       try {
         const out = await tool.run((params && params.arguments) || {});
+        // A tool may return a string, or { text, structured } — the latter also
+        // sends structuredContent, which the host pushes to the ui:// app.
+        if (out && typeof out === 'object' && ('text' in out || 'structured' in out)) {
+          const res = { content: [{ type: 'text', text: out.text != null ? String(out.text) : '' }] };
+          if (out.structured !== undefined) res.structuredContent = out.structured;
+          return ok(id, res);
+        }
         const text = typeof out === 'string' ? out : JSON.stringify(out, null, 2);
         return ok(id, { content: [{ type: 'text', text }] });
       } catch (err) {
@@ -99,5 +132,5 @@ export async function startMcpServer() {
     }
   });
   process.stdin.on('end', () => process.exit(0));
-  process.stderr.write(`uwp mcp: ready, ${tools.size} tool(s) + ${prompts.size} skill(s) over stdio\n`);
+  process.stderr.write(`uwp mcp: ready, ${tools.size} tool(s) + ${prompts.size} skill(s) + ${uiResources.size} app(s) over stdio\n`);
 }
