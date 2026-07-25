@@ -173,6 +173,32 @@ export const mcpTools = [
   },
 ];
 
+// Skills: AI instructions the tool provides, served as MCP prompts over
+// `uwp mcp` and printable with `uwp skills`. This one teaches an agent to draft
+// a release post from the changelog data while respecting the grounding rule.
+export const skills = [
+  {
+    name: 'write_release_post',
+    description: 'Draft a WordPress release post from the changelog for a date window.',
+    arguments: [
+      { name: 'since', description: 'Start date YYYY-MM-DD', required: true },
+      { name: 'until', description: 'End date YYYY-MM-DD', required: true },
+      { name: 'milestone', description: 'Release milestone x.y', required: false },
+    ],
+    build: (a) => [
+      `Draft a WordPress release post for the window ${a.since || '<since>'} to ${a.until || '<until>'}${a.milestone ? ` (milestone ${a.milestone})` : ''}.`,
+      '',
+      'Steps:',
+      `1. Call the get_changelog tool (since=${a.since || '<since>'}, until=${a.until || '<until>'}${a.milestone ? `, milestone=${a.milestone}` : ''}, format=json) to get the grounded data: counts, the Core/Gutenberg changes, contributors and the source links.`,
+      '2. Write the post: a headline, a 1-2 sentence intro, then highlights grouped by area.',
+      '3. Grounding rule (strict): every prose highlight MUST trace to a real PR or ticket in that data. Never invent features and never estimate counts — use the numbers the tool returns.',
+      '4. End with the source links and a props / contributors section.',
+      '',
+      'Voice: the WordPress release-post style — clear, factual, community-facing.',
+    ].join('\n'),
+  },
+];
+
 // Terminal command: `uwp changelog --since … --until … [--milestone x.y]
 // [--gb-branch ref] [--core-branch ref] [--no-labels] [--no-dev-notes] [--deep]
 // [--post|--json]`. Accepts `uwp changelog <since> <until>` positionally too.

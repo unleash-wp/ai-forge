@@ -67,6 +67,7 @@ export async function loadPlugins() {
       routes: (mod && mod.routes) || [],
       commands: (mod && mod.commands) || [],
       mcpTools: (mod && mod.mcpTools) || [],
+      skills: (mod && mod.skills) || [],
     });
   }
   return plugins;

@@ -34,7 +34,7 @@ const ICON_HELP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 // Register Forge as an MCP server so Claude Code / Codex can query its tools
 // (get_changelog, list_milestones, list_branches) live. Claude Code has a CLI
 // for it; Codex points its MCP config at the same `uwp mcp` command.
-const MCP_CMD_CLAUDE = 'claude mcp add uwp -- uwp mcp';
+const MCP_CMD_CLAUDE = 'claude mcp add forge -- uwp mcp';
 const MCP_CMD_CODEX = 'uwp mcp';
 
 // Flag emoji from a 2-letter country code (regional indicator letters).

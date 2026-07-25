@@ -98,10 +98,12 @@ uwp serve            # -> http://localhost:4321
 
 `uwp mcp` runs Forge as an MCP server over stdio, so an AI coding agent can pull
 release data live and keep working with it. It exposes `get_changelog`,
-`list_milestones` and `list_branches` (plus any tool a plugin adds).
+`list_milestones` and `list_branches` tools, plus **skills** (MCP prompts) like
+`write_release_post` that teach the agent to use them — run `uwp skills` to list
+them. Any plugin can add more.
 
 ```bash
-claude mcp add uwp -- uwp mcp        # Claude Code
+claude mcp add forge -- uwp mcp      # Claude Code (server named "forge")
 # Codex: add an MCP server with command "uwp", args ["mcp"]
 ```
 

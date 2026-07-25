@@ -144,10 +144,23 @@ export const mcpTools = [
 ];
 ```
 
-Register the server: Claude Code `claude mcp add uwp -- uwp mcp`; Codex adds an
-MCP server with `command = "uwp"`, `args = ["mcp"]`. Keep `stdout` for JSON-RPC
-only — send any logging to `stderr`. The Changelog tool ships `get_changelog`,
-`list_milestones` and `list_branches`.
+Register the server (named `forge`; the command it runs is `uwp mcp`): Claude
+Code `claude mcp add forge -- uwp mcp`; Codex adds an MCP server with
+`command = "uwp"`, `args = ["mcp"]`. Keep `stdout` for JSON-RPC only — send any
+logging to `stderr`. The Changelog tool ships `get_changelog`, `list_milestones`
+and `list_branches` tools plus a `write_release_post` skill (MCP prompt).
+
+**Skills.** Export `skills` — reusable AI instructions your tool provides. They
+are served as MCP prompts over `uwp mcp` (so Claude Code / Codex can pull them)
+and printed by `uwp skills [<name>]`. `build(args)` returns the prompt text.
+
+```js
+export const skills = [
+  { name: 'my_tool_howto', description: 'How to use my-tool.',
+    arguments: [{ name: 'topic', required: false }],
+    build: (args) => `Use the my_tool_echo tool to handle: ${args.topic}.` },
+];
+```
 
 ### Register + run
 

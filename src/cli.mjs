@@ -7,7 +7,8 @@ Usage:
   uwp <since> <until> [options]
   uwp serve [--port <n>]            Open the browser UI.
   uwp mcp                          Run as an MCP server (stdio) for Claude Code
-                                    / Codex: claude mcp add uwp -- uwp mcp
+                                    / Codex: claude mcp add forge -- uwp mcp
+  uwp skills [<name>]              List the AI skills tools provide, or print one.
   uwp cookie-import <browser>       Import the wordpress.org cookie from a local
                                     browser (chrome|safari|firefox|edge, macOS).
   uwp <tool> [options]             Run a tool's own command (listed under -h).
@@ -51,6 +52,23 @@ export async function run(argv) {
   if (args._[0] === 'mcp') {
     const { startMcpServer } = await import('./mcp-server.mjs');
     return startMcpServer();
+  }
+
+  if (args._[0] === 'skills') {
+    const { loadPlugins } = await import('./plugins.mjs');
+    const skills = (await loadPlugins()).flatMap((p) => p.skills || []);
+    const name = args._[1];
+    if (!name) {
+      if (!skills.length) { console.log('No skills installed.'); return; }
+      console.log('Skills (AI instructions the tools provide):\n');
+      for (const s of skills) console.log(`  ${s.name.padEnd(24)} ${s.description || ''}`);
+      console.log('\nRun `uwp skills <name> [--arg value]` to print one.');
+      return;
+    }
+    const skill = skills.find((s) => s.name === name);
+    if (!skill) throw new Error(`unknown skill: ${name} (run \`uwp skills\` to list)`);
+    console.log(skill.build ? skill.build(args) : (skill.instructions || ''));
+    return;
   }
 
   if (args._[0] === 'cookie-import') {
