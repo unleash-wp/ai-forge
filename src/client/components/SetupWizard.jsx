@@ -388,7 +388,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                             <Text fontSize="0.8125rem" color="ui.text" mb="3">{t('Delete all local settings for this browser? This cannot be undone.')}</Text>
                             <HStack gap="2">
                               <Button variant="primary" size="sm" bg="ui.bad" _hover={{ bg: 'ui.bad', opacity: 0.9 }} onClick={() => { resetSettings(); setConfirmClear(false); }}>{t('Delete everything')}</Button>
-                              <Button variant="ghost" size="sm" onClick={() => setConfirmClear(false)}>{t('Cancel')}</Button>
+                              <Button variant="ghost" size="sm" bg="ui.surface" borderColor="ui.primary" onClick={() => setConfirmClear(false)}>{t('Cancel')}</Button>
                             </HStack>
                           </Box>
                         ) : (
