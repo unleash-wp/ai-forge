@@ -162,6 +162,29 @@ export const skills = [
 ];
 ```
 
+**MCP Apps (interactive panels).** Export `uiResources` — self-contained HTML
+panels that Claude Desktop / Codex render in a sandboxed iframe *inside the
+conversation* (no browser). Link a tool to one with a `ui` field, and return
+`{ text, structured }` from its `run` — the host pushes `structured` to the
+panel, which renders it and can call your tools back via postMessage.
+
+```js
+export const uiResources = [
+  { uri: 'ui://my-tool/panel', name: 'panel', description: '…',
+    html: readFileSync(new URL('./app.html', import.meta.url), 'utf8'),
+    permissions: { clipboardWrite: {} } },
+];
+export const mcpTools = [
+  { name: 'show_thing', description: '…', ui: 'ui://my-tool/panel',
+    inputSchema: { /* … */ },
+    run: async (a) => ({ text: 'summary', structured: { /* data the panel renders */ } }) },
+];
+```
+
+The panel HTML speaks the MCP Apps postMessage dialect (`ui/initialize`, then
+handle `ui/notifications/tool-result`); see `tools/changelog/app.html` for a
+zero-dependency vanilla example. The Changelog tool ships `show_changelog`.
+
 ### Register + run
 
 Scaffold from the template with `npm run new-tool -- <id> [Display Name]` (copies
