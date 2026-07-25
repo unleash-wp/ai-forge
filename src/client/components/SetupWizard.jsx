@@ -5,6 +5,9 @@ import { useState } from 'react';
 import { fetchJSON } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { Button, TextInput, TextArea } from '../ui';
+import { Box, Circle, Code, Grid, Heading, HStack, Link, Stack, Text, chakra } from '@chakra-ui/react';
+
+const msgColor = (k) => (k === 'good' ? 'ui.goodInk' : k === 'bad' ? 'ui.bad' : 'ui.muted');
 
 export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const [ghToken, setGhToken] = useState('');
@@ -66,81 +69,80 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
   const showTracSetup = !trac.set || editTrac;
 
   return (
-    <section className={'c-card c-wizard' + (open ? ' is-open' : '')}>
-      <button className="c-wizard__close" type="button" onClick={onClose} aria-label="Close setup">&times;</button>
-      <h2 className="c-wizard__title">Setup</h2>
-      <p className="c-wizard__lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own. Nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
-      <div className="c-wizard__steps">
-        <div className={'c-wizard__step' + (gh.set ? ' is-done' : '')}>
-          <div className="c-wizard__num"><span className="c-wizard__num-digit">1</span></div>
-          <div>
-            <h3 className="c-wizard__step-title">GitHub <em className="c-wizard__step-hint">lifts the API limit from 60 to 5000 requests an hour</em></h3>
+    <Box as="section" display={open ? 'block' : 'none'} position="relative" p="8" mb="6" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="md">
+      <chakra.button type="button" onClick={onClose} aria-label="Close setup" position="absolute" top="6" right="6" w="2rem" h="2rem" display="grid" placeItems="center" borderWidth="1px" borderColor="ui.border" bg="ui.surface" borderRadius="forge" color="ui.muted" fontSize="1.25rem" cursor="pointer" _hover={{ borderColor: 'navy', color: 'navy' }}>&times;</chakra.button>
+      <Heading as="h2" fontSize="1.375rem" fontWeight="700" color="ui.heading" mb="1" letterSpacing="-.01em">Setup</Heading>
+      <Text color="ui.muted" fontSize="0.875rem" mb="8" maxW="70ch">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own. Nothing is shared. The same keys power <Code>uwp --deep</Code> on the CLI.</Text>
+      <Stack gap="8">
+        <Grid templateColumns="2.125rem 1fr" gap="4">
+          <Circle size="2.125rem" bg={gh.set ? 'ui.good' : 'navy'} color="white" fontWeight="700" fontSize="0.9375rem" boxShadow="sm">{gh.set ? '✓' : '1'}</Circle>
+          <Box>
+            <Heading as="h3" mt="1" mb="1" fontSize="1rem" fontWeight="700" color="ui.heading">GitHub <chakra.em fontStyle="normal" color="ui.muted" fontWeight="500" fontSize="0.8125rem">lifts the API limit from 60 to 5000 requests an hour</chakra.em></Heading>
             {gh.set && (
-              <div className="c-wizard__connected"><span>✓</span> Connected · {ghSrc} · 5000/h
+              <HStack gap="1.5" flexWrap="wrap" fontSize="0.875rem" color="ui.goodInk" fontWeight="500"><chakra.span>✓</chakra.span> Connected · {ghSrc} · 5000/h
                 {gh.source === 'file'
-                  ? <button className="c-wizard__disconnect" type="button" onClick={disconnectGh}>Disconnect</button>
-                  : <span className="c-wizard__disc-note">{gh.source === 'gh' ? 'auto-detected from the gh CLI' : 'set by env var'}</span>}
-              </div>
+                  ? <chakra.button type="button" onClick={disconnectGh} bg="none" border="0" p="0" ml="1.5" color="ui.muted" fontWeight="500" fontSize="0.7813rem" textDecoration="underline" cursor="pointer" _hover={{ color: 'ui.bad' }}>Disconnect</chakra.button>
+                  : <chakra.span ml="1.5" color="ui.muted" fontWeight="400" fontSize="0.7813rem">{gh.source === 'gh' ? 'auto-detected from the gh CLI' : 'set by env var'}</chakra.span>}
+              </HStack>
             )}
             {showGhSetup && (
-              <div>
-                <p className="c-wizard__step-desc">Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b>. It only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</p>
-                <ol className="c-wizard__step-list"><li className="c-wizard__step-item">One click if the <code>gh</code> CLI is logged in (detected automatically), or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it below.</li></ol>
-                <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ margin: 0 }}>
-                  <TextInput type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder="ghp_… or github_pat_…" autoComplete="off" spellCheck="false" />
-                </form>
-                <div className="c-wizard__actions">
+              <Box>
+                <Text mt="0" mb="3" fontSize="0.875rem" color="ui.muted" maxW="66ch">Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b>. It only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</Text>
+                <chakra.ol my="2" mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">One click if the <Code>gh</Code> CLI is logged in (detected automatically), or <Link href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">create a token</Link> (leave every scope unchecked) and paste it below.</chakra.li></chakra.ol>
+                <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0"><TextInput type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder="ghp_… or github_pat_…" autoComplete="off" spellCheck="false" /></chakra.form>
+                <HStack gap="2" mt="3" flexWrap="wrap">
                   <Button variant="primary" size="sm" onClick={saveGh}>Save &amp; connect</Button>
                   <Button variant="ghost" size="sm" onClick={testGh}>Test</Button>
-                  <span className={'c-message' + (ghMsg.kind ? ' is-' + ghMsg.kind : '')}>{ghMsg.text}</span>
-                </div>
-              </div>
+                  <Text as="span" fontSize="0.7813rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>
+                </HStack>
+              </Box>
             )}
             {gh.set && gh.source !== 'env' && !editGh && (
-              <button className="c-wizard__expander" onClick={() => setEditGh(true)}>{gh.source === 'gh' ? 'Use your own token instead' : 'Use a different token'}</button>
+              <chakra.button type="button" onClick={() => setEditGh(true)} mt="2" fontSize="0.7813rem" color="ui.muted" bg="none" border="0" p="0" textDecoration="underline" cursor="pointer">{gh.source === 'gh' ? 'Use your own token instead' : 'Use a different token'}</chakra.button>
             )}
-          </div>
-        </div>
-        <div className={'c-wizard__step' + (trac.set ? ' is-done' : '')}>
-          <div className="c-wizard__num"><span className="c-wizard__num-digit">2</span></div>
-          <div>
-            <h3 className="c-wizard__step-title">WordPress.org <em className="c-wizard__step-hint">only needed for “deep” (full ticket descriptions)</em></h3>
+          </Box>
+        </Grid>
+        <Grid templateColumns="2.125rem 1fr" gap="4">
+          <Circle size="2.125rem" bg={trac.set ? 'ui.good' : 'navy'} color="white" fontWeight="700" fontSize="0.9375rem" boxShadow="sm">{trac.set ? '✓' : '2'}</Circle>
+          <Box>
+            <Heading as="h3" mt="1" mb="1" fontSize="1rem" fontWeight="700" color="ui.heading">WordPress.org <chakra.em fontStyle="normal" color="ui.muted" fontWeight="500" fontSize="0.8125rem">only needed for “deep” (full ticket descriptions)</chakra.em></Heading>
             {trac.set && (
-              <div className="c-wizard__connected"><span>✓</span> Cookie saved · {trac.source}
+              <HStack gap="1.5" flexWrap="wrap" fontSize="0.875rem" color="ui.goodInk" fontWeight="500"><chakra.span>✓</chakra.span> Cookie saved · {trac.source}
                 {trac.source === 'file'
-                  ? <button className="c-wizard__disconnect" type="button" onClick={disconnectCookie}>Disconnect</button>
-                  : <span className="c-wizard__disc-note">set by env var</span>}
-              </div>
+                  ? <chakra.button type="button" onClick={disconnectCookie} bg="none" border="0" p="0" ml="1.5" color="ui.muted" fontWeight="500" fontSize="0.7813rem" textDecoration="underline" cursor="pointer" _hover={{ color: 'ui.bad' }}>Disconnect</chakra.button>
+                  : <chakra.span ml="1.5" color="ui.muted" fontWeight="400" fontSize="0.7813rem">set by env var</chakra.span>}
+              </HStack>
             )}
             {showTracSetup && (
-              <div>
-                <p className="c-wizard__step-desc">A web page can't read this cookie for you (it's HttpOnly). Quickest is to import it straight from the browser you're logged into:</p>
+              <Box>
+                <Text mt="0" mb="3" fontSize="0.875rem" color="ui.muted" maxW="66ch">A web page can't read this cookie for you (it's HttpOnly). Quickest is to import it straight from the browser you're logged into:</Text>
                 {browser && (
-                  <div className="c-quick-import">
-                    <span className="c-quick-import__label">Quick import <span className="c-quick-import__note">(macOS)</span></span>
-                    <div className="c-quick-import__buttons"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></div>
-                  </div>
+                  <Box mb="3">
+                    <chakra.span display="block" fontSize="0.7813rem" fontWeight="600" color="ui.text" mb="2">Quick import <chakra.span fontWeight="400" color="ui.muted">(macOS)</chakra.span></chakra.span>
+                    <HStack flexWrap="wrap" gap="2"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></HStack>
+                  </Box>
                 )}
-                <details className="c-quick-import__manual"><summary className="c-quick-import__summary">Or paste it manually</summary>
-                  <ol className="c-quick-import__steps">
-                    <li className="c-quick-import__step"><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
-                    <li className="c-quick-import__step">DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
-                  </ol>
+                <chakra.details mb="3">
+                  <chakra.summary fontSize="0.7813rem" color="ui.muted" cursor="pointer">Or paste it manually</chakra.summary>
+                  <chakra.ol mt="2" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted">
+                    <chakra.li my="1"><Link href="https://wordpress.org/" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">Log in to wordpress.org</Link>.</chakra.li>
+                    <chakra.li my="1">DevTools → Application → Cookies → <Code>wordpress.org</Code> → copy <Code>wporg_logged_in</Code> + <Code>wporg_sec</Code> as <Code>name=value; name=value</Code>.</chakra.li>
+                  </chakra.ol>
                   <TextArea rows="3" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="wporg_logged_in=…; wporg_sec=…" />
-                </details>
-                <div className="c-wizard__actions">
+                </chakra.details>
+                <HStack gap="2" mt="3" flexWrap="wrap">
                   <Button variant="primary" size="sm" onClick={saveCookie}>Save &amp; connect</Button>
                   <Button variant="ghost" size="sm" onClick={testCookie}>Test</Button>
-                  <span className={'c-message' + (ckMsg.kind ? ' is-' + ckMsg.kind : '')}>{ckMsg.text}</span>
-                </div>
-              </div>
+                  <Text as="span" fontSize="0.7813rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>
+                </HStack>
+              </Box>
             )}
             {trac.set && trac.source === 'file' && !editTrac && (
-              <button className="c-wizard__expander" onClick={() => setEditTrac(true)}>Replace the cookie</button>
+              <chakra.button type="button" onClick={() => setEditTrac(true)} mt="2" fontSize="0.7813rem" color="ui.muted" bg="none" border="0" p="0" textDecoration="underline" cursor="pointer">Replace the cookie</chakra.button>
             )}
-          </div>
-        </div>
-      </div>
-    </section>
+          </Box>
+        </Grid>
+      </Stack>
+    </Box>
   );
 }
