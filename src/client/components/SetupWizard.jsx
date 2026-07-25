@@ -359,7 +359,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                   <TabItem value="credits" icon={ICON_INFO} label={t('Credits')} />
                 </Tabs.List>
 
-                <Box flex="1" minW="0" overflowY="auto" px="6" py="6">
+                <Box flex="1" minW="0" overflowY="auto" px="6" pt="6" pb="10">
 
                   <Tabs.Content value="general" mt="0">
                     <TabTitle>{t('General')}</TabTitle>
