@@ -1,0 +1,66 @@
+# Automated release. Push a version tag (e.g. `git tag v0.1.1 && git push --tags`)
+# and this builds, tests, publishes @unleashwp/ai-forge to npm, and attaches the
+# Claude Desktop .mcpb bundle to a GitHub Release.
+#
+# One-time setup on npmjs.com (pick ONE auth path):
+#   A) Trusted publishing (recommended, tokenless): on the @unleashwp/ai-forge
+#      package settings, add a GitHub Actions trusted publisher for repo
+#      unleash-wp/ai-forge + workflow "release.yml". Nothing else needed — OIDC
+#      below authenticates and signs provenance automatically.
+#   B) Token: create an npm automation token and add it as the repo secret
+#      NPM_TOKEN. It is used below if present.
+# The very first publish of a brand-new scoped package usually has to be done once
+# by hand (`npm publish`) to create it; automated releases take over after that.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # create the GitHub Release
+  id-token: write   # npm OIDC trusted publishing + provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      # One version source: the tag must match package.json (strip the leading v).
+      - name: Check tag matches package.json version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG" >&2
+            exit 1
+          fi
+
+      - name: Build the browser UI bundle
+        run: npm run build
+
+      - name: Unit tests
+        run: node --test
+
+      - name: Publish to npm (provenance)
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Pack the Claude Desktop bundle
+        run: npm run mcpb:pack
+
+      - name: Create the GitHub Release with the .mcpb attached
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" unleashwp-ai-forge.mcpb --title "$GITHUB_REF_NAME" --generate-notes
