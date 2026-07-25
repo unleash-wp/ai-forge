@@ -276,7 +276,7 @@ function Results({ data, since, until }) {
       <div className={'panel' + (tab === 'devnotes' ? '' : ' hidden')}>
         <p className="note">Published dev notes for {meta.milestone ? <b>{meta.milestone}</b> : 'this milestone'}, from <a href={'https://make.wordpress.org/core/tag/dev-notes-' + String(meta.milestone || '').replace(/\./g, '-') + '/'} target="_blank" rel="noopener">make.wordpress.org/core</a> (the tagged Field Guide source).</p>
         {devNotes === null ? <p className="note"><span className="spin" /> Loading dev notes…</p>
-          : devNotes.length === 0 ? <div className="empty"><h3>No dev notes yet</h3><p>make.wordpress.org has no <code>dev-notes-{String(meta.milestone || '').replace(/\./g, '-')}</code> posts yet - they land as the release nears.</p></div>
+          : devNotes.length === 0 ? <div className="empty"><h3>No dev notes yet</h3><p>make.wordpress.org has no <code>dev-notes-{String(meta.milestone || '').replace(/\./g, '-')}</code> posts yet. They land as the release nears.</p></div>
           : <ul className="devnotes-list">{devNotes.map((n, i) => (
               <li key={i}>
                 <a href={n.url} target="_blank" rel="noopener">{n.title}</a>
@@ -367,7 +367,7 @@ export default function ChangelogTool() {
       .then((d) => { setData(d); setStatus(''); })
       .catch((err) => {
         const m = err.message || 'request failed';
-        if (/rate limit|\b403\b/i.test(m)) { setStatus('GitHub rate limit reached - that is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.'); core.openSetup(); }
+        if (/rate limit|\b403\b/i.test(m)) { setStatus('GitHub rate limit reached. That is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.'); core.openSetup(); }
         else if (/cookie/i.test(m)) { setStatus('Error: ' + m); core.openSetup(); }
         else setStatus('Error: ' + m);
       })
@@ -381,9 +381,9 @@ export default function ChangelogTool() {
         <form className="query" onSubmit={submit}>
           <div className="qfields">
             <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-            <label>Milestone<Select block searchable ariaLabel="Milestone" value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="—" /></label>
-            <label>Gutenberg branch<Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
-            <label>Core branch<Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="—" /></label>
+            <label>Milestone<Select block searchable ariaLabel="Milestone" value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="Select" /></label>
+            <label>Gutenberg branch<Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></label>
+            <label>Core branch<Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></label>
           </div>
           <div className="qactions">
             <div className="checks">

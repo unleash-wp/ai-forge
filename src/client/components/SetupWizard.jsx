@@ -69,7 +69,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
     <section className={'card wizard' + (open ? ' open' : '')}>
       <button className="wiz-close" type="button" onClick={onClose} aria-label="Close setup">&times;</button>
       <h2>Setup</h2>
-      <p className="lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own - nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
+      <p className="lead">Two keys, both stored locally (owner-only file) and sent only to GitHub / WordPress.org. Each is your own. Nothing is shared. The same keys power <code>uwp --deep</code> on the CLI.</p>
       <div className="steps">
         <div className={'step' + (gh.set ? ' done' : '')}>
           <div className="num"><span className="d">1</span></div>
@@ -84,7 +84,7 @@ export default function SetupWizard({ status, refreshStatus, open, onClose }) {
             )}
             {showGhSetup && (
               <div>
-                <p>Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b> - it only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</p>
+                <p>Works with <b>any</b> GitHub account. You do <b>not</b> need access to the WordPress org, and the token needs <b>no scopes</b>. It only reads public repos and raises your rate limit. Skip it and the tool still runs at 60 requests an hour.</p>
                 <ol><li>One click if the <code>gh</code> CLI is logged in (detected automatically), or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it below.</li></ol>
                 <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ margin: 0 }}>
                   <TextInput type="password" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder="ghp_… or github_pat_…" autoComplete="off" spellCheck="false" />
