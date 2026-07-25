@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { authenticated, tokenStatus, saveToken, deleteToken, checkToken } from './github.mjs';
+import { authenticated, tokenStatus, saveToken, deleteToken, checkToken, setDisabled } from './github.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './trac.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
@@ -219,6 +219,15 @@ export function startServer({ port = 4321 } = {}) {
     if (url.pathname === '/api/github-token' && req.method === 'DELETE') {
       if (process.env.GITHUB_TOKEN) { json(res, 400, { error: 'GITHUB_TOKEN env is set; unset it in your shell to disconnect.' }); return; }
       deleteToken();
+      setDisabled(true); // also suppress the gh CLI auto-detect until reconnected
+      json(res, 200, { ok: true });
+      return;
+    }
+
+    // Reconnect using the detected gh CLI login (one click, no token to paste).
+    if (url.pathname === '/api/github-token/enable' && req.method === 'POST') {
+      if (process.env.GITHUB_TOKEN) { json(res, 400, { error: 'GITHUB_TOKEN env already provides the token.' }); return; }
+      setDisabled(false);
       json(res, 200, { ok: true });
       return;
     }
@@ -362,7 +371,7 @@ const PAGE = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forge · UnleashWP</title>
+<title>UnleashWP Forge</title>
 <link rel="icon" type="image/svg+xml" href="/brand/bulb.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

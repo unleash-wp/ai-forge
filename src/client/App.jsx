@@ -60,7 +60,6 @@ export default function App() {
 
   const openSetup = useCallback(() => setWizardOpen(true), []);
 
-  const gh = status && status.github, trac = status && status.trac;
   const inPlugins = activeId === PLUGINS_VIEW;
   const active = plugins.find((p) => p.id === activeId);
   const ActiveTool = activeId && !inPlugins ? REGISTRY[activeId] : null;
@@ -70,7 +69,7 @@ export default function App() {
     <CoreContext.Provider value={coreApi}>
       {installing && <Installer status={status} onDone={refreshStatus} />}
 
-      <Header headerRef={headerRef} scrolled={scrolled} ghSet={!!(gh && gh.set)} tracSet={!!(trac && trac.set)} onToggleSetup={() => setWizardOpen((o) => !o)} />
+      <Header headerRef={headerRef} scrolled={scrolled} onOpenSettings={() => setWizardOpen(true)} />
 
       <Grid maxW="72.5rem" mx="auto" px={{ base: '4', lg: '6' }} gap={{ base: '4', lg: '8' }} alignItems="start"
         templateColumns={{ base: '1fr', lg: '7.75rem minmax(0, 1fr)' }}>
@@ -83,7 +82,7 @@ export default function App() {
               {inPlugins ? 'Plugins' : (active ? active.name : 'WP Changelog')}
             </Heading>
             <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
-              {inPlugins ? 'Tools installed on this Forge. Every tool is a plugin. Add your own.' : (active ? active.description : '')}
+              {inPlugins ? 'Tools installed on UnleashWP Forge. Every tool is a plugin. Add your own.' : (active ? active.description : '')}
             </Text>
           </Box>
           {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}

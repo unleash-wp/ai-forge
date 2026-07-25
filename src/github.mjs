@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
@@ -10,17 +10,39 @@ export function tokenPath() {
   return join(base, 'wp-trac', 'github-token');
 }
 
-// Persist a token pasted in the setup wizard (owner-only). Returns the path.
+// Marker that the user explicitly disconnected GitHub. It lets Disconnect work
+// even when the token comes from the `gh` CLI (which we can't and shouldn't log
+// out system-wide) - resolveToken() ignores the file + gh CLI while it exists.
+function disabledPath() {
+  return tokenPath() + '.off';
+}
+export function isDisabled() {
+  return existsSync(disabledPath());
+}
+export function setDisabled(off) {
+  const p = disabledPath();
+  if (off) { mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, '', { mode: 0o600 }); }
+  else { try { unlinkSync(p); } catch { /* already gone */ } }
+}
+
+// Persist a token pasted in the setup wizard (owner-only). Clears the disconnect
+// marker so the new token takes effect. Returns the path.
 export function saveToken(value) {
   const p = tokenPath();
   mkdirSync(dirname(p), { recursive: true });
   writeFileSync(p, value.trim() + '\n', { mode: 0o600 });
+  setDisabled(false);
   return p;
 }
 
 // Remove the saved token file (the setup wizard's Disconnect). No-op if absent.
 export function deleteToken() {
   try { unlinkSync(tokenPath()); return true; } catch { return false; }
+}
+
+// Is a `gh` CLI login available to (re)connect with one click?
+export function ghAvailable() {
+  return !!ghCli();
 }
 
 function readSavedToken() {
@@ -49,6 +71,7 @@ function ghCli() {
 // token`. Read live so the setup wizard takes effect without a restart.
 export function resolveToken() {
   if (process.env.GITHUB_TOKEN) return { token: process.env.GITHUB_TOKEN.trim(), source: 'env' };
+  if (isDisabled()) return { token: null, source: 'none' };
   const f = readSavedToken();
   if (f) return { token: f, source: 'file' };
   const gh = ghCli();
@@ -58,7 +81,7 @@ export function resolveToken() {
 
 export function tokenStatus() {
   const { token, source } = resolveToken();
-  return { set: !!token, source, path: tokenPath(), envLocked: !!process.env.GITHUB_TOKEN };
+  return { set: !!token, source, path: tokenPath(), envLocked: !!process.env.GITHUB_TOKEN, ghAvailable: ghAvailable() };
 }
 
 export function authenticated() {
