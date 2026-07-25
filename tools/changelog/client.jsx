@@ -1,12 +1,13 @@
 // Changelog Generator - client side of the first UnleashWP Forge tool plugin.
 // Default-exports a React component that the shell mounts in <main>. It receives
-// the core services (toast, openSetup) via the CoreContext. BEM classes (c-*)
-// are styled by this tool's co-located ./client.scss (bundled into main.css).
+// the core services (toast, openSetup) via the CoreContext. UI is Chakra UI v3;
+// the changelog body stays an HTML string (React can't mount components inside
+// dangerouslySetInnerHTML) styled by the `changelogCss` block below.
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Badge, Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, SimpleGrid, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
-import { Button, Select, Checkbox } from '../../src/client/ui';
+import { Button as UButton, Select, Checkbox, TextInput } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
-import './client.scss'; // this tool's co-located styles (bundled into main.css)
 
 const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
@@ -17,8 +18,8 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const codefmt = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>');
 
 // Contributor hygiene: strip any leading @ so names are clean by default (the
-// "Add @" toggle re-adds it), and drop automation accounts (github-actions[bot],
-// *-bot, dependabot, renovate, …) so props credit only real people.
+// "Add @" toggle re-adds it), and drop automation accounts so props credit only
+// real people.
 const cleanName = (n) => String(n).replace(/^@+/, '').trim();
 const isBot = (n) => /\[bot\]|(^|[^a-z])bot([^a-z]|$)|dependabot|renovate|greenkeeper|codecov|imgbot/i.test(String(n));
 
@@ -31,7 +32,7 @@ const IC = {
   table: svgIc('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'),
   ext: svgIc('<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>'),
 };
-function Ic({ html }) { return <span style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: html }} />; }
+function Ic({ html }) { return <chakra.span display="contents" dangerouslySetInnerHTML={{ __html: html }} />; }
 
 function pad(n) { return (n < 10 ? '0' : '') + n; }
 function isoD(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -50,52 +51,103 @@ function sortGroups(obj, uncatLast) {
   });
 }
 function groupHeadHtml(label, url, who) {
-  const inner = url ? '<a class="c-changelog-group__link" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + IC.ext + '</a>' : label;
-  return '<h2 class="c-changelog-group__title">' + inner + ' <span class="c-byline">(' + esc(who) + ')</span></h2>';
+  const inner = url ? '<a class="cl-link" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + IC.ext + '</a>' : label;
+  return '<h2 class="cl-title">' + inner + ' <span class="cl-byline">(' + esc(who) + ')</span></h2>';
 }
 function gbItem(c) {
   const ref = c.pr
-    ? '<a class="c-ref" href="' + GB + '/pull/' + c.pr + '" target="_blank" rel="noopener">#' + c.pr + '</a>'
-    : (c.sha ? '<a class="c-ref" href="' + GB + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : '');
-  return '<li class="c-changelog-list__item">' + (ref ? ref + ' ' : '') + codefmt(c.subject) + ' <span class="c-byline">by ' + esc(c.author) + '</span></li>';
+    ? '<a class="cl-ref" href="' + GB + '/pull/' + c.pr + '" target="_blank" rel="noopener">#' + c.pr + '</a>'
+    : (c.sha ? '<a class="cl-ref" href="' + GB + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : '');
+  return '<li>' + (ref ? ref + ' ' : '') + codefmt(c.subject) + ' <span class="cl-byline">by ' + esc(c.author) + '</span></li>';
 }
-function gbGroup(cat, items) { return '<h3 class="c-changelog-group__subhead">' + esc(cat) + ' <span class="c-changelog-group__count">(' + items.length + ')</span></h3><ul class="c-changelog-list">' + items.map(gbItem).join('') + '</ul>'; }
+function gbGroup(cat, items) { return '<h3 class="cl-sub">' + esc(cat) + ' <span class="cl-count">(' + items.length + ')</span></h3><ul class="cl-list">' + items.map(gbItem).join('') + '</ul>'; }
 function coreItem(c) {
   const ref = c.changeset
-    ? '<a class="c-ref" href="' + TRAC + '/changeset/' + c.changeset + '" target="_blank" rel="noopener">r' + c.changeset + '</a>'
-    : (c.sha ? '<a class="c-ref" href="' + CORE_GH + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : esc(c.shortSha));
-  const tix = (c.tickets || []).map((n) => '<a class="c-ref" href="' + TRAC + '/ticket/' + n + '" target="_blank" rel="noopener">#' + n + '</a>').join(' ');
-  const cls = c.classification ? ' <span class="c-tag">' + esc(c.classification) + '</span>' : '';
-  const props = c.props && c.props.length ? ' <span class="c-byline">by ' + esc(c.props.join(', ')) + '</span>' : '';
-  const desc = c.description ? '<div class="c-desc">' + codefmt(c.description.replace(/\s+/g, ' ').trim()) + '</div>' : '';
-  return '<li class="c-changelog-list__item">' + ref + ' ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + desc + '</li>';
+    ? '<a class="cl-ref" href="' + TRAC + '/changeset/' + c.changeset + '" target="_blank" rel="noopener">r' + c.changeset + '</a>'
+    : (c.sha ? '<a class="cl-ref" href="' + CORE_GH + '/commit/' + c.sha + '" target="_blank" rel="noopener">' + esc(c.shortSha) + '</a>' : esc(c.shortSha));
+  const tix = (c.tickets || []).map((n) => '<a class="cl-ref" href="' + TRAC + '/ticket/' + n + '" target="_blank" rel="noopener">#' + n + '</a>').join(' ');
+  const cls = c.classification ? ' <span class="cl-tag">' + esc(c.classification) + '</span>' : '';
+  const props = c.props && c.props.length ? ' <span class="cl-byline">by ' + esc(c.props.join(', ')) + '</span>' : '';
+  const desc = c.description ? '<div class="cl-desc">' + codefmt(c.description.replace(/\s+/g, ' ').trim()) + '</div>' : '';
+  return '<li>' + ref + ' ' + codefmt(c.subject) + cls + (tix ? ' ' + tix : '') + props + desc + '</li>';
 }
-function coreGroup(comp, items) { return '<h3 class="c-changelog-group__subhead">' + esc(comp) + ' <span class="c-changelog-group__count">(' + items.length + ')</span></h3><ul class="c-changelog-list">' + items.map(coreItem).join('') + '</ul>'; }
+function coreGroup(comp, items) { return '<h3 class="cl-sub">' + esc(comp) + ' <span class="cl-count">(' + items.length + ')</span></h3><ul class="cl-list">' + items.map(coreItem).join('') + '</ul>'; }
 
-// Build the changelog list bodies (pure links + text, no React handlers) as HTML.
 function changelogBodyHtml(data) {
   const { meta, report } = data;
   const s = data.sources || {};
   let cl = '';
   if (report.gutenberg.byCategory || report.gutenberg.commits.length) {
-    cl += '<section class="c-changelog-group">' + groupHeadHtml('Gutenberg', s.gutenberg, meta.gbBranch);
+    cl += '<section class="cl-group">' + groupHeadHtml('Gutenberg', s.gutenberg, meta.gbBranch);
     if (report.gutenberg.byCategory) sortGroups(report.gutenberg.byCategory).forEach((g) => { cl += gbGroup(g[0], g[1]); });
-    else cl += '<ul class="c-changelog-list">' + report.gutenberg.commits.map(gbItem).join('') + '</ul>';
+    else cl += '<ul class="cl-list">' + report.gutenberg.commits.map(gbItem).join('') + '</ul>';
     cl += '</section>';
   }
-  cl += '<section class="c-changelog-group">' + groupHeadHtml('Core', s.trac, meta.coreBranch);
+  cl += '<section class="cl-group">' + groupHeadHtml('Core', s.trac, meta.coreBranch);
   if (report.core.tracker) {
-    cl += '<p class="u-note">Grouped via <code>' + esc(report.core.tracker.slug) + '</code> dev-notes tracker.</p>';
+    cl += '<p class="cl-note">Grouped via <code>' + esc(report.core.tracker.slug) + '</code> dev-notes tracker.</p>';
     sortGroups(report.core.byComponent, true).forEach((g) => { cl += coreGroup(g[0], g[1]); });
   } else {
-    if (meta.trackerMissing) cl += '<p class="u-note">No dev-notes tracker for this milestone. Core stays ungrouped.</p>';
-    cl += '<ul class="c-changelog-list">' + report.core.commits.map(coreItem).join('') + '</ul>';
+    if (meta.trackerMissing) cl += '<p class="cl-note">No dev-notes tracker for this milestone. Core stays ungrouped.</p>';
+    cl += '<ul class="cl-list">' + report.core.commits.map(coreItem).join('') + '</ul>';
   }
   cl += '</section>';
   return cl;
 }
 
+// Styles for the HTML-string changelog body (Chakra css prop, resolves tokens).
+const changelogCss = {
+  '& .cl-group': { mt: '12' },
+  '& .cl-group:first-of-type': { mt: '0' },
+  '& .cl-title': { fontSize: 'clamp(1.25rem, 1.12rem + 0.65vw, 1.4375rem)', fontWeight: '700', color: 'ui.heading', letterSpacing: '-.01em', borderBottom: '2px solid', borderColor: 'ui.border', pb: '3', mb: '4' },
+  '& .cl-title .cl-byline': { fontSize: '0.875rem' },
+  '& .cl-link': { display: 'inline-flex', alignItems: 'center', gap: '2', color: 'ui.heading' },
+  '& .cl-link svg': { color: 'ui.muted', transition: 'color .12s' },
+  '& .cl-link:hover': { color: 'ui.accent' },
+  '& .cl-link:hover svg': { color: 'ui.accent' },
+  '& .cl-sub': { fontSize: '0.8125rem', fontWeight: '700', letterSpacing: '.04em', textTransform: 'uppercase', color: 'ui.muted', mt: '6', mb: '2' },
+  '& .cl-count': { color: 'ui.muted', fontWeight: '500' },
+  '& .cl-list': { my: '2', pl: '5', listStyle: 'disc' },
+  '& .cl-list li': { my: '1.5', contentVisibility: 'auto', containIntrinsicSize: 'auto 2rem' },
+  '& .cl-list a, & .cl-ref': { fontWeight: '600' },
+  '& .cl-ref': { whiteSpace: 'nowrap' },
+  '& .cl-tag': { display: 'inline-block', bg: 'ui.tagbg', color: 'ui.tagfg', borderRadius: 'sm', px: '1.5', fontSize: '0.6875rem', fontWeight: '600', ml: '1' },
+  '& .cl-byline': { color: 'ui.muted', fontSize: '0.8125rem', fontWeight: '400' },
+  '& .cl-desc': { color: 'ui.muted', fontSize: '0.8125rem', lineHeight: '1.5', mt: '1', mb: '2', maxW: '70ch' },
+  '& .cl-note': { color: 'ui.muted', fontSize: '0.8125rem' },
+  '& code': { bg: 'ui.tagbg', color: 'ui.tagfg', px: '1.5', borderRadius: 'sm', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '0.75rem' },
+  '& a': { color: 'ui.primary' },
+};
+
+// ---- Info tooltip (CSS-only, via data-tip) ----
+function Info({ tip }) {
+  return (
+    <chakra.button type="button" aria-label={tip} data-tip={tip} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      display="inline-grid" placeItems="center" w="0.875rem" h="0.875rem" borderWidth="1px" borderColor="ui.border"
+      borderRadius="full" color="ui.muted" fontSize="0.5625rem" fontWeight="600" cursor="help" position="relative" opacity="0.75"
+      _hover={{ opacity: 1, borderColor: 'ui.muted' }}
+      css={{
+        '&::after': { content: 'attr(data-tip)', position: 'absolute', top: 'calc(100% + 0.4375rem)', left: 0, bg: 'ui.surface', color: 'ui.text', borderWidth: '1px', borderColor: 'ui.border', p: '2', borderRadius: 'sm', font: '400 0.75rem/1.4 var(--chakra-fonts-body)', width: '13rem', textAlign: 'left', whiteSpace: 'normal', opacity: 0, visibility: 'hidden', pointerEvents: 'none', transition: 'opacity .12s, visibility .12s', zIndex: 40, boxShadow: 'md' },
+        '&:hover::after': { opacity: 1, visibility: 'visible' },
+      }}>i</chakra.button>
+  );
+}
+
 // ---- Date range picker ----
+const calCss = {
+  '& .cal-cell': { height: '2.25rem', border: 0, bg: 'none', font: '500 0.8125rem/1 var(--chakra-fonts-body)', color: 'ui.text', cursor: 'pointer', borderRadius: 'sm', display: 'inline-grid', placeItems: 'center', p: 0 },
+  '& .cal-cell:hover': { bg: 'ui.sunk' },
+  '& .cal-cell.is-empty': { visibility: 'hidden', cursor: 'default' },
+  '& .cal-cell.is-today': { boxShadow: 'inset 0 0 0 1.5px var(--chakra-colors-navy)', color: 'navy', fontWeight: '700' },
+  '& .cal-cell.is-inrange': { bg: 'ui.rangeFill', borderRadius: 0, color: 'navy' },
+  '& .cal-cell.is-start, & .cal-cell.is-end': { bg: 'navy', color: 'white', fontWeight: '700' },
+  '& .cal-cell.is-start': { borderRadius: '0.3125rem 0 0 0.3125rem' },
+  '& .cal-cell.is-end': { borderRadius: '0 0.3125rem 0.3125rem 0' },
+  '& .cal-cell.is-start.is-end': { borderRadius: 'sm' },
+  '& .cal-cell.is-disabled': { color: 'ui.muted', opacity: 0.35, cursor: 'not-allowed' },
+  '& .cal-cell.is-disabled:hover': { bg: 'none' },
+};
+
 function DateRangePicker({ since, until, onChange }) {
   const today = useRef((() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })()).current;
   const [open, setOpen] = useState(false);
@@ -126,19 +178,19 @@ function DateRangePicker({ since, until, onChange }) {
   const startDow = new Date(view.getFullYear(), view.getMonth(), 1).getDay();
   const days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
   const cells = [];
-  for (let i = 0; i < startDow; i++) cells.push(<button key={'e' + i} type="button" className="c-calendar__cell is-empty" tabIndex={-1} />);
+  for (let i = 0; i < startDow; i++) cells.push(<chakra.button key={'e' + i} type="button" className="cal-cell is-empty" tabIndex={-1} />);
   for (let day = 1; day <= days; day++) {
     const ds = view.getFullYear() + '-' + pad(view.getMonth() + 1) + '-' + pad(day);
-    let cls = 'c-calendar__cell';
+    let cls = 'cal-cell';
     if (ds > tISO) cls += ' is-disabled';
     if (ds === tISO) cls += ' is-today';
     if (s && e) { if (ds === s) cls += ' is-start'; if (ds === e) cls += ' is-end'; if (ds > s && ds < e) cls += ' is-inrange'; }
     else if (s && ds === s) cls += ' is-start is-end';
     const disabled = ds > tISO;
     cells.push(
-      <button key={ds} type="button" className={cls} data-d={ds}
+      <chakra.button key={ds} type="button" className={cls} data-d={ds}
         onClick={() => { if (disabled) return; pick(ds); }}
-        onMouseOver={() => { if (!disabled && pendStart && ds !== hoverDay) setHoverDay(ds); }}>{day}</button>
+        onMouseOver={() => { if (!disabled && pendStart && ds !== hoverDay) setHoverDay(ds); }}>{day}</chakra.button>
     );
   }
   function pick(ds) {
@@ -152,36 +204,66 @@ function DateRangePicker({ since, until, onChange }) {
     const ed = new Date(today), sd = new Date(today); sd.setDate(sd.getDate() - n);
     onChange(isoD(sd), isoD(ed)); setPendStart(null); setView(new Date(ed.getFullYear(), ed.getMonth(), 1)); setOpen(false);
   }
+  const navBtn = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', w: '1.875rem', h: '1.875rem', p: 0, borderRadius: 'sm', borderWidth: '1px', borderColor: 'ui.border', bg: 'ui.surface', color: 'ui.text', cursor: 'pointer', flex: 'none', _hover: { bg: 'ui.sunk', borderColor: 'ui.primary' }, _disabled: { opacity: 0.3, cursor: 'not-allowed' } };
 
   return (
-    <div className="c-daterange" ref={wrapRef}>
-      <span className="c-daterange__label">Date range</span>
-      <button type="button" className="c-daterange__button" aria-haspopup="true" aria-expanded={open}
-        onClick={(ev) => { ev.stopPropagation(); setOpen((o) => !o); }}>
-        <span>{since && until ? fmtRange(since, until) : 'Pick dates'}</span>
-        <CalendarIcon size={16} className="c-daterange__cal-icon" />
-      </button>
+    <Box position="relative" ref={wrapRef} display="flex" flexDir="column" gap="1.5">
+      <Text as="span" fontSize="0.7813rem" fontWeight="600" letterSpacing=".04em" textTransform="uppercase" color="ui.muted">Date range</Text>
+      <chakra.button type="button" aria-haspopup="true" aria-expanded={open} onClick={(ev) => { ev.stopPropagation(); setOpen((o) => !o); }}
+        display="inline-flex" alignItems="center" justifyContent="space-between" gap="2" minW="14rem" px="3.5" py="2.5" textAlign="left"
+        bg="ui.surface" color="ui.text" borderWidth="1px" borderColor={open ? 'ui.primary' : 'ui.border'} borderRadius="0.4375rem" cursor="pointer"
+        fontSize="1rem" _hover={{ borderColor: 'ui.primary' }}>
+        <chakra.span>{since && until ? fmtRange(since, until) : 'Pick dates'}</chakra.span>
+        <CalendarIcon size={16} className="cal-trigger-icon" />
+      </chakra.button>
       {open && (
-        <div className="c-calendar" onClick={(ev) => ev.stopPropagation()}>
-          <div className="c-calendar__presets">
+        <Box onClick={(ev) => ev.stopPropagation()} position="absolute" top="calc(100% + 0.5rem)" left="0" zIndex="30" w="18.75rem"
+          bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="lg" p="3" css={calCss}>
+          <Flex flexWrap="wrap" gap="1.5" mb="2.5">
             {[['7 days', 7], ['14 days', 14], ['30 days', 30]].map((p) => (
-              <button key={p[1]} type="button" className="c-calendar__preset" onClick={() => preset(p[1])}>{p[0]}</button>
+              <chakra.button key={p[1]} type="button" onClick={() => preset(p[1])} font="500 0.75rem/1 var(--chakra-fonts-body)"
+                bg="ui.sunk" borderWidth="1px" borderColor="ui.border" color="ui.text" borderRadius="sm" px="3" py="1.5" cursor="pointer"
+                _hover={{ borderColor: 'navy', color: 'navy' }}>{p[0]}</chakra.button>
             ))}
-          </div>
-          <div className="c-calendar__head">
-            <button type="button" className="c-calendar__nav" aria-label="Previous month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}><ArrowLeft size={18} /></button>
-            <div className="c-calendar__title">{MON[view.getMonth()] + ' ' + view.getFullYear()}</div>
-            <button type="button" className="c-calendar__nav" aria-label="Next month" disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}><ArrowRight size={18} /></button>
-          </div>
-          <div className="c-calendar__dow"><span className="c-calendar__dow-day">Su</span><span className="c-calendar__dow-day">Mo</span><span className="c-calendar__dow-day">Tu</span><span className="c-calendar__dow-day">We</span><span className="c-calendar__dow-day">Th</span><span className="c-calendar__dow-day">Fr</span><span className="c-calendar__dow-day">Sa</span></div>
-          <div className="c-calendar__grid" onMouseLeave={() => { if (pendStart && hoverDay !== pendStart) setHoverDay(pendStart); }}>{cells}</div>
-        </div>
+          </Flex>
+          <Flex align="center" justify="space-between" mb="2">
+            <chakra.button type="button" aria-label="Previous month" onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} css={navBtn}><ArrowLeft size={18} /></chakra.button>
+            <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{MON[view.getMonth()] + ' ' + view.getFullYear()}</Text>
+            <chakra.button type="button" aria-label="Next month" disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} css={navBtn}><ArrowRight size={18} /></chakra.button>
+          </Flex>
+          <Grid templateColumns="repeat(7, minmax(0, 1fr))" gap="0.5" mb="1">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => <Text key={d} textAlign="center" fontSize="0.6875rem" fontWeight="600" color="ui.muted" py="1">{d}</Text>)}
+          </Grid>
+          <Grid templateColumns="repeat(7, minmax(0, 1fr))" autoRows="2.25rem" gap="0.5"
+            onMouseLeave={() => { if (pendStart && hoverDay !== pendStart) setHoverDay(pendStart); }}>{cells}</Grid>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }
 
 // ---- Results view ----
+function StatCard({ n, label, counted }) {
+  return (
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" px="5" py="4" boxShadow="sm"
+      transition="transform .12s, box-shadow .12s" _hover={{ transform: 'translateY(-2px)', boxShadow: 'md' }}
+      css={counted ? { boxShadow: 'inset 0 2.5px 0 var(--chakra-colors-yellow), var(--chakra-shadows-sm)' } : undefined}>
+      <chakra.b display="block" fontSize="clamp(1.6rem, 1.4rem + 0.9vw, 2.1875rem)" fontWeight="700" color="ui.heading" lineHeight="1.05" fontVariantNumeric="tabular-nums">{n}</chakra.b>
+      <Text display="block" color="ui.muted" fontSize="0.7813rem">{label}</Text>
+      {counted && <Badge mt="1.5" colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem" letterSpacing=".05em">in total</Badge>}
+    </Box>
+  );
+}
+
+function SrcRow({ url, text, onCopy }) {
+  return (
+    <Flex align="center" gap="3" py="3" borderTop="1px solid" borderColor="ui.border" _first={{ borderTop: '0' }}>
+      <Link href={url} target="_blank" rel="noopener" flex="1" wordBreak="break-word" fontSize="0.875rem" fontWeight="600" color="ui.primary" dangerouslySetInnerHTML={{ __html: text }} />
+      <UButton variant="ghost" size="sm" onClick={onCopy}><Ic html={IC.link} />Copy link</UButton>
+    </Flex>
+  );
+}
+
 function Results({ data, since, until }) {
   const core = useCore();
   const [tab, setTab] = useState('changelog');
@@ -195,23 +277,14 @@ function Results({ data, since, until }) {
   }, [meta.milestone]);
   const issues = (t.coreTickets || 0) + (t.gutenbergPRs || 0);
   const changes = (t.gutenbergCommits || 0) + (t.coreChangesets || 0);
-  // Core-tickets card: prefer the Trac milestone count (matches the Sources
-  // "Closed Core Trac tickets" link exactly) when the server could fetch it with
-  // a saved cookie; otherwise the cookie-free count of tickets the in-window
-  // changesets close.
   const coreTicketsShown = report.core.tracTicketCount != null ? report.core.tracTicketCount : (t.coreTickets || 0);
-  // Contributor list is pure over the report; memoize so tab switches and the
-  // "Add @" toggle don't re-run the clean/bot-filter/sort every render.
   const all = useMemo(() => uniq((report.gutenberg.contributors || []).concat(report.core.contributors || [])
     .map(cleanName).filter((n) => n && !isBot(n)))
     .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())), [report]);
   const dn = !!meta.devNotesOnly;
   const s = data.sources || {};
-  // The changelog body is a big HTML string (hundreds of <li>). Rebuild it only
-  // when the data changes, not on every tab/@-toggle/dev-notes re-render.
   const bodyHtml = useMemo(() => changelogBodyHtml(data), [data]);
 
-  // @ is off by default and controlled by the toggle for both the view and every export.
   const withAt = (n) => (propsAt ? '@' : '') + n;
   const propsLine = all.map(withAt).join(', ');
   const copy = (text, label) => { navigator.clipboard.writeText(text); core.toast(label); };
@@ -225,81 +298,85 @@ function Results({ data, since, until }) {
     const arr = all.map((n) => "\t'" + withAt(n).replace(/'/g, "\\'") + "',");
     copy('array(\n' + arr.join('\n') + '\n)', 'PHP array copied');
   }
-  const stat = (n, l, counted) => <div className={'c-stat' + (counted ? ' c-stat--counted' : '')} key={l}><b className="c-stat__value u-tnum">{n}</b><span className="c-stat__label">{l}</span>{counted && <span className="c-stat__tag">in total</span>}</div>;
+  const bigNum = { position: 'relative', fontWeight: '700', color: 'ui.heading', lineHeight: '1', letterSpacing: '-.03em', pb: '1.5', fontVariantNumeric: 'tabular-nums' };
+  const underline = { content: '""', position: 'absolute', left: 0, bottom: 0, width: '100%', height: '0.375rem', bg: 'yellow', borderRadius: 'full' };
 
   return (
-    <div className="c-results">
-      <div className="c-results__head">
-        <div className="c-lead-metric"><b className="c-lead-metric__value u-tnum">{dn ? issues : changes}</b><span className="c-lead-metric__text">{(dn ? 'dev notes / field guide tickets, ' : 'changes landed across Core and Gutenberg, ') + fmtRange(since, until)}{!dn && <button type="button" className="c-info" data-tip={t.gutenbergCommits + ' Gutenberg changes + ' + t.coreChangesets + ' Core changesets'} aria-label={t.gutenbergCommits + ' Gutenberg changes plus ' + t.coreChangesets + ' Core changesets'} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button>}</span></div>
-        <div className="c-stats">
-          {!dn && stat(t.gutenbergCommits, 'Gutenberg changes', true)}
-          {stat(t.coreChangesets, dn ? 'Dev-note changesets' : 'Core changesets', !dn)}
-          {stat(coreTicketsShown, dn ? 'Dev-note tickets' : 'Core tickets', dn)}
-          {stat(all.length, 'Contributors')}
-        </div>
-      </div>
+    <Box mt="8">
+      <Flex align="baseline" gap="4" mb="8" flexWrap="wrap">
+        <chakra.b {...bigNum} fontSize="clamp(2.5rem, 1.9rem + 2.6vw, 3.5rem)" css={{ '&::after': underline }}>{dn ? issues : changes}</chakra.b>
+        <Text color="ui.muted" fontSize="0.9375rem">{(dn ? 'dev notes / field guide tickets, ' : 'changes landed across Core and Gutenberg, ') + fmtRange(since, until)}{!dn && <> <Info tip={t.gutenbergCommits + ' Gutenberg changes + ' + t.coreChangesets + ' Core changesets'} /></>}</Text>
+      </Flex>
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap="3" mb="8">
+        {!dn && <StatCard n={t.gutenbergCommits} label="Gutenberg changes" counted />}
+        <StatCard n={t.coreChangesets} label={dn ? 'Dev-note changesets' : 'Core changesets'} counted={!dn} />
+        <StatCard n={coreTicketsShown} label={dn ? 'Dev-note tickets' : 'Core tickets'} counted={dn} />
+        <StatCard n={all.length} label="Contributors" />
+      </SimpleGrid>
 
       {meta.deepError && (
-        <div className="c-warn">MCP enrichment skipped ({esc(meta.deepError)}). Descriptions still show, sourced from the GitHub commit bodies.</div>
+        <Box bg="rgba(252,190,0,.12)" border="1px solid" borderColor="rgba(252,190,0,.45)" color="ui.text" borderRadius="forge" px="3.5" py="2.5" fontSize="0.875rem" mb="6">MCP enrichment skipped ({esc(meta.deepError)}). Descriptions still show, sourced from the GitHub commit bodies.</Box>
       )}
 
-      <div className="c-tabs" role="tablist">
-        <button className={'c-tab' + (tab === 'changelog' ? ' is-active' : '')} onClick={() => setTab('changelog')}>Changelog<span className="c-tab__badge">{changes}</span></button>
-        <button className={'c-tab' + (tab === 'props' ? ' is-active' : '')} onClick={() => setTab('props')}>Props<span className="c-tab__badge">{all.length}</span></button>
-        <button className={'c-tab' + (tab === 'devnotes' ? ' is-active' : '')} onClick={() => setTab('devnotes')}>Dev Notes{devNotes ? <span className="c-tab__badge">{devNotes.length}</span> : null}</button>
-        <div className="c-tabs__tools">
-          <Button variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</Button>
-          <Button variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />Download</Button>
-        </div>
-      </div>
+      <Tabs.Root value={tab} onValueChange={(e) => setTab(e.value)} variant="line" colorPalette="brand">
+        <Tabs.List borderBottom="1px solid" borderColor="ui.border">
+          <Tabs.Trigger value="changelog" fontWeight="600">Changelog<Badge ml="2" variant="subtle" colorPalette="brand">{changes}</Badge></Tabs.Trigger>
+          <Tabs.Trigger value="props" fontWeight="600">Props<Badge ml="2" variant="subtle" colorPalette="brand">{all.length}</Badge></Tabs.Trigger>
+          <Tabs.Trigger value="devnotes" fontWeight="600">Dev Notes{devNotes ? <Badge ml="2" variant="subtle" colorPalette="brand">{devNotes.length}</Badge> : null}</Tabs.Trigger>
+          <HStack ml="auto" gap="2" pb="2">
+            <UButton variant="ghost" size="sm" onClick={() => copy(data.markdown, 'Markdown copied')}><Ic html={IC.md} />Copy Markdown</UButton>
+            <UButton variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />Download</UButton>
+          </HStack>
+        </Tabs.List>
 
-      <div className={'c-panel' + (tab === 'changelog' ? '' : ' is-hidden')}>
-        {data.sources && (
-          <section className="c-card c-sources">
-            <h2 className="c-sources__title">Sources <em className="c-sources__title-hint">link these in the post so anyone can verify</em></h2>
-            <SrcRow url={s.trac} text={'Closed Core Trac tickets' + (s.milestone ? ' (milestone ' + esc(s.milestone) + ')' : '') + ', ' + esc(s.since) + ' to ' + esc(s.until)} onCopy={() => copy(s.trac, 'Link copied')} />
-            <SrcRow url={s.gutenberg} text={'Gutenberg commits on ' + esc(s.gbBranch) + ', ' + esc(s.since) + ' to ' + esc(s.until)} onCopy={() => copy(s.gutenberg, 'Link copied')} />
-          </section>
-        )}
-        <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-        <details><summary>Raw Markdown</summary><pre>{data.markdown}</pre></details>
-      </div>
+        <Tabs.Content value="changelog">
+          {data.sources && (
+            <Box as="section" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="md" px="6" py="5" mb="6">
+              <Heading as="h2" fontSize="1.25rem" fontWeight="700" color="ui.heading" mb="3" letterSpacing="-.01em">Sources <chakra.em fontStyle="normal" fontWeight="500" color="ui.muted" fontSize="0.8125rem">link these in the post so anyone can verify</chakra.em></Heading>
+              <SrcRow url={s.trac} text={'Closed Core Trac tickets' + (s.milestone ? ' (milestone ' + esc(s.milestone) + ')' : '') + ', ' + esc(s.since) + ' to ' + esc(s.until)} onCopy={() => copy(s.trac, 'Link copied')} />
+              <SrcRow url={s.gutenberg} text={'Gutenberg commits on ' + esc(s.gbBranch) + ', ' + esc(s.since) + ' to ' + esc(s.until)} onCopy={() => copy(s.gutenberg, 'Link copied')} />
+            </Box>
+          )}
+          <Box css={changelogCss} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+          <chakra.details mt="4">
+            <chakra.summary cursor="pointer" color="ui.muted" fontSize="0.8125rem" fontWeight="500">Raw Markdown</chakra.summary>
+            <chakra.pre mt="3" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="forge" p="4" overflowX="auto" fontSize="0.75rem" lineHeight="1.55">{data.markdown}</chakra.pre>
+          </chakra.details>
+        </Tabs.Content>
 
-      <div className={'c-panel' + (tab === 'props' ? '' : ' is-hidden')}>
-        <div className="c-props__head">
-          <div className="c-props-metric"><b className="c-props-metric__value u-tnum">{all.length}</b><span className="c-props-metric__text">contributors with props this window</span></div>
-          <div className="c-props__actions">
-            <label className="c-props__at"><Checkbox checked={propsAt} onChange={(e) => setPropsAt(e.target.checked)} /> Add @ before names</label>
-            <Button variant="ghost" size="sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</Button>
-            <Button variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />CSV</Button>
-            <Button variant="ghost" size="sm" onClick={copyPhp}><Ic html={IC.md} />PHP array</Button>
-          </div>
-        </div>
-        <p className="c-props__list">{propsLine}</p>
-        {propsAt && <p className="u-note c-props__hint">Slack handles usually match the wp.org username, but not always. Double-check before pinging.</p>}
-      </div>
+        <Tabs.Content value="props">
+          <Flex align="flex-end" justify="space-between" gap="4" flexWrap="wrap" mb="6">
+            <Flex align="baseline" gap="3" flexWrap="wrap">
+              <chakra.b {...bigNum} fontSize="clamp(1.9rem, 1.55rem + 1.4vw, 2.5rem)" css={{ '&::after': underline }}>{all.length}</chakra.b>
+              <Text fontSize="0.875rem" color="ui.muted">contributors with props this window</Text>
+            </Flex>
+            <Flex align="center" gap="3" flexWrap="wrap">
+              <CChk.Root checked={propsAt} colorPalette="brand" onCheckedChange={(d) => setPropsAt(d.checked === true)}>
+                <CChk.HiddenInput /><CChk.Control /><CChk.Label fontSize="0.875rem">Add @ before names</CChk.Label>
+              </CChk.Root>
+              <UButton variant="ghost" size="sm" onClick={() => copy(propsLine, 'Props copied')}><Ic html={IC.clip} />Copy props line</UButton>
+              <UButton variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />CSV</UButton>
+              <UButton variant="ghost" size="sm" onClick={copyPhp}><Ic html={IC.md} />PHP array</UButton>
+            </Flex>
+          </Flex>
+          <Text m="0" fontSize="0.9688rem" lineHeight="1.85" color="ui.text">{propsLine}</Text>
+          {propsAt && <Text mt="3" color="ui.muted" fontSize="0.8125rem">Slack handles usually match the wp.org username, but not always. Double-check before pinging.</Text>}
+        </Tabs.Content>
 
-      <div className={'c-panel' + (tab === 'devnotes' ? '' : ' is-hidden')}>
-        <p className="u-note">Published dev notes for {meta.milestone ? <b>{meta.milestone}</b> : 'this milestone'}, from <a href={'https://make.wordpress.org/core/tag/dev-notes-' + String(meta.milestone || '').replace(/\./g, '-') + '/'} target="_blank" rel="noopener">make.wordpress.org/core</a> (the tagged Field Guide source).</p>
-        {devNotes === null ? <p className="u-note"><span className="u-spin" /> Loading dev notes…</p>
-          : devNotes.length === 0 ? <div className="c-empty"><h3 className="c-empty__title">No dev notes yet</h3><p className="c-empty__text">make.wordpress.org has no <code>dev-notes-{String(meta.milestone || '').replace(/\./g, '-')}</code> posts yet. They land as the release nears.</p></div>
-          : <ul className="c-devnotes">{devNotes.map((n, i) => (
-              <li key={i} className="c-devnotes__item">
-                <a className="c-devnotes__link" href={n.url} target="_blank" rel="noopener">{n.title}</a>
-                <span className="c-devnotes__date">{n.date}</span>
-                {n.excerpt && <p className="c-devnotes__excerpt">{n.excerpt}…</p>}
-              </li>
-            ))}</ul>}
-      </div>
-    </div>
-  );
-}
-function SrcRow({ url, text, onCopy }) {
-  return (
-    <div className="c-sources__row">
-      <a className="c-sources__link" href={url} target="_blank" rel="noopener" dangerouslySetInnerHTML={{ __html: text }} />
-      <Button variant="ghost" size="sm" onClick={onCopy}><Ic html={IC.link} />Copy link</Button>
-    </div>
+        <Tabs.Content value="devnotes">
+          <Text color="ui.muted" fontSize="0.8125rem">Published dev notes for {meta.milestone ? <b>{meta.milestone}</b> : 'this milestone'}, from <Link href={'https://make.wordpress.org/core/tag/dev-notes-' + String(meta.milestone || '').replace(/\./g, '-') + '/'} target="_blank" rel="noopener" color="ui.primary" fontWeight="600">make.wordpress.org/core</Link> (the tagged Field Guide source).</Text>
+          {devNotes === null ? <Text mt="2" color="ui.muted" fontSize="0.8125rem">Loading dev notes…</Text>
+            : devNotes.length === 0 ? <Box textAlign="center" py="12"><Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">No dev notes yet</Heading><Text color="ui.muted" fontSize="0.9688rem">make.wordpress.org has no dev-notes-{String(meta.milestone || '').replace(/\./g, '-')} posts yet. They land as the release nears.</Text></Box>
+            : <Stack as="ul" listStyleType="none" gap="0" mt="3">{devNotes.map((n, i) => (
+                <chakra.li key={i} py="4" borderTop={i ? '1px solid' : '0'} borderColor="ui.border">
+                  <Link href={n.url} target="_blank" rel="noopener" fontWeight="600" fontSize="0.9375rem" color="ui.heading" _hover={{ color: 'ui.accent' }}>{n.title}</Link>
+                  <chakra.span ml="3" fontSize="0.75rem" color="ui.muted">{n.date}</chakra.span>
+                  {n.excerpt && <Text mt="1.5" fontSize="0.8125rem" color="ui.muted" lineHeight="1.5">{n.excerpt}…</Text>}
+                </chakra.li>
+              ))}</Stack>}
+        </Tabs.Content>
+      </Tabs.Root>
+    </Box>
   );
 }
 
@@ -323,13 +400,11 @@ export default function ChangelogTool() {
   const [status, setStatus] = useState('');
   const [data, setData] = useState(null);
 
-  // default window: last 7 days
   useEffect(() => {
     const d = new Date(), sd = new Date(d); sd.setDate(sd.getDate() - 7);
     setSince(isoD(sd)); setUntil(isoD(d));
   }, []);
 
-  // load branches -> milestones + branch pickers
   useEffect(() => {
     let alive = true;
     const gb = fetch('/api/branches?repo=gutenberg').then((r) => r.json()).then((d) => {
@@ -380,35 +455,53 @@ export default function ChangelogTool() {
       .finally(() => setBusy(false));
   }
 
+  const fieldLabel = { fontSize: '0.7813rem', fontWeight: '600', letterSpacing: '.04em', textTransform: 'uppercase', color: 'ui.muted', mb: '1.5', display: 'block' };
+  const CHECKS = [
+    [labels, setLabels, 'Group Gutenberg', 'Group Gutenberg changes by label (Bug, Feature). Off shows one flat list.'],
+    [devNotes, setDevNotes, 'Group Core', 'Group Core changes by component (Editor, REST API). Off shows one flat list.'],
+    [devOnly, setDevOnly, 'Dev notes only', 'Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep.'],
+    [full, setFull, 'Full descriptions', "Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast."],
+  ];
+
   return (
     <>
-      <section className={'c-filters' + (loaded ? '' : ' is-loading')}>
-        {!loaded && <div className="c-filters__loading"><span className="u-spin" /> Loading milestones and branches…</div>}
-        <form className="c-query" onSubmit={submit}>
-          <div className="c-query__fields">
-            <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-            <label className="c-query__field">Milestone<Select block searchable ariaLabel="Milestone" value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="Select" /></label>
-            <label className="c-query__field">Gutenberg branch<Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></label>
-            <label className="c-query__field">Core branch<Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></label>
-          </div>
-          <div className="c-query__actions">
-            <div className="c-query__checks">
-              <label className="c-query__check"><Checkbox checked={labels} onChange={(e) => setLabels(e.target.checked)} /> Group Gutenberg <button type="button" className="c-info" data-tip="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." aria-label="Group Gutenberg changes by label (Bug, Feature). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
-              <label className="c-query__check"><Checkbox checked={devNotes} onChange={(e) => setDevNotes(e.target.checked)} /> Group Core <button type="button" className="c-info" data-tip="Group Core changes by component (Editor, REST API). Off shows one flat list." aria-label="Group Core changes by component (Editor, REST API). Off shows one flat list." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
-              <label className="c-query__check"><Checkbox checked={devOnly} onChange={(e) => setDevOnly(e.target.checked)} /> Dev notes only <button type="button" className="c-info" data-tip="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." aria-label="Keep only Core tickets flagged dev-note / misc-dev-note / field-guide in the docs tracker. Perfect for Field Guide prep." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
-              <label className="c-query__check"><Checkbox checked={full} onChange={(e) => setFull(e.target.checked)} /> Full descriptions <button type="button" className="c-info" data-tip="Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast." aria-label="Show each Core change's full description from its GitHub commit body (cookie-free). The Automattic MCP enriches it with Trac ticket detail when available. Off = fast." onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>i</button></label>
-            </div>
-            <div className="c-query__go"><button className="c-query__reset" type="button" onClick={reset}>Reset</button><Button variant="primary" type="submit" disabled={busy}>Generate</Button></div>
-          </div>
-        </form>
-      </section>
+      <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
+        {!loaded ? (
+          <Flex align="center" justify="center" gap="2.5" color="ui.muted" fontSize="0.875rem" py="12">Loading milestones and branches…</Flex>
+        ) : (
+          <chakra.form onSubmit={submit}>
+            <Flex flexWrap="wrap" gap={{ base: '4', lg: '6' }} align="flex-end">
+              <Box flex="1.3 1 14rem"><DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} /></Box>
+              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>Milestone</chakra.label><Select block searchable ariaLabel="Milestone" value={milestone} onChange={onMilestone} options={milestones.map((v) => ({ value: v, label: v }))} placeholder="Select" /></Box>
+              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>Gutenberg branch</chakra.label><Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch} options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></Box>
+              <Box flex="1 1 10rem"><chakra.label css={fieldLabel}>Core branch</chakra.label><Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch} options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="Select" /></Box>
+            </Flex>
+            <Flex align={{ base: 'stretch', lg: 'center' }} justify="space-between" gap="4" mt="6" pt="4" borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
+              <Flex align="center" gap={{ base: '4', lg: '6' }} flexWrap="wrap">
+                {CHECKS.map(([val, set, label, tip]) => (
+                  <CChk.Root key={label} checked={val} colorPalette="brand" onCheckedChange={(d) => set(d.checked === true)}>
+                    <CChk.HiddenInput /><CChk.Control /><CChk.Label fontSize="0.875rem" fontWeight="500" whiteSpace="nowrap">{label} <Info tip={tip} /></CChk.Label>
+                  </CChk.Root>
+                ))}
+              </Flex>
+              <Flex align="center" gap="4" justify={{ base: 'flex-end', lg: 'initial' }}>
+                <chakra.button type="button" onClick={reset} bg="none" border="0" color="ui.muted" fontSize="0.8125rem" cursor="pointer" textDecoration="underline" p="1" _hover={{ color: 'navy' }}>Reset</chakra.button>
+                <UButton variant="primary" type="submit" disabled={busy} px="7.5" fontSize="1rem" fontWeight="700">Generate</UButton>
+              </Flex>
+            </Flex>
+          </chakra.form>
+        )}
+      </Box>
 
-      {status && <div className="c-status" role="status" aria-live="polite">{status.startsWith('__spin__') ? <><span className="u-spin" /> {status.slice(8)}</> : status}</div>}
+      {status && <Flex align="center" gap="2.5" my="6" mx="0.5" color="ui.muted" minH="1.25rem" fontSize="0.9688rem" role="status" aria-live="polite">{status.startsWith('__spin__') ? status.slice(8) : status}</Flex>}
 
       {data ? <Results data={data} since={since} until={until} />
         : (!status && (
-          <div className="c-results"><div className="c-empty"><img className="c-empty__icon" src="/brand/bulb.svg" alt="" /><h3 className="c-empty__title">No changelog yet</h3>
-            <p className="c-empty__text">Pick a date range and a milestone, then Generate. You get the counts, the source links, the grouped changelog, and the props.</p></div></div>
+          <Box mt="8"><Box textAlign="center" py="16" px="5">
+            <chakra.img src="/brand/bulb.svg" alt="" w="3.5rem" h="3.5rem" opacity="0.95" mb="4" mx="auto" />
+            <Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">No changelog yet</Heading>
+            <Text mx="auto" maxW="48ch" color="ui.muted" fontSize="0.9688rem" lineHeight="1.6">Pick a date range and a milestone, then Generate. You get the counts, the source links, the grouped changelog, and the props.</Text>
+          </Box></Box>
         ))}
     </>
   );
