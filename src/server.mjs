@@ -29,12 +29,12 @@ export function startServer({ port = 4321 } = {}) {
       res.end(PAGE);
       return;
     }
-    // Webpack bundles (SCSS -> main.css, client JS -> main.js), served from dist/.
-    if (url.pathname === '/assets/main.css' || url.pathname === '/assets/main.js') {
-      const isCss = url.pathname.endsWith('.css');
+    // Webpack bundle (client JS), served from dist/. Styles are Chakra UI
+    // (Emotion), injected at runtime — there is no CSS file.
+    if (url.pathname === '/assets/main.js') {
       try {
-        const body = readFileSync(join(DIR, '..', 'dist', isCss ? 'main.css' : 'main.js'), 'utf8');
-        res.writeHead(200, { 'Content-Type': (isCss ? 'text/css' : 'application/javascript') + '; charset=utf-8', 'Cache-Control': 'no-store' });
+        const body = readFileSync(join(DIR, '..', 'dist', 'main.js'), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(body);
       } catch {
         res.writeHead(500, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' });
@@ -367,7 +367,6 @@ const PAGE = `<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/main.css">
 </head>
 <body>
 <div id="root"></div>

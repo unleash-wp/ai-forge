@@ -8,10 +8,12 @@
 // matches the rest of Forge. Talk to the shell through useCore():
 //   { toast(msg), openSetup(), status, refreshStatus() }
 //
-// Styling is BEMIT (see CONTRIBUTING.md, "Frontend & styles"): reuse shared
-// classes like `c-filters` / `c-card`, or add your own in a co-located
-// client.scss. Copy this folder to tools/<your-id>/, edit plugin.json, build.
+// Styling is Chakra UI v3 (see CONTRIBUTING.md, "Frontend & styles"): compose
+// Chakra primitives and style with the `ui.*` semantic tokens + colorPalette
+// "brand" - no CSS file. Copy this folder to tools/<your-id>/, edit plugin.json,
+// build.
 import { useState } from 'react';
+import { Box, Text } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
 import { Button } from '../../src/client/ui';
 
@@ -20,12 +22,14 @@ export default function MyTool() {
   const [n, setN] = useState(0);
 
   return (
-    <section className="c-filters">
-      <p>Your tool UI goes here. Compose it from the shared components and the
-        design-system classes (<code>c-filters</code>, <code>c-card</code>, …).</p>
+    <Box bg="ui.surface" borderColor="ui.border" borderWidth="1px" rounded="forge" p={4}>
+      <Text color="ui.muted" mb={3}>
+        Your tool UI goes here. Compose it from the shared components and Chakra
+        primitives, styled with <code>ui.*</code> tokens.
+      </Text>
       <Button variant="primary" onClick={() => { setN(n + 1); core.toast('Clicked ' + (n + 1)); }}>
         Clicked {n} times
       </Button>
-    </section>
+    </Box>
   );
 }

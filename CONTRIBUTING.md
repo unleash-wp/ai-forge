@@ -63,11 +63,12 @@ Default-export a React component. The shell mounts it in `<main>` and hands it
 the core services through `useCore()`:
 
 ```jsx
+import { Box } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
 
 export default function MyTool() {
   const core = useCore(); // { toast, openSetup, status, refreshStatus }
-  return <section className="c-filters">…your UI…</section>;
+  return <Box>…your UI…</Box>;
 }
 ```
 
@@ -85,10 +86,10 @@ import { ToolIcon } from '../../src/client/icons.jsx';
 - `Select` - a custom dropdown that matches the design system; add `searchable`
   for long lists, `block` for full width. Keyboard + screen-reader accessible.
 
-You can also reuse the shared design-system classes (`c-filters`, `c-card`, `c-empty`,
-…) and add your own in `tools/<id>/client.scss` (see **Frontend & styles**
-below). The shell owns the header, rail, setup wizard and toast; don't re-render
-those. `tools/_template/client.jsx` is a working example that uses these.
+Style with Chakra props + the shared design tokens (`bg="ui.surface"`,
+`color="ui.heading"`, `colorPalette="brand"`) — see **Frontend & styles** below.
+The shell owns the header, rail, setup wizard and toast; don't re-render those.
+`tools/_template/client.jsx` is a working example that uses these.
 
 ### 3. `server.mjs` - optional backend
 
@@ -114,60 +115,58 @@ skipped.
 
 ## Frontend & styles
 
-Styles are **ITCSS** (Inverted Triangle CSS) with **BEMIT** naming. Layers load
-generic → specific, low specificity → high, so nothing fights the cascade. One
-primary block per file; its tightly-coupled sub-blocks may share the file.
+Styling is **Chakra UI v3** (Emotion under the hood). There is no CSS/SCSS file:
+styles are injected at runtime from the theme + the props you write on
+components. There is nothing to import, no cascade to fight, no class names to
+keep unique. `npm run build` emits `dist/main.js` only — no `main.css`.
 
-```
-src/styles/
-  settings/    design tokens (CSS variables), light + dark — no output
-  tools/       Sass mixins (the mq() breakpoint helper) — no output
-  generic/     resets that touch everything
-  elements/    bare HTML tags (body, a, input, button …) — the ONLY tag styling
-  objects/     layout primitives (.o-shell, .o-workspace)
-  components/  the UI, one primary c- block per file (_header, _select, _plugins …)
-  utilities/   single-purpose helpers (.u-tnum, .u-spin, .u-note)
-  main.scss    the @use manifest — the only place layers are wired together
-```
+**One design system, in `src/client/theme.js`.** It maps the UnleashWP brand
+(navy, yellow) and the light/dark surface/text palette to Chakra tokens via
+`createSystem` + `defineConfig`. Two token families you'll use constantly:
 
-**Namespaces (BEMIT):** `o-` objects, `c-` components, `u-` utilities. A block is
-`c-block`, an element `c-block__element`, a variant `c-block--modifier`.
+- **`ui.*` semantic tokens** — colour-mode-aware, so you never hard-code a hex or
+  write a dark-mode branch. `ui.surface`, `ui.sunk`, `ui.border`, `ui.heading`,
+  `ui.text`, `ui.muted`, `ui.primary`, `ui.accent`, `ui.good`, `ui.bad`, plus the
+  `sm`/`md`/`lg` shadow tokens. Each already resolves to the right value in light
+  and dark.
+- **`colorPalette="brand"`** — hand it to any interactive Chakra component
+  (`Button`, `Checkbox`, `Tabs`, `Badge`) to theme it in brand navy.
 
-**State is `is-` / `has-`**, applied alongside the block class, never a loose
-word: `.c-tab.is-active`, `.c-wizard.is-open`, `.c-filters.is-loading`,
-`.c-calendar__cell.is-start`. Use a `--modifier` only for a fixed variant chosen
-by the component's API (`.c-button--primary`, `.c-select--block`), not for a
-runtime toggle.
+```jsx
+import { Box, Heading, Text, Button } from '@chakra-ui/react';
 
-**No tag selectors inside components.** Every styled element gets a class — write
-`.c-wizard__title` on the `<h2>`, not `.c-wizard h2`; `.c-changelog-list__item`
-on the `<li>`, not `li`. Bare-tag styling belongs to the `elements/` layer only.
-The one exception: SVGs injected by the icon/logo components (there is no element
-to class), targeted as `.c-logo svg`.
-
-```scss
-@use '../tools/mixins' as *;
-
-.c-rail {
-  display: flex;
-  &__cap { text-transform: uppercase; }        // .c-rail__cap
-  &.is-collapsed { flex-direction: row; }        // state, with the block class
-  @include mq('lg') { flex-direction: row; }     // breakpoints: sm / md / lg
-}
+<Box bg="ui.surface" borderColor="ui.border" borderWidth="1px" rounded="forge" p={4}>
+  <Heading size="md" color="ui.heading">Title</Heading>
+  <Text color="ui.muted">Body</Text>
+  <Button colorPalette="brand">Do it</Button>
+</Box>
 ```
 
-**Add a component:** drop a `_name.scss` in `components/`, write one `c-` block,
-then add `@use 'components/name';` to `main.scss`. Colours come from
-`var(--token)` only (never a raw hex); prefer a spacing token (`--s1`…`--s8`)
-over a magic number.
+**Reach for the right primitive** instead of nesting `Box`es: `Stack`/`HStack`
+for flow, `Grid`/`SimpleGrid` for columns, `Flex` for explicit layout. Responsive
+props are mobile-first objects — `columns={{ base: 1, md: 2 }}`,
+`direction={{ base: 'column', md: 'row' }}`. The theme defines custom breakpoints
+`sm 560 / md 640 / lg 780` to match the old layout.
 
-**A tool owns its styles.** Shell + design-system primitives (header, rail,
-filters, `Select`, `Button`, wizard …) stay in `src/styles/`. A tool's own look
-lives beside its code under `tools/<id>/styles/` (same one-primary-block rule), wired by a
-`tools/<id>/client.scss` manifest that the tool's `client.jsx` imports. The
-changelog tool is the worked example (`tools/changelog/styles/*` +
-`tools/changelog/client.scss`). Webpack bundles every imported `.scss` into the
-single `dist/main.css`, so `c-` block names must stay unique across tools.
+**Shared primitives live in `src/client/ui/`** (`Button`, `Select`, `TextInput`,
+`TextArea`, `Checkbox`) — thin wrappers over Chakra that fix the app's API and
+defaults. Import those rather than raw Chakra inputs so every tool matches. The
+shell components (`Header`, `Rail`, `Footer`, `SetupWizard`, `Installer`,
+`PluginsManager`) are plain Chakra components under `src/client/components/`.
+
+**The `Provider`** (`src/client/ui/Provider.jsx`) wraps the app with
+`ChakraProvider value={system}` + `next-themes` for the light/dark toggle
+(`defaultTheme="system"`). It's mounted once in `index.jsx`; a tool never touches
+it.
+
+**Adding a token or a variant:** extend `theme.js` (`tokens` for a raw value,
+`semanticTokens` for a light/dark pair). For a reusable styled component with
+variants, prefer a Chakra recipe over ad-hoc props. Keep raw hex out of
+components — if you need a new colour, name it in the theme first.
+
+Only the browser bundle depends on Chakra/Emotion (they're `devDependencies`,
+bundled into `dist/main.js`). The core CLI stays zero-dependency vanilla Node and
+never imports any of this.
 
 ## Quality gate
 

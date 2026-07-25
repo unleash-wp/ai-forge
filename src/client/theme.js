@@ -2,21 +2,11 @@
 // light/dark surface/text palette to Chakra tokens, so components style
 // themselves with semantic tokens (`ui.surface`, `ui.heading`, …) that adapt to
 // colour mode automatically. JS (no TypeScript); no typegen needed.
-//
-// preflight is off while the app is mid-migration from the hand-written SCSS —
-// it stops Chakra's global reset from clobbering the not-yet-migrated BEM
-// components. Flip it back on (drop the line) once the SCSS is fully removed.
 import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react';
 
 const config = defineConfig({
-  preflight: false,
   globalCss: {
     'html, body': { fontFamily: 'body', background: 'ui.bg', color: 'ui.text' },
-    // preflight is off, so add just the border reset Chakra components rely on
-    // (makes `borderWidth` render without an explicit border-style). Low
-    // specificity, so the SCSS components' own borders still win during the
-    // migration.
-    '*, *::before, *::after': { borderWidth: '0', borderStyle: 'solid', borderColor: 'ui.border' },
   },
   theme: {
     // Match the old SCSS mq() breakpoints so responsive props line up.
