@@ -105,63 +105,63 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
 
   return (
     <>
-      {busy && <div className="warn" role="status" aria-live="polite">{busy}</div>}
-      {err && <div className="warn warn--bad" role="alert">{err}</div>}
+      {busy && <div className="c-warn" role="status" aria-live="polite">{busy}</div>}
+      {err && <div className="c-warn c-warn--error" role="alert">{err}</div>}
 
-      <div className="plugins__install">
-        <span className="plugins__install-label">Add a tool</span>
-        <form onSubmit={(e) => { e.preventDefault(); installUrl(); }}>
-          <TextInput value={source} onChange={(e) => setSource(e.target.value)} placeholder="github:owner/repo or https://github.com/owner/repo" spellCheck="false" disabled={!!busy} />
+      <div className="c-plugins__install">
+        <span className="c-plugins__install-label">Add a tool</span>
+        <form className="c-plugins__install-form" onSubmit={(e) => { e.preventDefault(); installUrl(); }}>
+          <TextInput className="c-plugins__install-input" value={source} onChange={(e) => setSource(e.target.value)} placeholder="github:owner/repo or https://github.com/owner/repo" spellCheck="false" disabled={!!busy} />
           <Button variant="primary" size="sm" type="submit" disabled={!!busy}>Install</Button>
           <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => fileRef.current && fileRef.current.click()}>Upload .zip</Button>
           <input ref={fileRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={(e) => uploadZip(e.target.files[0])} />
         </form>
       </div>
-      <p className="plugins__trust">Installs run the tool's code on this machine. Only install tools you trust. <a href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Build your own →</a></p>
+      <p className="c-plugins__trust">Installs run the tool's code on this machine. Only install tools you trust. <a href="https://github.com/unleash-wp/wp-release-helper/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Build your own →</a></p>
 
-      <div className="plugins__bar">
-        <div className="segmented">
-          <button className={'segmented__item' + (filter === 'all' ? ' segmented__item--on' : '')} type="button" onClick={() => setFilter('all')}>All <span>{plugins.length}</span></button>
-          <button className={'segmented__item' + (filter === 'inactive' ? ' segmented__item--on' : '')} type="button" onClick={() => setFilter('inactive')}>Inactive <span>{inactiveCount}</span></button>
+      <div className="c-plugins__bar">
+        <div className="c-segmented">
+          <button className={'c-segmented__item' + (filter === 'all' ? ' is-active' : '')} type="button" onClick={() => setFilter('all')}>All <span className="c-segmented__count">{plugins.length}</span></button>
+          <button className={'c-segmented__item' + (filter === 'inactive' ? ' is-active' : '')} type="button" onClick={() => setFilter('inactive')}>Inactive <span className="c-segmented__count">{inactiveCount}</span></button>
         </div>
-        <div className="plugins__bar-right">
-          {updMsg && <span className="plugins__upd-msg">{updMsg}</span>}
+        <div className="c-plugins__bar-right">
+          {updMsg && <span className="c-plugins__upd-msg">{updMsg}</span>}
           <Button variant="ghost" size="sm" onClick={checkUpdates}>Check for updates</Button>
-          <TextInput className="plugins__search" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
+          <TextInput className="c-plugins__search" value={iq} onChange={(e) => setIq(e.target.value)} placeholder="Search installed tools…" spellCheck="false" />
         </div>
       </div>
 
       {selectableIds.length > 0 && (
-        <div className="bulk">
-          <label className="bulk__all"><Checkbox checked={allSelected} onChange={toggleAll} /> Select all</label>
+        <div className="c-bulk">
+          <label className="c-bulk__all"><Checkbox checked={allSelected} onChange={toggleAll} /> Select all</label>
           <Select value={bulk} onChange={setBulk} options={BULK_OPTIONS} placeholder="Bulk actions" ariaLabel="Bulk actions" disabled={!!busy} />
           <Button variant="ghost" size="sm" onClick={applyBulk} disabled={!bulk || !selected.size || !!busy}>Apply</Button>
-          {selected.size > 0 && <span className="bulk__count">{selected.size} selected</span>}
+          {selected.size > 0 && <span className="c-bulk__count">{selected.size} selected</span>}
         </div>
       )}
 
-      <div className="plugin-list">
+      <div className="c-plugin-list">
         {shown.map((p) => {
           const up = upFor(p.id);
           const active = p.enabled !== false;
           const core = p.id === 'changelog';
           return (
-            <div className={'plugin-row' + (active ? '' : ' plugin-row--inactive')} key={p.id}>
+            <div className={'c-plugin-row' + (active ? '' : ' is-inactive')} key={p.id}>
               {selectableIds.length > 0 && (core
-                ? <span className="plugin-row__cbx plugin-row__cbx--spacer" aria-hidden="true" />
-                : <Checkbox className="plugin-row__cbx" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
-              <span className="plugin-row__icon"><ToolIcon name={p.icon} size={20} /></span>
-              <div className="plugin-row__info">
-                <div className="plugin-row__title">
-                  <h3>{p.name}</h3>
-                  {core && <span className="chip">Core</span>}
-                  {!active && <span className="chip chip--off">Inactive</span>}
-                  {up && <span className="chip chip--up">Update available</span>}
+                ? <span className="c-plugin-row__cbx c-plugin-row__cbx--spacer" aria-hidden="true" />
+                : <Checkbox className="c-plugin-row__cbx" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)} aria-label={'Select ' + p.name} />)}
+              <span className="c-plugin-row__icon"><ToolIcon name={p.icon} size={20} /></span>
+              <div className="c-plugin-row__info">
+                <div className="c-plugin-row__title">
+                  <h3 className="c-plugin-row__name">{p.name}</h3>
+                  {core && <span className="c-chip">Core</span>}
+                  {!active && <span className="c-chip c-chip--off">Inactive</span>}
+                  {up && <span className="c-chip c-chip--up">Update available</span>}
                 </div>
-                <p className="plugin-row__desc">{p.description}</p>
-                <div className="plugin-row__sub">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</div>
+                <p className="c-plugin-row__desc">{p.description}</p>
+                <div className="c-plugin-row__sub">Version {p.version} · By {p.author || 'unknown'} · {p.price === 'free' ? 'Free' : p.price}</div>
               </div>
-              <div className="plugin-row__actions">
+              <div className="c-plugin-row__actions">
                 {up && !core && <Button variant="primary" size="sm" disabled={!!busy} onClick={() => updateOne(p.id, p.name)}>Update to {up.latest}</Button>}
                 {active && <Button variant="ghost" size="sm" onClick={() => onOpen(p.id)}>Open</Button>}
                 {!core && <Button variant="ghost" size="sm" disabled={!!busy} onClick={() => toggle(p.id, !active)}>{active ? 'Deactivate' : 'Activate'}</Button>}
@@ -170,7 +170,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
             </div>
           );
         })}
-        {shown.length === 0 && <div className="plugin-list__empty">No tools match.</div>}
+        {shown.length === 0 && <div className="c-plugin-list__empty">No tools match.</div>}
       </div>
     </>
   );

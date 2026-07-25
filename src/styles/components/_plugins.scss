@@ -1,7 +1,7 @@
 // Plugins manager: install bar, filter/search bar, bulk bar, and the tool list.
 @use '../tools/mixins' as *;
 
-.plugins {
+.c-plugins {
   &__trust { font-size: 0.75rem; color: var(--muted); margin: var(--s2) 0 var(--s5); }
 
   &__install {
@@ -14,22 +14,22 @@
     border: 1px solid var(--border);
     border-radius: 0.75rem;
     padding: var(--s3) var(--s4);
-
-    form {
-      display: flex;
-      gap: var(--s2);
-      align-items: center;
-      flex: 1;
-      min-width: 18rem;
-      margin: 0;
-
-      @include mq('md') { min-width: 0; }
-    }
-
-    input[type="text"] { flex: 1; }
   }
 
   &__install-label { font-weight: 600; color: var(--heading); flex: none; letter-spacing: -.01em; }
+
+  &__install-form {
+    display: flex;
+    gap: var(--s2);
+    align-items: center;
+    flex: 1;
+    min-width: 18rem;
+    margin: 0;
+
+    @include mq('md') { min-width: 0; }
+  }
+
+  &__install-input { flex: 1; }
 
   &__bar {
     display: flex;
@@ -48,7 +48,7 @@
 }
 
 // Segmented control (All / Inactive filter).
-.segmented {
+.c-segmented {
   display: inline-flex;
   background: var(--sunk);
   border: 1px solid var(--border);
@@ -70,24 +70,22 @@
     transition: color .12s, background .12s;
 
     &:hover { color: var(--text); }
+    &.is-active { background: var(--surface); color: var(--heading); box-shadow: var(--shadow-sm); font-weight: 600; }
+    &.is-active .c-segmented__count { color: var(--primary); background: var(--ghost-hover); }
+  }
 
-    &--on { background: var(--surface); color: var(--heading); box-shadow: var(--shadow-sm); font-weight: 600; }
-
-    span {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      color: var(--muted);
-      background: var(--tagbg);
-      padding: 0.0625rem 0.4375rem;
-      border-radius: 999px;
-    }
-
-    &--on span { color: var(--primary); background: var(--ghost-hover); }
+  &__count {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--tagbg);
+    padding: 0.0625rem 0.4375rem;
+    border-radius: 999px;
   }
 }
 
 // Bulk management bar (select all + bulk action).
-.bulk {
+.c-bulk {
   display: flex;
   align-items: center;
   gap: var(--s3);
@@ -99,7 +97,7 @@
 }
 
 // The installed-tools list.
-.plugin-list {
+.c-plugin-list {
   border: 1px solid var(--border);
   border-radius: 0.875rem;
   background: var(--surface);
@@ -109,7 +107,7 @@
   &__empty { padding: var(--s7) var(--s5); text-align: center; color: var(--muted); font-size: 0.875rem; }
 }
 
-.plugin-row {
+.c-plugin-row {
   display: flex;
   align-items: center;
   gap: var(--s4);
@@ -119,9 +117,9 @@
   & + & { border-top: 1px solid var(--border); }
   &:hover { background: var(--sunk); }
 
-  &--inactive {
+  &.is-inactive {
     opacity: .6;
-    .plugin-row__icon { background: var(--slate); box-shadow: none; }
+    .c-plugin-row__icon { background: var(--slate); box-shadow: none; }
   }
 
   &__icon {
@@ -135,19 +133,12 @@
     background: linear-gradient(145deg, #2a3f6f, var(--navy-deep));
     box-shadow: 0 2px 8px rgba(32, 49, 89, .28), inset 0 1px 0 rgba(255, 255, 255, .08);
 
-    svg { width: 1.3125rem; height: 1.3125rem; }
+    svg { width: 1.3125rem; height: 1.3125rem; } // injected icon
   }
 
   &__info { flex: 1; min-width: 0; }
-
-  &__title {
-    display: flex;
-    align-items: center;
-    gap: var(--s2);
-
-    h3 { margin: 0; font-size: 0.9375rem; font-weight: 600; color: var(--heading); letter-spacing: -.01em; }
-  }
-
+  &__title { display: flex; align-items: center; gap: var(--s2); }
+  &__name { margin: 0; font-size: 0.9375rem; font-weight: 600; color: var(--heading); letter-spacing: -.01em; }
   &__desc { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   &__sub { margin-top: 0.3125rem; font-size: 0.6875rem; color: var(--muted); letter-spacing: .01em; }
 

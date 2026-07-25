@@ -9,7 +9,7 @@ export default function UpdateNote() {
   }, []);
   if (!updates.length) return null;
   return (
-    <div className="warn">
+    <div className="c-warn">
       {updates.map((u) => (
         <div key={u.id}>Update available: <b>{u.name}</b> {u.current} → {u.latest}. <a href={u.url} target="_blank" rel="noopener">Release notes</a></div>
       ))}

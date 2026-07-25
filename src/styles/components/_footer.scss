@@ -1,5 +1,5 @@
 // Site footer: attribution + independence note + contribute link.
-.footer {
+.c-footer {
   border-top: 1px solid var(--border);
   color: var(--muted);
   font-size: 0.6875rem;
@@ -19,7 +19,7 @@
   &__left { display: flex; flex-direction: column; gap: 0.125rem; }
   &__note { opacity: .8; }
 
-  a {
+  &__link {
     color: var(--muted);
     font-weight: 600;
 

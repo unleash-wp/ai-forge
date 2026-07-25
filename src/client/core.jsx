@@ -22,7 +22,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastCtx.Provider value={toast}>
       {children}
-      <div className={'toast' + (msg ? ' toast--show' : '')} role="status" aria-live="polite">{msg ? '✓ ' + msg : ''}</div>
+      <div className={'c-toast' + (msg ? ' is-visible' : '')} role="status" aria-live="polite">{msg ? '✓ ' + msg : ''}</div>
     </ToastCtx.Provider>
   );
 }

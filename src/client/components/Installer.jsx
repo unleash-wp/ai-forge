@@ -57,61 +57,61 @@ export default function Installer({ status, onDone }) {
   }
 
   return (
-    <div className="installer">
-      <div className="installer__card">
-        <div className="installer__head">
-          <span className="logo" aria-label="UnleashWP" dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
-          <div className="installer__dots">
-            <span className={'installer__dot' + (step >= 1 ? ' installer__dot--active' : '')} />
-            <span className={'installer__dot' + (step >= 2 ? ' installer__dot--active' : '')} />
+    <div className="c-installer">
+      <div className="c-installer__card">
+        <div className="c-installer__head">
+          <span className="c-logo" aria-label="UnleashWP" dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
+          <div className="c-installer__dots">
+            <span className={'c-installer__dot' + (step >= 1 ? ' is-active' : '')} />
+            <span className={'c-installer__dot' + (step >= 2 ? ' is-active' : '')} />
           </div>
         </div>
-        <div className="installer__body">
+        <div className="c-installer__body">
           {step === 1 && (
-            <div className="installer__step">
-              <span className="installer__kicker">Step 1 of 2</span>
-              <h2>Connect GitHub</h2>
-              <p>Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.</p>
+            <div className="c-installer__step">
+              <span className="c-installer__kicker">Step 1 of 2</span>
+              <h2 className="c-installer__step-title">Connect GitHub</h2>
+              <p className="c-installer__step-desc">Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.</p>
               {ghDetected ? (
-                <div className="installer__ok"><span>✓</span> GitHub ready · {status.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token'} · 5000/h</div>
+                <div className="c-installer__ok"><span>✓</span> GitHub ready · {status.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token'} · 5000/h</div>
               ) : (
                 <div>
-                  <ol><li>Detected automatically if the <code>gh</code> CLI is logged in, or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it:</li></ol>
+                  <ol className="c-installer__step-list"><li className="c-installer__step-item">Detected automatically if the <code>gh</code> CLI is logged in, or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it:</li></ol>
                   <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ margin: 0 }}>
                     <TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder="ghp_… or github_pat_…  (optional, skip for 60/h)" autoComplete="off" spellCheck="false" />
                   </form>
-                  <span className={'msg' + (ghMsg.kind ? ' msg--' + ghMsg.kind : '')}>{ghMsg.text}</span>
+                  <span className={'c-message' + (ghMsg.kind ? ' is-' + ghMsg.kind : '')}>{ghMsg.text}</span>
                 </div>
               )}
             </div>
           )}
           {step === 2 && (
-            <div className="installer__step">
-              <span className="installer__kicker">Step 2 of 2</span>
-              <h2>Connect WordPress.org</h2>
-              <p>Needed for <b>deep</b>: full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
+            <div className="c-installer__step">
+              <span className="c-installer__kicker">Step 2 of 2</span>
+              <h2 className="c-installer__step-title">Connect WordPress.org</h2>
+              <p className="c-installer__step-desc">Needed for <b>deep</b>: full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
               {browser && (
-                <div className="quick-import">
-                  <span className="quick-import__label">Quick import from your browser <span className="quick-import__note">(you must be logged in there)</span></span>
-                  <div className="quick-import__buttons"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></div>
+                <div className="c-quick-import">
+                  <span className="c-quick-import__label">Quick import from your browser <span className="c-quick-import__note">(you must be logged in there)</span></span>
+                  <div className="c-quick-import__buttons"><Button variant="ghost" size="sm" onClick={importCookie}>Import from {BROWSER_NAMES[browser]}</Button></div>
                 </div>
               )}
-              <details className="quick-import__manual"><summary>Or paste it manually</summary>
-                <ol>
-                  <li><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
-                  <li>DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
+              <details className="c-quick-import__manual"><summary className="c-quick-import__summary">Or paste it manually</summary>
+                <ol className="c-quick-import__steps">
+                  <li className="c-quick-import__step"><a href="https://wordpress.org/" target="_blank" rel="noopener">Log in to wordpress.org</a>.</li>
+                  <li className="c-quick-import__step">DevTools → Application → Cookies → <code>wordpress.org</code> → copy <code>wporg_logged_in</code> + <code>wporg_sec</code> as <code>name=value; name=value</code>.</li>
                 </ol>
                 <TextArea rows="3" value={cookie} onChange={(e) => setCookie(e.target.value)} placeholder="wporg_logged_in=…; wporg_sec=…" />
               </details>
-              <span className={'msg' + (ckMsg.kind ? ' msg--' + ckMsg.kind : '')}>{ckMsg.text}</span>
+              <span className={'c-message' + (ckMsg.kind ? ' is-' + ckMsg.kind : '')}>{ckMsg.text}</span>
               {escape && (
-                <div className="installer__escape">Trac isn't reachable right now (bot wall or expired cookie). You can <button className="installer__back" type="button" onClick={finish}>continue anyway</button>. The tool runs cookie-free and you can add the cookie later in Setup.</div>
+                <div className="c-installer__escape">Trac isn't reachable right now (bot wall or expired cookie). You can <button className="c-installer__back" type="button" onClick={finish}>continue anyway</button>. The tool runs cookie-free and you can add the cookie later in Setup.</div>
               )}
             </div>
           )}
         </div>
-        <div className="installer__foot">
-          {step !== 1 && <button className="installer__back" type="button" onClick={() => setStep(1)}>Back</button>}
+        <div className="c-installer__foot">
+          {step !== 1 && <button className="c-installer__back" type="button" onClick={() => setStep(1)}>Back</button>}
           <Button variant="primary" onClick={primary}>{step === 1 ? 'Continue' : 'Finish setup'}</Button>
         </div>
       </div>

@@ -1,21 +1,20 @@
-// ITCSS · Utilities — highest-specificity, single-purpose helpers and shared
-// state. Kept tiny on purpose; most styling belongs in a component partial.
-.tnum { font-variant-numeric: tabular-nums; }
+// ITCSS · Utilities — single-purpose helpers, `u-` namespace, highest specificity.
+.u-tnum { font-variant-numeric: tabular-nums; }
 
 // Muted supporting text used across the changelog, dev-notes and tracker hints.
-.note { color: var(--muted); font-size: 0.8125rem; }
+.u-note { color: var(--muted); font-size: 0.8125rem; }
 
 // Spinner shown during any async fetch.
-.spin {
+.u-spin {
   width: 0.9375rem;
   height: 0.9375rem;
   border: 2px solid var(--border);
   border-top-color: var(--navy);
   border-radius: 50%;
-  animation: sp .7s linear infinite;
+  animation: u-spin-rotate .7s linear infinite;
 }
 
-@keyframes sp { to { transform: rotate(360deg); } }
+@keyframes u-spin-rotate { to { transform: rotate(360deg); } }
 
-// The first-run installer locks background scroll while its overlay is up.
-body.installing { overflow: hidden; }
+// State: the first-run installer locks background scroll while its overlay is up.
+body.is-installing { overflow: hidden; }

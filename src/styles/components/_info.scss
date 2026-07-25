@@ -1,5 +1,5 @@
 // Small "i" affordance with a CSS-only tooltip driven by data-tip.
-.info {
+.c-info {
   display: inline-grid;
   place-items: center;
   width: 0.875rem;
@@ -39,15 +39,4 @@
   }
 
   &:hover::after, &:focus-visible::after { opacity: 1; visibility: visible; }
-}
-
-// Status line under the query form during a fetch.
-#status {
-  margin: var(--s5) 0.125rem;
-  color: var(--muted);
-  min-height: 1.25rem;
-  font-size: 0.9688rem;
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
 }

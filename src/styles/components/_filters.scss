@@ -1,7 +1,7 @@
-// Panel that wraps the query form. --loading swaps the form for a spinner row.
+// Panel wrapping the query form. is-loading swaps the form for a spinner row.
 @use '../tools/mixins' as *;
 
-.filters {
+.c-filters {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r);
@@ -21,8 +21,8 @@
     padding: var(--s7) 0;
   }
 
-  &--loading {
-    .filters__loading { display: flex; }
-    > form { display: none; }
+  &.is-loading {
+    .c-filters__loading { display: flex; }
+    .c-query { display: none; }
   }
 }

@@ -1,8 +1,7 @@
-// Compact tool rail (left): one Metro tile per installed tool. Collapses to a
-// horizontal row under the header on tablet.
+// Compact tool rail (left). Collapses to a horizontal row on tablet.
 @use '../tools/mixins' as *;
 
-.rail {
+.c-rail {
   position: sticky;
   top: 5.125rem;
   margin-top: var(--s6);
@@ -30,7 +29,7 @@
   }
 }
 
-.tool {
+.c-tool {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -52,7 +51,7 @@
   &__ic { display: grid; place-items: center; }
   &__name { font: 500 0.5938rem/1.25 var(--font); }
 
-  &--active {
+  &.is-active {
     background: var(--navy);
     color: #fff;
     box-shadow: var(--shadow-sm);
@@ -60,6 +59,8 @@
 
     &:hover { transform: none; }
   }
+
+  // --plugins is a marker for the manager tile; it inherits the base tool look.
 
   @include mq('lg') { flex: 1 1 7.5rem; height: 4.75rem; }
 }

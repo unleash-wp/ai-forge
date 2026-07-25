@@ -114,48 +114,60 @@ skipped.
 
 ## Frontend & styles
 
-Styles live in `src/styles/`, organised as **ITCSS** (Inverted Triangle CSS):
-layers load from generic to specific, low specificity to high, so nothing has to
-fight the cascade.
+Styles are **ITCSS** (Inverted Triangle CSS) with **BEMIT** naming. Layers load
+generic → specific, low specificity → high, so nothing fights the cascade. One
+BEM block per file — no exceptions.
 
 ```
 src/styles/
-  settings/    design tokens (CSS variables), light + dark
-  tools/       Sass mixins (e.g. the mq() breakpoint helper)
-  generic/     resets
-  elements/    bare tags (body, a, input, button …)
-  objects/     layout primitives (.shell)
-  components/  one BEM block per file (header, rail, wizard, select …)
-  utilities/   single-purpose helpers (.tnum, .spin, .note)
+  settings/    design tokens (CSS variables), light + dark — no output
+  tools/       Sass mixins (the mq() breakpoint helper) — no output
+  generic/     resets that touch everything
+  elements/    bare HTML tags (body, a, input, button …) — the ONLY tag styling
+  objects/     layout primitives (.o-shell, .o-workspace)
+  components/  the UI, one c- block per file (_header, _rail, _wizard, _select …)
+  utilities/   single-purpose helpers (.u-tnum, .u-spin, .u-note)
   main.scss    the @use manifest — the only place layers are wired together
 ```
 
-Naming is **BEM**: `.block`, `.block__element`, `.block--modifier`. State and
-variants are modifiers (`.tab--active`, `.pill--ok`), never loose words. Nest
-child tags and responsive rules inside the block:
+**Namespaces (BEMIT):** `o-` objects, `c-` components, `u-` utilities. A block is
+`c-block`, an element `c-block__element`, a variant `c-block--modifier`.
+
+**State is `is-` / `has-`**, applied alongside the block class, never a loose
+word: `.c-tab.is-active`, `.c-wizard.is-open`, `.c-filters.is-loading`,
+`.c-calendar__cell.is-start`. Use a `--modifier` only for a fixed variant chosen
+by the component's API (`.c-button--primary`, `.c-select--block`), not for a
+runtime toggle.
+
+**No tag selectors inside components.** Every styled element gets a class — write
+`.c-wizard__title` on the `<h2>`, not `.c-wizard h2`; `.c-changelog-list__item`
+on the `<li>`, not `li`. Bare-tag styling belongs to the `elements/` layer only.
+The one exception: SVGs injected by the icon/logo components (there is no element
+to class), targeted as `.c-logo svg`.
 
 ```scss
 @use '../tools/mixins' as *;
 
-.rail {
+.c-rail {
   display: flex;
-  &__cap { text-transform: uppercase; }       // .rail__cap
-  &--collapsed { flex-direction: row; }        // .rail--collapsed
-  @include mq('lg') { flex-direction: row; }   // breakpoints: sm / md / lg
+  &__cap { text-transform: uppercase; }        // .c-rail__cap
+  &.is-collapsed { flex-direction: row; }        // state, with the block class
+  @include mq('lg') { flex-direction: row; }     // breakpoints: sm / md / lg
 }
 ```
 
-**Add a component:** drop a `_name.scss` in `components/`, write one block, then
-add `@use 'components/name';` to `main.scss`. Colours come from `var(--token)`
-only (never hard-code a hex); prefer a spacing token (`--s1`…`--s8`) over a magic
-number.
+**Add a component:** drop a `_name.scss` in `components/`, write one `c-` block,
+then add `@use 'components/name';` to `main.scss`. Colours come from
+`var(--token)` only (never a raw hex); prefer a spacing token (`--s1`…`--s8`)
+over a magic number.
 
-**A tool owns its styles.** Shell and design-system primitives (header, rail,
+**A tool owns its styles.** Shell + design-system primitives (header, rail,
 filters, `Select`, `Button`, wizard …) stay in `src/styles/`. A tool's own look
-lives beside its code in `tools/<id>/client.scss`, imported at the top of its
-`client.jsx`. The changelog tool is the worked example
-(`tools/changelog/client.scss`). Webpack bundles every imported `.scss` into the
-single `dist/main.css`, so BEM block names must stay unique across tools.
+lives beside its code: one block per file under `tools/<id>/styles/`, wired by a
+`tools/<id>/client.scss` manifest that the tool's `client.jsx` imports. The
+changelog tool is the worked example (`tools/changelog/styles/*` +
+`tools/changelog/client.scss`). Webpack bundles every imported `.scss` into the
+single `dist/main.css`, so `c-` block names must stay unique across tools.
 
 ## Quality gate
 

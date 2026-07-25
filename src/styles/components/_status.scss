@@ -1,0 +1,10 @@
+// The fetch-status line under the query form (spinner + message).
+.c-status {
+  margin: var(--s5) 0.125rem;
+  color: var(--muted);
+  min-height: 1.25rem;
+  font-size: 0.9688rem;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
