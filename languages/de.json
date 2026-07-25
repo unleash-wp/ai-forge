@@ -69,6 +69,7 @@
   "Run UnleashWP Forge from %s.": "UnleashWP Forge aus %s starten.",
   "Register Forge as an MCP server in %s.": "Forge als MCP-Server in %s registrieren.",
   "Add Forge as an MCP server (command uwp, args mcp) in %s.": "Forge als MCP-Server hinzufügen (Befehl uwp, Args mcp) in %s.",
+  "Add Forge as an MCP server in %s.": "Forge als MCP-Server in %s hinzufügen.",
   "Copy command": "Befehl kopieren",
   "Copy": "Kopieren",
   "Copied": "Kopiert",

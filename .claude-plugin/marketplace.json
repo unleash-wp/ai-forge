@@ -1,0 +1,12 @@
+{
+  "name": "unleashwp-forge",
+  "owner": { "name": "UnleashWP" },
+  "description": "UnleashWP Forge — WordPress release tooling for Claude Code and Codex.",
+  "plugins": [
+    {
+      "name": "forge",
+      "source": "./",
+      "description": "Forge's MCP tools + skills: WordPress Core/Gutenberg release changelogs, milestones and branches — queryable live from your AI coding agent."
+    }
+  ]
+}
