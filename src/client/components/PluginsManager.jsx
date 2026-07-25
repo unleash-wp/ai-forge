@@ -6,8 +6,19 @@
 // after a server rebuild, gated behind the user's own action + a trust note.
 import { useState, useEffect, useRef } from 'react';
 import { ToolIcon } from '../icons.jsx';
+import { useCore } from '../core.jsx';
 import { Button, Select, TextInput, Checkbox } from '../ui';
 import { Badge, Box, Flex, HStack, Link, Text, chakra } from '@chakra-ui/react';
+
+// Small dot showing whether a required connector is set.
+function ReqDot({ ok, name }) {
+  return (
+    <HStack gap="1.5" flex="none" color={ok ? 'ui.goodInk' : 'ui.bad'} fontWeight="600">
+      <Box w="0.4375rem" h="0.4375rem" borderRadius="full" bg={ok ? 'ui.good' : 'ui.bad'} flex="none" />
+      <chakra.span>{name}</chakra.span>
+    </HStack>
+  );
+}
 
 const NOTICE = { bg: 'rgba(252,190,0,.12)', border: '1px solid', borderColor: 'rgba(252,190,0,.45)', color: 'ui.text', borderRadius: 'forge', px: '3.5', py: '2.5', fontSize: '0.875rem', mb: '6' };
 
@@ -30,6 +41,9 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [busy, setBusy] = useState('');
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
+  const core = useCore();
+  const ghOk = !!(core.status && core.status.github && core.status.github.set);
+  const wpOk = !!(core.status && core.status.trac && core.status.trac.set);
 
   useEffect(() => {
     fetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
@@ -110,6 +124,13 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
     <>
       {busy && <Box {...NOTICE} role="status" aria-live="polite">{busy}</Box>}
       {err && <Box {...NOTICE} borderColor="ui.bad" color="ui.bad" role="alert">{err}</Box>}
+
+      <Flex align="center" gap="3" flexWrap="wrap" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="forge" px="4" py="2.5" mb="5" fontSize="0.8125rem" color="ui.muted">
+        <chakra.span>Every tool runs on these connectors:</chakra.span>
+        <ReqDot ok={ghOk} name="GitHub" />
+        <ReqDot ok={wpOk} name="WordPress.org" />
+        <chakra.button type="button" onClick={core.openSetup} ml="auto" bg="none" border="0" p="0" color="ui.primary" fontWeight="600" cursor="pointer" textDecoration="underline">Manage connectors</chakra.button>
+      </Flex>
 
       <Flex align="center" gap="4" flexWrap="wrap" boxShadow="sm" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="0.75rem" px="4" py="3">
         <Text fontWeight="600" color="ui.heading" flex="none" letterSpacing="-.01em">Add a tool</Text>

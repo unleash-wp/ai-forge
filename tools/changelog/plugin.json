@@ -1,6 +1,6 @@
 {
   "id": "changelog",
-  "name": "WP Changelog",
+  "name": "Changelog",
   "description": "Turn a date window into a ready release-post changelog for Core and Gutenberg.",
   "version": "0.1.0",
   "coreVersion": ">=0.1.0",

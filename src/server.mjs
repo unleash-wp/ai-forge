@@ -15,6 +15,7 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 // Light-bulb mark served at /brand/bulb.svg (favicon + empty-state image). The
 // header wordmark now lives in the React bundle, not injected here.
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
+const VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')).version;
 
 export function startServer({ port = 4321 } = {}) {
   // Load tool plugins; reloadable so install/uninstall picks up changes without
@@ -164,6 +165,7 @@ export function startServer({ port = 4321 } = {}) {
     if (url.pathname === '/api/config/status') {
       const c = resolveCookie();
       json(res, 200, {
+        version: VERSION,
         installed: isInstalled(),
         github: tokenStatus(),
         trac: {
