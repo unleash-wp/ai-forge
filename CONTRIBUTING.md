@@ -67,7 +67,7 @@ import { useCore } from '../../src/client/core.jsx';
 
 export default function MyTool() {
   const core = useCore(); // { toast, openSetup, status, refreshStatus }
-  return <section className="filters">…your UI…</section>;
+  return <section className="c-filters">…your UI…</section>;
 }
 ```
 
@@ -85,7 +85,7 @@ import { ToolIcon } from '../../src/client/icons.jsx';
 - `Select` - a custom dropdown that matches the design system; add `searchable`
   for long lists, `block` for full width. Keyboard + screen-reader accessible.
 
-You can also reuse the shared design-system classes (`filters`, `card`, `empty`,
+You can also reuse the shared design-system classes (`c-filters`, `c-card`, `c-empty`,
 …) and add your own in `tools/<id>/client.scss` (see **Frontend & styles**
 below). The shell owns the header, rail, setup wizard and toast; don't re-render
 those. `tools/_template/client.jsx` is a working example that uses these.
@@ -116,7 +116,7 @@ skipped.
 
 Styles are **ITCSS** (Inverted Triangle CSS) with **BEMIT** naming. Layers load
 generic → specific, low specificity → high, so nothing fights the cascade. One
-BEM block per file — no exceptions.
+primary block per file; its tightly-coupled sub-blocks may share the file.
 
 ```
 src/styles/
@@ -125,7 +125,7 @@ src/styles/
   generic/     resets that touch everything
   elements/    bare HTML tags (body, a, input, button …) — the ONLY tag styling
   objects/     layout primitives (.o-shell, .o-workspace)
-  components/  the UI, one c- block per file (_header, _rail, _wizard, _select …)
+  components/  the UI, one primary c- block per file (_header, _select, _plugins …)
   utilities/   single-purpose helpers (.u-tnum, .u-spin, .u-note)
   main.scss    the @use manifest — the only place layers are wired together
 ```
@@ -163,7 +163,7 @@ over a magic number.
 
 **A tool owns its styles.** Shell + design-system primitives (header, rail,
 filters, `Select`, `Button`, wizard …) stay in `src/styles/`. A tool's own look
-lives beside its code: one block per file under `tools/<id>/styles/`, wired by a
+lives beside its code under `tools/<id>/styles/` (same one-primary-block rule), wired by a
 `tools/<id>/client.scss` manifest that the tool's `client.jsx` imports. The
 changelog tool is the worked example (`tools/changelog/styles/*` +
 `tools/changelog/client.scss`). Webpack bundles every imported `.scss` into the

@@ -8,7 +8,9 @@
 // matches the rest of Forge. Talk to the shell through useCore():
 //   { toast(msg), openSetup(), status, refreshStatus() }
 //
-// Copy this folder to tools/<your-id>/, edit plugin.json, then `npm run build`.
+// Styling is BEMIT (see CONTRIBUTING.md, "Frontend & styles"): reuse shared
+// classes like `c-filters` / `c-card`, or add your own in a co-located
+// client.scss. Copy this folder to tools/<your-id>/, edit plugin.json, build.
 import { useState } from 'react';
 import { useCore } from '../../src/client/core.jsx';
 import { Button } from '../../src/client/ui';
@@ -18,14 +20,12 @@ export default function MyTool() {
   const [n, setN] = useState(0);
 
   return (
-    <section className="filters">
-      <p>Your tool UI goes here. Compose it from the shared components (and reuse the
-        existing class names like <code>filters</code>, <code>stat</code>, …).</p>
-      <div className="go">
-        <Button variant="primary" onClick={() => { setN(n + 1); core.toast('Clicked ' + (n + 1)); }}>
-          Clicked {n} times
-        </Button>
-      </div>
+    <section className="c-filters">
+      <p>Your tool UI goes here. Compose it from the shared components and the
+        design-system classes (<code>c-filters</code>, <code>c-card</code>, …).</p>
+      <Button variant="primary" onClick={() => { setN(n + 1); core.toast('Clicked ' + (n + 1)); }}>
+        Clicked {n} times
+      </Button>
     </section>
   );
 }

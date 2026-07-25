@@ -3,11 +3,11 @@
 .c-button {
   &--primary {
     background: var(--navy);
-    color: #fff;
+    color: var(--white);
     box-shadow: var(--shadow-sm);
 
     &:hover { background: var(--yellow); color: var(--navy); }
-    &:disabled { opacity: .55; cursor: default; background: var(--navy); color: #fff; transform: none; }
+    &:disabled { opacity: .55; cursor: default; background: var(--navy); color: var(--white); transform: none; }
   }
 
   &--ghost {

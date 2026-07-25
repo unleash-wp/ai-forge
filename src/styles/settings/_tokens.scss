@@ -2,7 +2,7 @@
 // No selectors that emit box rules here; only :root variables (light + dark).
 // Everything downstream references these via var(--x); never hard-code a colour.
 :root {
-  --navy: #203159; --navy-deep: #0f131f; --yellow: #fcbe00; --ink: #292b2e;
+  --navy: #203159; --navy-2: #2a3f6f; --navy-deep: #0f131f; --white: #fff; --yellow: #fcbe00; --ink: #292b2e;
   --slate: #727f9f; --slate-2: #35415b;
   --paper: #ffffff; --paper-alt: #f2f4f7; --paper-faded: #eceef5; --hairline: #e3e7f0;
   --bg: #eef1f6; --surface: #ffffff; --sunk: #f5f7fa; --border: #e3e7f0;
