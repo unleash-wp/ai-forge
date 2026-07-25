@@ -1,44 +1,17 @@
-import { changelogOutput } from './changelog-cli.mjs';
-
-const HELP = `uwp (wp-release-helper) - summarize WordPress Core & Gutenberg changes for a release post.
+const HELP = `ai-forge — a hub for WordPress release and dev tooling. Every tool is a plugin.
 
 Usage:
-  uwp --since <date> --until <date> [options]
-  uwp <since> <until> [options]
-  uwp serve [--port <n>]            Open the browser UI.
-  uwp mcp                          Run as an MCP server (stdio) for Claude Code
-                                    / Codex: claude mcp add forge -- uwp mcp
-  uwp skills [<name>]              List the AI skills tools provide, or print one.
-  uwp cookie-import <browser>       Import the wordpress.org cookie from a local
+  ai-forge serve [--port <n>]       Open the browser UI.
+  ai-forge mcp                      Run as an MCP server (stdio) for Claude Code /
+                                    Codex: claude mcp add forge -- ai-forge mcp
+  ai-forge skills [<name>]          List the AI skills tools provide, or print one.
+  ai-forge cookie-import <browser>  Import the wordpress.org cookie from a local
                                     browser (chrome|safari|firefox|edge, macOS).
-  uwp <tool> [options]             Run a tool's own command (listed under -h).
-
-Options:
-  --since <date>        Start of window (YYYY-MM-DD or ISO 8601). Required.
-  --until <date>        End of window (YYYY-MM-DD or ISO 8601). Required.
-  --milestone <x.y>     Release milestone; defaults Gutenberg branch to wp/<x.y>.
-  --gb-branch <ref>     Gutenberg branch (default: wp/<milestone> or trunk).
-  --core-branch <ref>   wordpress-develop branch (default: trunk).
-  --no-labels           Skip Gutenberg [Type] label grouping (fewer API calls).
-  --no-dev-notes        Skip the Core dev-notes tracker; leave Core flat.
-  --deep                Read full Trac ticket descriptions (one cookie-gated CSV
-                        request); fills Uncategorized + adds descriptions to JSON.
-                        Needs a WordPress.org cookie (see --trac-cookie).
-  --trac-cookie <file>  File holding the WPORG_TRAC_COOKIE value for --deep
-                        (or set the WPORG_TRAC_COOKIE env var).
-  --post                Emit a fill-in release-post template (headline, count
-                        line, source links, highlights placeholder + changelog).
-  --json                Emit raw JSON instead of Markdown.
-  -h, --help            Show this help.
-
-Sources:
-  Gutenberg  -> github.com/WordPress/gutenberg
-  Core       -> github.com/WordPress/wordpress-develop (git mirror of Core SVN)
-  Core grouping -> WordPress/Documentation-Issue-Tracker dev-notes (cookie-free).
+  ai-forge <tool> [options]         Run a tool's own command (listed below).
+  -h, --help                        Show this help.
 
 Example:
-  uwp --since 2026-07-15 --until 2026-07-22 --milestone 7.1
-  uwp serve
+  ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 `;
 
 export async function run(argv) {
@@ -62,11 +35,11 @@ export async function run(argv) {
       if (!skills.length) { console.log('No skills installed.'); return; }
       console.log('Skills (AI instructions the tools provide):\n');
       for (const s of skills) console.log(`  ${s.name.padEnd(24)} ${s.description || ''}`);
-      console.log('\nRun `uwp skills <name> [--arg value]` to print one.');
+      console.log('\nRun `ai-forge skills <name> [--arg value]` to print one.');
       return;
     }
     const skill = skills.find((s) => s.name === name);
-    if (!skill) throw new Error(`unknown skill: ${name} (run \`uwp skills\` to list)`);
+    if (!skill) throw new Error(`unknown skill: ${name} (run \`ai-forge skills\` to list)`);
     console.log(skill.build ? skill.build(args) : (skill.instructions || ''));
     return;
   }
@@ -75,7 +48,7 @@ export async function run(argv) {
     const { importWporgCookie } = await import('./cookie-import.mjs');
     const { saveCookie, validateCookie } = await import('./trac.mjs');
     const browser = args.browser ?? args._[1];
-    if (!browser) throw new Error('usage: uwp cookie-import <chrome|safari|firefox|edge>');
+    if (!browser) throw new Error('usage: ai-forge cookie-import <chrome|safari|firefox|edge>');
     const cookie = importWporgCookie(browser); // value stays local; never printed
     const path = saveCookie(cookie);
     console.log(`Imported wporg_logged_in + wporg_sec from ${browser}, saved to ${path}.`);
@@ -98,40 +71,20 @@ export async function run(argv) {
     }
   }
 
-  if (args.help) {
+  if (args.help || !args._[0]) {
     console.log(HELP);
     const { loadPlugins } = await import('./plugins.mjs');
     const cmds = (await loadPlugins()).flatMap((p) => p.commands || []);
     if (cmds.length) {
       console.log('Tool commands:');
-      for (const c of cmds) console.log(`  uwp ${c.name.padEnd(16)} ${c.summary || ''}`);
+      for (const c of cmds) console.log(`  ai-forge ${c.name.padEnd(16)} ${c.summary || ''}`);
       console.log('');
     }
     return;
   }
 
-  const since = args.since ?? args._[0];
-  const until = args.until ?? args._[1];
-  if (!since || !until) {
-    console.log(HELP);
-    throw new Error('--since and --until are required');
-  }
-
-  // The top-level form is a thin alias for the changelog tool's own command.
-  const out = await changelogOutput({
-    since,
-    until,
-    milestone: args.milestone ?? null,
-    gbBranch: args['gb-branch'],
-    coreBranch: args['core-branch'],
-    labels: args.labels,
-    devNotes: args['dev-notes'],
-    deep: args.deep,
-    tracCookie: args['trac-cookie'],
-    json: args.json,
-    post: args.post,
-  }, { warn: console.error });
-  console.log(out);
+  console.log(HELP);
+  throw new Error(`unknown command: ${args._[0]} (run \`ai-forge -h\`)`);
 }
 
 // Minimal flag parser: --key value, --key=value, --flag, --no-flag, and positionals.

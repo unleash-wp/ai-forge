@@ -1,4 +1,4 @@
-import { commits, labelsFor } from './github.mjs';
+import { commits, labelsFor } from '../../../src/github.mjs';
 import { parseCommit } from './parse.mjs';
 import { fetchTracker } from './devnotes.mjs';
 import { buildReport } from './aggregate.mjs';
