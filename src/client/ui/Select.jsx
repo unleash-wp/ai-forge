@@ -1,10 +1,12 @@
-// Select - a custom, accessible dropdown/combobox (native <select> can't be styled
-// cross-browser). options: [{ value, label }]; value '' shows the placeholder.
-// `searchable` adds a filter box; keyboard: Up/Down/Home/End/Enter/Escape with
-// aria-activedescendant. Rendered options are capped for very long lists.
+// Select - a custom, accessible dropdown/combobox styled with Chakra primitives
+// (native <select> can't be styled cross-browser; Chakra's own Select isn't
+// searchable). options: [{ value, label }]; value '' shows the placeholder.
+// `searchable` adds a filter box; keyboard: Up/Down/Home/End/Enter/Escape.
 import { useState, useRef, useEffect, useId } from 'react';
+import { Box, Input, chakra } from '@chakra-ui/react';
 
 const OPT_CAP = 100;
+const CButton = chakra('button');
 
 export function Select({ value, onChange, options, placeholder = 'Select', disabled, block, searchable, ariaLabel }) {
   const [open, setOpen] = useState(false);
@@ -23,7 +25,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
 
   useEffect(() => {
     if (!open) { setQuery(''); setActive(-1); return; }
-    const idx = options.findIndex((o) => o.value === value); // start on the current value
+    const idx = options.findIndex((o) => o.value === value);
     setActive(idx >= 0 && idx < OPT_CAP ? idx : 0);
     if (searchable && searchRef.current) searchRef.current.focus();
     const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -59,28 +61,39 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
   const activeId = open && active >= 0 && shown[active] ? base + '-opt-' + active : undefined;
 
   return (
-    <div className={'c-select' + (block ? ' c-select--block' : '') + (open ? ' is-open' : '') + (disabled ? ' is-disabled' : '')} ref={ref} onKeyDown={onKeyDown}>
-      <button ref={btnRef} type="button" className="c-select__button" disabled={disabled} aria-label={ariaLabel}
-        aria-haspopup="listbox" aria-expanded={open} aria-activedescendant={!searchable ? activeId : undefined}
-        onClick={() => setOpen((o) => !o)}>
-        <span className="c-select__value" title={sel ? sel.label : undefined}>{sel ? sel.label : placeholder}</span>
-        <svg className="c-select__caret" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-      </button>
+    <Box position="relative" ref={ref} onKeyDown={onKeyDown}
+      display={block ? 'block' : 'inline-block'} w={block ? 'full' : undefined} minW={block ? '0' : '10rem'}>
+      <CButton ref={btnRef} type="button" disabled={disabled} aria-label={ariaLabel} aria-haspopup="listbox"
+        aria-expanded={open} aria-activedescendant={!searchable ? activeId : undefined} onClick={() => setOpen((o) => !o)}
+        display="inline-flex" alignItems="center" justifyContent="space-between" gap="2" w="full" px="3.5" py="2.5"
+        borderWidth="1px" borderColor={open ? 'ui.primary' : 'ui.border'} borderRadius="0.4375rem" bg="ui.surface"
+        color="ui.text" fontSize="1rem" cursor={disabled ? 'default' : 'pointer'} opacity={disabled ? 0.55 : 1}
+        transition="border-color .12s, box-shadow .12s" boxShadow={open ? '0 0 0 3px var(--chakra-colors-ui-ring)' : 'none'}
+        _hover={{ borderColor: 'ui.primary' }}>
+        <chakra.span flex="1" minW="0" textAlign="left" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" title={sel ? sel.label : undefined}>{sel ? sel.label : placeholder}</chakra.span>
+        <chakra.svg color="ui.muted" flex="none" transition="transform .14s ease" transform={open ? 'rotate(180deg)' : 'none'} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></chakra.svg>
+      </CButton>
       {open && (
-        <div className="c-select__menu" role="listbox" aria-label={ariaLabel} ref={menuRef}>
+        <Box ref={menuRef} role="listbox" aria-label={ariaLabel} position="absolute" zIndex="30" top="calc(100% + 0.375rem)" left="0"
+          minW="full" maxW="24rem" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="0.5rem"
+          boxShadow="lg" p="1.5" display="flex" flexDir="column" gap="0.5" maxH="18rem" overflowY="auto">
           {searchable && (
-            <input ref={searchRef} className="c-select__search" value={query} placeholder="Search…" spellCheck="false" aria-label="Filter options"
-              aria-activedescendant={activeId} onChange={(e) => setQuery(e.target.value)} onClick={(e) => e.stopPropagation()} />
+            <Input ref={searchRef} value={query} placeholder="Search…" spellCheck="false" aria-label="Filter options"
+              aria-activedescendant={activeId} onChange={(e) => setQuery(e.target.value)} onClick={(e) => e.stopPropagation()}
+              flex="none" position="sticky" top="0" mb="1" px="2.5" py="1.5" bg="ui.sunk" borderWidth="1px" borderColor="ui.border"
+              borderRadius="0.375rem" fontSize="0.8125rem" _focus={{ bg: 'ui.surface', borderColor: 'ui.primary' }} />
           )}
           {shown.map((o, i) => (
-            <button key={o.value} id={base + '-opt-' + i} data-idx={i} type="button" role="option" aria-selected={o.value === value} title={o.label}
-              className={'c-select__option' + (o.value === value ? ' is-selected' : '') + (i === active ? ' is-active' : '')}
-              onMouseEnter={() => setActive(i)} onClick={() => pick(o)}>{o.label}</button>
+            <CButton key={o.value} id={base + '-opt-' + i} data-idx={i} type="button" role="option" aria-selected={o.value === value}
+              title={o.label} onMouseEnter={() => setActive(i)} onClick={() => pick(o)} flex="none" textAlign="left"
+              px="2.5" py="2" borderRadius="0.375rem" fontSize="0.875rem" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis"
+              bg={i === active ? 'ui.sunk' : 'transparent'} color={o.value === value ? 'ui.primary' : 'ui.text'}
+              fontWeight={o.value === value ? '600' : '400'} _hover={{ bg: 'ui.sunk' }}>{o.label}</CButton>
           ))}
-          {shown.length === 0 && <div className="c-select__note">No matches</div>}
-          {filtered.length > OPT_CAP && <div className="c-select__note">+{filtered.length - OPT_CAP} more, refine search</div>}
-        </div>
+          {shown.length === 0 && <Box flex="none" px="2.5" py="2" fontSize="0.75rem" color="ui.muted">No matches</Box>}
+          {filtered.length > OPT_CAP && <Box flex="none" px="2.5" py="2" fontSize="0.75rem" color="ui.muted">+{filtered.length - OPT_CAP} more, refine search</Box>}
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }
