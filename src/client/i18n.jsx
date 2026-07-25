@@ -34,6 +34,8 @@ function translate(locale, s, args) {
 }
 // Plain (non-React) translator, bound to the last-set locale.
 export function __(s, ...args) { return translate(CURRENT, s, args); }
+// The active locale code, for locale-aware formatting (dates, numbers).
+export function currentLocale() { return CURRENT; }
 
 const I18nCtx = createContext({ locale: 'en', t: (s) => s, setLocale: () => {} });
 export function useI18n() { return useContext(I18nCtx); }

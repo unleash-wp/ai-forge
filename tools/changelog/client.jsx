@@ -6,14 +6,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Badge, Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, SimpleGrid, Skeleton, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
-import { useT, useI18n, __ } from '../../src/client/i18n.jsx';
+import { useT, useI18n, __, currentLocale } from '../../src/client/i18n.jsx';
 import { Button as UButton, Select, Checkbox, TextInput } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
 import { ArrowLeft, ArrowRight, CalendarIcon } from '../../src/client/icons.jsx';
 
 const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
 const CORE_GH = 'https://github.com/WordPress/wordpress-develop';
-const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 // First weekday for a locale: 0 = Sunday, 1 = Monday. US English starts on
@@ -50,11 +49,17 @@ function Ic({ html }) { return <chakra.span display="contents" dangerouslySetInn
 
 function pad(n) { return (n < 10 ? '0' : '') + n; }
 function isoD(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-function fmtDay(isoStr) { const p = isoStr.split('-'); return __(MON[(+p[1]) - 1]) + ' ' + (+p[2]); }
+const parseISO = (iso) => new Date(iso + 'T00:00:00');
+// Locale-correct single date, e.g. en "Jul 18, 2026" / de "18. Juli 2026".
+function fmtDate(iso) {
+  try { return new Intl.DateTimeFormat(currentLocale(), { day: 'numeric', month: 'short', year: 'numeric' }).format(parseISO(iso)); }
+  catch { return iso; }
+}
+// Locale-correct range with a shared year/month collapsed by Intl itself,
+// e.g. en "Jul 18 – 25, 2026" / de "18.–25. Juli 2026".
 function fmtRange(a, b) {
-  const ya = a.split('-')[0], yb = b.split('-')[0];
-  return ya === yb ? fmtDay(a) + __(' to ') + fmtDay(b) + ', ' + ya
-                   : fmtDay(a) + ', ' + ya + __(' to ') + fmtDay(b) + ', ' + yb;
+  try { return new Intl.DateTimeFormat(currentLocale(), { day: 'numeric', month: 'short', year: 'numeric' }).formatRange(parseISO(a), parseISO(b)); }
+  catch { return fmtDate(a) + ' – ' + fmtDate(b); }
 }
 
 function uniq(arr) { const seen = {}, out = []; arr.forEach((x) => { if (!seen[x]) { seen[x] = 1; out.push(x); } }); return out; }
@@ -152,8 +157,8 @@ const calCss = {
   '& .cal-cell': { height: '2.25rem', border: 0, bg: 'none', font: '500 0.8125rem/1 var(--chakra-fonts-body)', color: 'ui.text', cursor: 'pointer', borderRadius: 'sm', display: 'inline-grid', placeItems: 'center', p: 0 },
   '& .cal-cell:hover': { bg: 'ui.sunk' },
   '& .cal-cell.is-empty': { visibility: 'hidden', cursor: 'default' },
-  '& .cal-cell.is-today': { boxShadow: 'inset 0 0 0 1.5px var(--chakra-colors-navy)', color: 'navy', fontWeight: '700' },
-  '& .cal-cell.is-inrange': { bg: 'ui.rangeFill', borderRadius: 0, color: 'navy' },
+  '& .cal-cell.is-today': { boxShadow: 'inset 0 0 0 1.5px var(--chakra-colors-ui-primary)', color: 'ui.primary', fontWeight: '700' },
+  '& .cal-cell.is-inrange': { bg: 'ui.rangeFill', borderRadius: 0, color: 'ui.heading' },
   '& .cal-cell.is-start, & .cal-cell.is-end': { bg: 'navy', color: 'white', fontWeight: '700' },
   '& .cal-cell.is-start': { borderRadius: '0.3125rem 0 0 0.3125rem' },
   '& .cal-cell.is-end': { borderRadius: '0 0.3125rem 0.3125rem 0' },
@@ -246,7 +251,7 @@ function DateRangePicker({ since, until, onChange }) {
           </Flex>
           <Flex align="center" justify="space-between" mb="2">
             <chakra.button type="button" aria-label={__('Previous month')} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))} css={navBtn}><ArrowLeft size={18} /></chakra.button>
-            <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{__(MON[view.getMonth()]) + ' ' + view.getFullYear()}</Text>
+            <Text fontWeight="700" fontSize="0.875rem" color="ui.heading">{new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(view)}</Text>
             <chakra.button type="button" aria-label={__('Next month')} disabled={nextDisabled} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))} css={navBtn}><ArrowRight size={18} /></chakra.button>
           </Flex>
           <Grid templateColumns="repeat(7, minmax(0, 1fr))" gap="0.5" mb="1">
@@ -354,8 +359,8 @@ function Results({ data, since, until }) {
           {data.sources && (
             <Box as="section" bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="md" px="6" py="5" mb="6">
               <Heading as="h2" fontSize="1.25rem" fontWeight="700" color="ui.heading" mb="3" letterSpacing="-.01em">{__('Sources')} <chakra.em fontStyle="normal" fontWeight="500" color="ui.muted" fontSize="0.8125rem">{__('link these in the post so anyone can verify')}</chakra.em></Heading>
-              <SrcRow url={s.trac} text={__('Closed Core Trac tickets') + (s.milestone ? __(' (milestone %s)', esc(s.milestone)) : '') + ', ' + __('%s to %s', esc(s.since), esc(s.until))} onCopy={() => copy(s.trac, __('Link copied'))} />
-              <SrcRow url={s.gutenberg} text={__('Gutenberg commits on %s', esc(s.gbBranch)) + ', ' + __('%s to %s', esc(s.since), esc(s.until))} onCopy={() => copy(s.gutenberg, __('Link copied'))} />
+              <SrcRow url={s.trac} text={__('Closed Core Trac tickets') + (s.milestone ? __(' (milestone %s)', esc(s.milestone)) : '') + ', ' + __('%s to %s', esc(fmtDate(s.since)), esc(fmtDate(s.until)))} onCopy={() => copy(s.trac, __('Link copied'))} />
+              <SrcRow url={s.gutenberg} text={__('Gutenberg commits on %s', esc(s.gbBranch)) + ', ' + __('%s to %s', esc(fmtDate(s.since)), esc(fmtDate(s.until)))} onCopy={() => copy(s.gutenberg, __('Link copied'))} />
             </Box>
           )}
           <Box css={changelogCss} dangerouslySetInnerHTML={{ __html: bodyHtml }} />
