@@ -62,7 +62,7 @@ export async function loadPlugins() {
         console.error(`plugin "${id}": server.mjs failed to load (${err.message})`);
       }
     }
-    plugins.push({ manifest, routes: (mod && mod.routes) || [] });
+    plugins.push({ manifest, routes: (mod && mod.routes) || [], commands: (mod && mod.commands) || [] });
   }
   return plugins;
 }

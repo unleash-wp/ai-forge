@@ -3,6 +3,7 @@
 // This one owns the report + branch endpoints; credential/setup routes stay in
 // the core shell because every tool shares them.
 import { generate } from '../../src/report.mjs';
+import { changelogOutput } from '../../src/changelog-cli.mjs';
 import { toMarkdown, toPost, sourceUrls } from '../../src/format.mjs';
 import { branches } from '../../src/github.mjs';
 import { resolveCookie, countTracTickets } from '../../src/trac.mjs';
@@ -119,4 +120,29 @@ export const routes = [
   { method: 'GET', path: '/api/report', handler: reportHandler },
   { method: 'GET', path: '/api/branches', handler: branchesHandler },
   { method: 'GET', path: '/api/devnotes', handler: devNotesHandler },
+];
+
+// Terminal command: `uwp changelog --since … --until … [--milestone x.y]
+// [--gb-branch ref] [--core-branch ref] [--no-labels] [--no-dev-notes] [--deep]
+// [--post|--json]`. Accepts `uwp changelog <since> <until>` positionally too.
+export const commands = [
+  {
+    name: 'changelog',
+    summary: 'Release-post changelog for a date window (--since --until [--post|--json]).',
+    run: async (args, ctx) => {
+      ctx.log(await changelogOutput({
+        since: args.since ?? args._[1],
+        until: args.until ?? args._[2],
+        milestone: args.milestone ?? null,
+        gbBranch: args['gb-branch'],
+        coreBranch: args['core-branch'],
+        labels: args.labels,
+        devNotes: args['dev-notes'],
+        deep: args.deep,
+        tracCookie: args['trac-cookie'],
+        json: args.json,
+        post: args.post,
+      }, { warn: ctx.error }));
+    },
+  },
 ];
