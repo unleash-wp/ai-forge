@@ -6,10 +6,11 @@
 import { readdirSync, existsSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { VERSION } from './version.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const TOOLS = join(DIR, '..', 'tools');
-const CORE_VERSION = JSON.parse(readFileSync(join(DIR, '..', 'package.json'), 'utf8')).version;
+const CORE_VERSION = VERSION;
 
 // Compare two "x.y.z" strings: -1 if a < b, 0 if equal, 1 if a > b.
 function cmpVersion(a, b) {
