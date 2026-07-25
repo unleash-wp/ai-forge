@@ -11,6 +11,10 @@ const config = defineConfig({
     // resolves `colorPalette.*` (tab indicators, badges, focus rings, …) is
     // navy unless a call site overrides it — instead of Chakra's grey default.
     html: { colorPalette: 'brand' },
+    // Accessibility: one consistent navy keyboard-focus ring for everything the
+    // user can Tab to (buttons, links, inputs, tabs, icon buttons, …), so the
+    // focus is always visible and on-brand instead of the browser's default.
+    '*:focus-visible': { outline: '2px solid', outlineColor: 'ui.primary', outlineOffset: '2px' },
   },
   theme: {
     // Match the old SCSS mq() breakpoints so responsive props line up.

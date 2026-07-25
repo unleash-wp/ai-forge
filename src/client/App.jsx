@@ -66,6 +66,13 @@ export default function App() {
   const openSettings = useCallback((tab = 'general') => { setSettingsTab(tab); setWizardOpen(true); }, []);
   const openSetup = useCallback(() => openSettings('connectors'), [openSettings]);
 
+  // "Home": back to the default tool (first enabled plugin) at the top.
+  const goHome = useCallback(() => {
+    const enabled = plugins.filter((p) => p.enabled !== false);
+    setActiveId(enabled.length ? enabled[0].id : PLUGINS_VIEW);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [plugins]);
+
   // Let tools react when they become the active tool.
   useEffect(() => { if (activeId && activeId !== PLUGINS_VIEW) doAction('forge.tool.open', activeId); }, [activeId]);
 
@@ -78,7 +85,7 @@ export default function App() {
     <CoreContext.Provider value={coreApi}>
       {installing && <Installer status={status} onDone={refreshStatus} />}
 
-      <Header headerRef={headerRef} scrolled={scrolled} onOpenSettings={() => openSettings('general')} />
+      <Header headerRef={headerRef} scrolled={scrolled} onHome={goHome} onOpenSettings={() => openSettings('general')} />
 
       <Grid maxW="72.5rem" mx="auto" px={{ base: '4', lg: '6' }} gap={{ base: '4', lg: '8' }} alignItems="start"
         templateColumns={{ base: '1fr', lg: '7.75rem minmax(0, 1fr)' }}>

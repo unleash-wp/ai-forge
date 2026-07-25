@@ -15,7 +15,7 @@ const iconBtn = {
   transition: 'color .15s ease, background .15s ease', _hover: { color: 'ui.heading', bg: 'ui.ghostHover' },
 };
 
-export default function Header({ headerRef, scrolled, onOpenSettings }) {
+export default function Header({ headerRef, scrolled, onHome, onOpenSettings }) {
   const { resolvedTheme, setTheme } = useTheme();
   const dark = resolvedTheme === 'dark';
   const t = useT();
@@ -24,13 +24,13 @@ export default function Header({ headerRef, scrolled, onOpenSettings }) {
       borderBottom="1px solid" borderColor="ui.border" transition="box-shadow .18s ease"
       boxShadow={scrolled ? 'md' : 'none'}>
       <Flex maxW="72.5rem" mx="auto" px="6" py="3.5" align="center" gap="4">
-        <Link href="https://unleash-wp.com" target="_blank" rel="noopener" aria-label="UnleashWP" flex="none"
+        <Link href="/" onClick={(e) => { e.preventDefault(); onHome(); }} aria-label={t('Go to start')} flex="none"
           display="inline-flex" alignItems="center" transition="opacity .15s" _hover={{ opacity: 0.78 }}>
           <Box _dark={{ display: 'none' }} css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block' } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
           <Box display="none" _dark={{ display: 'block' }} css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block' } }} dangerouslySetInnerHTML={{ __html: LOGO_WHITE }} />
         </Link>
         <Separator orientation="vertical" h="1.25rem" borderColor="ui.border" hideBelow="sm" />
-        <Link href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+        <Link href="/" onClick={(e) => { e.preventDefault(); onHome(); }}
           color="ui.heading" fontWeight="500" fontSize="0.9688rem" hideBelow="sm" _hover={{ opacity: 0.7 }}>Forge</Link>
         <HStack ml="auto" gap="1">
           <chakra.button {...iconBtn} onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={t('Toggle dark mode')} title={dark ? t('Light mode') : t('Dark mode')}
