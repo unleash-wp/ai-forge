@@ -25,7 +25,7 @@ export function startServer({ port = 4321 } = {}) {
     const url = new URL(req.url, `http://localhost:${port}`);
 
     if (url.pathname === '/') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(PAGE);
       return;
     }
@@ -34,7 +34,7 @@ export function startServer({ port = 4321 } = {}) {
       const isCss = url.pathname.endsWith('.css');
       try {
         const body = readFileSync(join(DIR, '..', 'dist', isCss ? 'main.css' : 'main.js'), 'utf8');
-        res.writeHead(200, { 'Content-Type': (isCss ? 'text/css' : 'application/javascript') + '; charset=utf-8', 'Cache-Control': 'no-cache' });
+        res.writeHead(200, { 'Content-Type': (isCss ? 'text/css' : 'application/javascript') + '; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(body);
       } catch {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -155,7 +155,7 @@ export function startServer({ port = 4321 } = {}) {
       return;
     }
     if (url.pathname === '/brand/bulb.svg') {
-      res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'max-age=86400' });
+      res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(BULB_FILE);
       return;
     }
@@ -308,7 +308,7 @@ export function startServer({ port = 4321 } = {}) {
 }
 
 function json(res, code, obj) {
-  res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
+  res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(JSON.stringify(obj));
 }
 
