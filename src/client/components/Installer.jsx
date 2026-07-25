@@ -34,7 +34,7 @@ export default function Installer({ status, onDone }) {
       return;
     }
     const c = cookie.trim();
-    if (!c) { setCkMsg({ text: 'Paste your cookie to finish - or continue anyway below.', kind: 'bad' }); setEscape(true); return; }
+    if (!c) { setCkMsg({ text: 'Paste your cookie to finish, or continue anyway below.', kind: 'bad' }); setEscape(true); return; }
     setCkMsg({ text: 'saving and testing…', kind: '' });
     fetchJSON('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie: c }) })
       .then(({ ok, data }) => {
@@ -71,14 +71,14 @@ export default function Installer({ status, onDone }) {
             <div className="inst-step">
               <span className="inst-kicker">Step 1 of 2</span>
               <h2>Connect GitHub</h2>
-              <p>Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account - no access to the WordPress org, no token scopes. It only reads public repos.</p>
+              <p>Raises your API limit from 60 to 5000 requests an hour. Works with <b>any</b> GitHub account. No access to the WordPress org, no token scopes. It only reads public repos.</p>
               {ghDetected ? (
-                <div className="inst-ok"><span>✓</span> GitHub ready - {status.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token'} · 5000/h</div>
+                <div className="inst-ok"><span>✓</span> GitHub ready · {status.github.source === 'gh' ? 'detected from the gh CLI' : 'saved token'} · 5000/h</div>
               ) : (
                 <div>
                   <ol><li>Detected automatically if the <code>gh</code> CLI is logged in, or <a href="https://github.com/settings/tokens/new?description=wp-release-helper&scopes=" target="_blank" rel="noopener">create a token</a> (leave every scope unchecked) and paste it:</li></ol>
                   <form onSubmit={(e) => e.preventDefault()} autoComplete="off" style={{ margin: 0 }}>
-                    <TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder="ghp_… or github_pat_…  (optional - skip for 60/h)" autoComplete="off" spellCheck="false" />
+                    <TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder="ghp_… or github_pat_…  (optional, skip for 60/h)" autoComplete="off" spellCheck="false" />
                   </form>
                   <span className={'msg' + (ghMsg.kind ? ' ' + ghMsg.kind : '')}>{ghMsg.text}</span>
                 </div>
@@ -89,7 +89,7 @@ export default function Installer({ status, onDone }) {
             <div className="inst-step">
               <span className="inst-kicker">Step 2 of 2</span>
               <h2>Connect WordPress.org</h2>
-              <p>Needed for <b>deep</b> - full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
+              <p>Needed for <b>deep</b>: full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.</p>
               {browser && (
                 <div className="quickimport">
                   <span className="qi-label">Quick import from your browser <span className="qi-note">(you must be logged in there)</span></span>
@@ -105,7 +105,7 @@ export default function Installer({ status, onDone }) {
               </details>
               <span className={'msg' + (ckMsg.kind ? ' ' + ckMsg.kind : '')}>{ckMsg.text}</span>
               {escape && (
-                <div className="inst-escape">Trac isn't reachable right now (bot wall or expired cookie). You can <button className="back" type="button" onClick={finish}>continue anyway</button> - the tool runs cookie-free and you can add the cookie later in Setup.</div>
+                <div className="inst-escape">Trac isn't reachable right now (bot wall or expired cookie). You can <button className="back" type="button" onClick={finish}>continue anyway</button>. The tool runs cookie-free and you can add the cookie later in Setup.</div>
               )}
             </div>
           )}

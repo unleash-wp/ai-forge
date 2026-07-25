@@ -78,7 +78,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
               onMouseEnter={() => setActive(i)} onClick={() => pick(o)}>{o.label}</button>
           ))}
           {shown.length === 0 && <div className="ui-select-note">No matches</div>}
-          {filtered.length > OPT_CAP && <div className="ui-select-note">+{filtered.length - OPT_CAP} more — refine search</div>}
+          {filtered.length > OPT_CAP && <div className="ui-select-note">+{filtered.length - OPT_CAP} more, refine search</div>}
         </div>
       )}
     </div>
