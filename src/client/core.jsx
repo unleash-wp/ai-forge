@@ -3,9 +3,26 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { Box, Portal } from '@chakra-ui/react';
 
-// fetch + parse JSON, returning { ok, data } so callers branch on HTTP status.
-export function fetchJSON(url, opts) {
-  return fetch(url, opts).then((r) => r.json().then((data) => ({ ok: r.ok, data })));
+// ---- One injectable transport for every Forge /api call ----
+// The browser talks to a same-origin server; the MCP-app iframe has no origin and
+// routes /api through the forge_api tool; a future native (Tauri) shell talks to a
+// loopback URL. Instead of each surface inventing its own transport, they all go
+// through apiFetch(). Each surface sets exactly one value: apiBase (default '' =
+// same-origin; Tauri sets a loopback origin). The iframe keeps working unchanged
+// because apiFetch calls the global fetch, which its bridge patches.
+let apiBase = '';
+export function setApiBase(base) { apiBase = base || ''; }
+
+// fetch a Forge path. Absolute URLs (external APIs) pass through untouched; a
+// relative /api path is resolved against apiBase.
+export function apiFetch(path, opts) {
+  const url = /^https?:\/\//.test(path) ? path : apiBase + path;
+  return fetch(url, opts);
+}
+
+// apiFetch + parse JSON, returning { ok, data } so callers branch on HTTP status.
+export function fetchJSON(path, opts) {
+  return apiFetch(path, opts).then((r) => r.json().then((data) => ({ ok: r.ok, data })));
 }
 
 // ---- Toast (confirmation after any copy / download) ----

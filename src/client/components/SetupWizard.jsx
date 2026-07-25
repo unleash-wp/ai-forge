@@ -4,7 +4,7 @@
 // GitHub / WordPress.org. Chakra handles backdrop, focus trap and Escape.
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { fetchJSON, useCore } from '../core.jsx';
+import { fetchJSON, apiFetch, useCore } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
 import { useI18n, __, availableLocales, LOCALE_NAMES, LOCALE_FLAGS } from '../i18n.jsx';
@@ -242,7 +242,9 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   const [updates, setUpdates] = useState([]);
   const [checking, setChecking] = useState(false);
 
-  // Contribute: live "good first issue" list from the public repo.
+  // Contribute: live "good first issue" list from the public repo. Intentionally a
+  // direct external fetch (GitHub, not a Forge /api route), so it must NOT go
+  // through apiFetch/apiBase — it has no auth and no origin dependence.
   const [issues, setIssues] = useState([]);
   useEffect(() => {
     if (!open) return;
@@ -260,7 +262,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
   function checkUpdatesNow() {
     setChecking(true);
-    fetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {}).finally(() => setChecking(false));
+    apiFetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {}).finally(() => setChecking(false));
   }
   useEffect(() => { if (open) checkUpdatesNow(); }, [open]);
 

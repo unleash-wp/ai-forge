@@ -5,6 +5,7 @@
 // consistent with the rest of Forge. Installing/updating runs the tool's code
 // after a server rebuild, gated behind the user's own action + a trust note.
 import { useState, useEffect, useRef } from 'react';
+import { apiFetch } from '../core.jsx';
 import { ToolIcon } from '../icons.jsx';
 import { useT } from '../i18n.jsx';
 import { Button, Select, TextInput, Checkbox } from '../ui';
@@ -34,7 +35,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const t = useT();
 
   useEffect(() => {
-    fetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
+    apiFetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
   }, []);
   const upFor = (id) => updates.find((u) => u.id === id);
   const inactiveCount = plugins.filter((p) => p.enabled === false).length;
@@ -50,32 +51,32 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
     const s = source.trim();
     if (!s) { setErr('Paste a GitHub repo URL first.'); return; }
     afterInstall('Installing from ' + s + '… building the bundle, then the page reloads.',
-      fetch('/api/plugins/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: s }) }));
+      apiFetch('/api/plugins/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: s }) }));
   }
   function uploadZip(file) {
     if (!file) return;
     afterInstall('Installing ' + file.name + '… building the bundle, then the page reloads.',
-      fetch('/api/plugins/upload', { method: 'POST', body: file }));
+      apiFetch('/api/plugins/upload', { method: 'POST', body: file }));
   }
   function remove(id, name) {
     if (!window.confirm('Remove "' + name + '"? This deletes it from tools/ and rebuilds.')) return;
     afterInstall('Removing ' + name + '… rebuilding.',
-      fetch('/api/plugins/uninstall', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }));
+      apiFetch('/api/plugins/uninstall', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }));
   }
   function toggle(id, enabled) {
     setErr('');
-    fetch('/api/plugins/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, enabled }) })
+    apiFetch('/api/plugins/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, enabled }) })
       .then((r) => r.json())
       .then((d) => { if (d.ok) { if (onChanged) onChanged(); } else setErr(d.error || 'failed'); })
       .catch(() => setErr('request failed'));
   }
   function updateOne(id, name) {
     afterInstall('Updating ' + name + '… downloading + rebuilding.',
-      fetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', ids: [id] }) }));
+      apiFetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', ids: [id] }) }));
   }
   function checkUpdates() {
     setUpdMsg('Checking…');
-    fetch('/api/updates').then((r) => r.json()).then((d) => {
+    apiFetch('/api/updates').then((r) => r.json()).then((d) => {
       const list = d.updates || [];
       setUpdates(list);
       setUpdMsg(list.length ? list.length + ' update' + (list.length > 1 ? 's' : '') + ' available' : 'All tools are up to date.');
@@ -97,7 +98,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
     if (!bulk || !ids.length) return;
     if (bulk === 'remove' && !window.confirm('Remove ' + ids.length + ' tool(s)? This deletes them and rebuilds.')) return;
     setErr(''); setBusy(VERB[bulk] + ' ' + ids.length + ' tool(s)…');
-    fetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: bulk, ids }) })
+    apiFetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: bulk, ids }) })
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) { setBusy(''); setErr(d.error || 'failed'); return; }

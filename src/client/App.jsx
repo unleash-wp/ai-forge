@@ -3,7 +3,7 @@
 // under it. Every piece is its own component in ./components/.
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Box, Grid, Heading, Text } from '@chakra-ui/react';
-import { CoreContext, useToast } from './core.jsx';
+import { CoreContext, useToast, apiFetch } from './core.jsx';
 import { useT } from './i18n.jsx';
 import { applyFilters, doAction, hooks } from './hooks.js';
 import REGISTRY from './registry.js';
@@ -30,12 +30,12 @@ export default function App() {
   const headerRef = useRef(null);
 
   const refreshStatus = useCallback(() => {
-    return fetch('/api/config/status').then((r) => r.json()).then(setStatus).catch(() => {});
+    return apiFetch('/api/config/status').then((r) => r.json()).then(setStatus).catch(() => {});
   }, []);
 
   // (Re)load the plugin list; keep the active tool valid (enabled), else fall back.
   const loadPluginList = useCallback(() => {
-    return fetch('/api/plugins').then((r) => r.json()).then((d) => {
+    return apiFetch('/api/plugins').then((r) => r.json()).then((d) => {
       // Plugins can add, hide or reorder tools in the rail via this filter.
       const list = applyFilters('forge.plugins', d.plugins || []);
       setPlugins(list);
