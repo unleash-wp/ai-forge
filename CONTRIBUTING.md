@@ -1,9 +1,10 @@
 # Contributing to UnleashWP AI Forge
 
-Forge is a small, self-hosted toolbelt for WordPress release and dev work. The
-free core is a plain Node server plus a React browser UI, and every tool is a
-**plugin** - a folder under `tools/`. Adding a tool needs no changes to the
-shell.
+Forge is UnleashWP's self-hosted **plugin platform** for WordPress (and an AI
+bridge over MCP). The **core is the platform** — a plain Node server plus a React
+browser UI (the shell). **Every tool is a plugin** — a folder under `tools/`,
+including the changelog. Nothing in the shell is a "feature" tool; adding a tool
+needs no changes to the shell.
 
 ## Run it locally
 
@@ -126,7 +127,7 @@ export const commands = [
 ];
 ```
 
-The core Changelog tool does this: `ai-forge changelog --since <date> --until
+The Changelog plugin does this: `ai-forge changelog --since <date> --until
 <date> [--milestone x.y] [--post|--json]` (alias `uwp changelog …`).
 
 **MCP tools.** Export `mcpTools` and `uwp mcp` serves them over stdio (the MCP
