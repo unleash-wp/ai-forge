@@ -68,12 +68,13 @@ under **Uncategorized**.
 ```bash
 git clone https://github.com/unleash-wp/wp-release-helper
 cd wp-release-helper
-npm link        # installs the `uwp` command globally
-gh auth login   # optional but recommended: raises GitHub API limit to 5000/h
+npm install -g .   # installs the `uwp` command globally (or `npm link` for dev)
+gh auth login      # optional but recommended: raises GitHub API limit to 5000/h
 ```
 
-No dependencies - plain Node ≥18 (uses the global `fetch`). Without `npm link`
-you can still run it as `node bin/wp-release-helper.mjs …`.
+Now `uwp` is on your PATH — no `node …` needed. The core CLI is dependency-free
+(plain Node ≥18, uses the global `fetch`); the browser UI (`uwp serve`) is a
+webpack/React bundle built once by `npm install`.
 
 ## Usage
 

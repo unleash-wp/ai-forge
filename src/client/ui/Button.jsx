@@ -3,7 +3,8 @@
 import { Button as CButton } from '@chakra-ui/react';
 
 export function Button({ variant = 'ghost', size, danger, children, ...rest }) {
-  const common = { size: size === 'sm' ? 'sm' : 'md', borderRadius: 'forge', fontWeight: '500', h: 'auto', py: size === 'sm' ? '2.5' : '3' };
+  const common = { size: size === 'sm' ? 'sm' : 'md', borderRadius: 'forge', fontWeight: '500', h: 'auto', py: size === 'sm' ? '2.5' : '3',
+    _focusVisible: { outline: '2px solid', outlineColor: 'ui.primary', outlineOffset: '2px' } };
   if (variant === 'primary') {
     return (
       <CButton {...common} bg="navy" color="white" boxShadow="sm"
