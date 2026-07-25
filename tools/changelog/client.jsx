@@ -321,7 +321,8 @@ function Results({ data, since, until }) {
         <Box bg="rgba(252,190,0,.12)" border="1px solid" borderColor="rgba(252,190,0,.45)" color="ui.text" borderRadius="forge" px="3.5" py="2.5" fontSize="0.875rem" mb="6">{__('MCP enrichment skipped (%s). Descriptions still show, sourced from the GitHub commit bodies.', esc(meta.deepError))}</Box>
       )}
 
-      <Tabs.Root value={tab} onValueChange={(e) => setTab(e.value)} variant="line" colorPalette="brand">
+      <Tabs.Root value={tab} onValueChange={(e) => setTab(e.value)} variant="line" colorPalette="brand"
+        css={{ '& [data-part="trigger"][data-selected]': { color: 'ui.heading' } }}>
         <Tabs.List borderBottom="1px solid" borderColor="ui.border">
           <Tabs.Trigger value="changelog" fontWeight="600">{__('Changelog')}<Badge ml="2" variant="subtle" colorPalette="brand">{changes}</Badge></Tabs.Trigger>
           <Tabs.Trigger value="props" fontWeight="600">{__('Props')}<Badge ml="2" variant="subtle" colorPalette="brand">{all.length}</Badge></Tabs.Trigger>

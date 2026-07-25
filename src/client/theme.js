@@ -7,6 +7,10 @@ import { createSystem, defaultConfig, defineConfig } from '@chakra-ui/react';
 const config = defineConfig({
   globalCss: {
     'html, body': { fontFamily: 'body', background: 'ui.bg', color: 'ui.text' },
+    // Make navy the default colour palette, so every Chakra component that
+    // resolves `colorPalette.*` (tab indicators, badges, focus rings, …) is
+    // navy unless a call site overrides it — instead of Chakra's grey default.
+    html: { colorPalette: 'brand' },
   },
   theme: {
     // Match the old SCSS mq() breakpoints so responsive props line up.
@@ -44,14 +48,19 @@ const config = defineConfig({
     },
     semanticTokens: {
       colors: {
-        // brand colorPalette sub-tokens (what Chakra's recipes resolve).
-        'brand.solid': { value: { base: '{colors.brand.700}', _dark: '{colors.brand.400}' } },
-        'brand.contrast': { value: '#ffffff' },
-        'brand.fg': { value: { base: '{colors.brand.700}', _dark: '{colors.brand.300}' } },
-        'brand.muted': { value: { base: '{colors.brand.100}', _dark: '{colors.brand.900}' } },
-        'brand.subtle': { value: { base: '{colors.brand.50}', _dark: '{colors.brand.950}' } },
-        'brand.emphasized': { value: { base: '{colors.brand.200}', _dark: '{colors.brand.800}' } },
-        'brand.focusRing': { value: { base: '{colors.brand.600}', _dark: '{colors.brand.400}' } },
+        // brand colorPalette sub-tokens (what Chakra's recipes resolve). These
+        // MUST be nested under `brand` — flat 'brand.solid' keys collide with
+        // the `brand` token scale above and never emit their CSS vars, which
+        // makes colorPalette="brand" fall back to Chakra's grey default.
+        brand: {
+          solid: { value: { base: '{colors.brand.700}', _dark: '{colors.brand.400}' } },
+          contrast: { value: '#ffffff' },
+          fg: { value: { base: '{colors.brand.700}', _dark: '{colors.brand.300}' } },
+          muted: { value: { base: '{colors.brand.100}', _dark: '{colors.brand.900}' } },
+          subtle: { value: { base: '{colors.brand.50}', _dark: '{colors.brand.950}' } },
+          emphasized: { value: { base: '{colors.brand.200}', _dark: '{colors.brand.800}' } },
+          focusRing: { value: { base: '{colors.brand.600}', _dark: '{colors.brand.400}' } },
+        },
         'ui.bg': { value: { base: '#eef1f6', _dark: '#0a0e16' } },
         'ui.surface': { value: { base: '#ffffff', _dark: '#141a27' } },
         'ui.sunk': { value: { base: '#f5f7fa', _dark: '#1b2231' } },
