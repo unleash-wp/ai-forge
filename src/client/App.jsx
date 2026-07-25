@@ -24,6 +24,7 @@ export default function App() {
   const [plugins, setPlugins] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState('general');
   const [scrolled, setScrolled] = useState(false);
   const railRef = useRef(null);
   const headerRef = useRef(null);
@@ -62,7 +63,8 @@ export default function App() {
     return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', place); };
   }, []);
 
-  const openSetup = useCallback(() => setWizardOpen(true), []);
+  const openSettings = useCallback((tab = 'general') => { setSettingsTab(tab); setWizardOpen(true); }, []);
+  const openSetup = useCallback(() => openSettings('connectors'), [openSettings]);
 
   // Let tools react when they become the active tool.
   useEffect(() => { if (activeId && activeId !== PLUGINS_VIEW) doAction('forge.tool.open', activeId); }, [activeId]);
@@ -76,7 +78,7 @@ export default function App() {
     <CoreContext.Provider value={coreApi}>
       {installing && <Installer status={status} onDone={refreshStatus} />}
 
-      <Header headerRef={headerRef} scrolled={scrolled} onOpenSettings={() => setWizardOpen(true)} />
+      <Header headerRef={headerRef} scrolled={scrolled} onOpenSettings={() => openSettings('general')} />
 
       <Grid maxW="72.5rem" mx="auto" px={{ base: '4', lg: '6' }} gap={{ base: '4', lg: '8' }} alignItems="start"
         templateColumns={{ base: '1fr', lg: '7.75rem minmax(0, 1fr)' }}>
@@ -96,9 +98,9 @@ export default function App() {
         </Box>
       </Grid>
 
-      <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} onClose={() => setWizardOpen(false)} />
+      <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} initialTab={settingsTab} onClose={() => setWizardOpen(false)} />
 
-      <Footer version={status && status.version} />
+      <Footer version={status && status.version} onCredits={() => openSettings('credits')} />
     </CoreContext.Provider>
   );
 }
