@@ -1,3 +1,22 @@
+import { resolveCookie } from './connectors/wporg-cookie.mjs';
+
+// WordPress.org is mandatory for any plugin data command: without a logged-in
+// session Trac serves its bot wall and contributor + Core ticket counts come back
+// inaccurate. Throw a clear, actionable error before running one. The connect path
+// (`cookie-import`) and `serve`/`mcp`/`update`/`skills`/help are handled earlier
+// and stay open, so the user can always reach the way to connect.
+function requireWporg() {
+  if (resolveCookie()) return;
+  throw new Error(
+    'wordpress.org connection required — AI Forge needs it or contributor and Core ticket counts are inaccurate.\n' +
+    'Connect once, then re-run your command:\n' +
+    '  uwp-ai-forge cookie-import <chrome|safari|firefox|edge>\n' +
+    'or open the app and sign in to WordPress.org:\n' +
+    '  uwp-ai-forge serve   (→ http://localhost:4321, Setup)\n' +
+    'or set the WPORG_TRAC_COOKIE environment variable.'
+  );
+}
+
 const HELP = `uwp-ai-forge — a hub for WordPress release and dev tooling. Each plugin adds a feature.
 (short alias: uwp)
 
@@ -81,7 +100,7 @@ export async function run(argv) {
     const { loadPlugins } = await import('./plugins.mjs');
     for (const p of await loadPlugins()) {
       const cmd = (p.commands || []).find((c) => c.name === sub);
-      if (cmd) { await cmd.run(args, { log: console.log, error: console.error }); return; }
+      if (cmd) { requireWporg(); await cmd.run(args, { log: console.log, error: console.error }); return; }
     }
   }
 

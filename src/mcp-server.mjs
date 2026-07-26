@@ -10,8 +10,22 @@ import { loadPlugins } from './plugins.mjs';
 import { startInternalServer, forgeAppHtml, appAvailable } from './mcp-app.mjs';
 import { VERSION } from './version.mjs';
 import { SERVER_ID } from './connectors/registry.mjs';
+import { resolveCookie } from './connectors/wporg-cookie.mjs';
 
 const PROTOCOL = '2024-11-05';
+
+// WordPress.org is mandatory. Without a logged-in session Trac serves its bot
+// wall instead of data, so contributor and Core ticket counts come back
+// inaccurate. Every data tool is gated behind the connection; only the app-infra
+// tools are exempt (open_forge is itself a way to reach the connect screen, and
+// forge_api is the app's own loopback proxy). See connectors/wporg-cookie.mjs.
+const WPORG_EXEMPT = new Set(['open_forge', 'forge_api']);
+const WPORG_REQUIRED =
+  'wordpress.org connection required. AI Forge needs a logged-in wordpress.org ' +
+  'session or its contributor and Core ticket counts are inaccurate. Connect once, ' +
+  'then retry: in a terminal run `uwp-ai-forge cookie-import <chrome|safari|firefox|edge>`, ' +
+  'or open the app (`uwp-ai-forge serve` → Setup) and sign in to WordPress.org. ' +
+  'Or set the WPORG_TRAC_COOKIE environment variable.';
 
 export async function startMcpServer() {
   // Aggregate every plugin's MCP tools and skills. Skills are exposed as MCP
@@ -143,6 +157,11 @@ export async function startMcpServer() {
     if (method === 'tools/call') {
       const tool = tools.get(params && params.name);
       if (!tool) return fail(id, -32602, `unknown tool: ${params && params.name}`);
+      // Mandatory wordpress.org gate: refuse data tools until a session cookie is
+      // present, so a call never returns wrong counts from Trac's bot wall.
+      if (!WPORG_EXEMPT.has(tool.name) && !resolveCookie()) {
+        return ok(id, { content: [{ type: 'text', text: WPORG_REQUIRED }], isError: true });
+      }
       try {
         const out = await tool.run((params && params.arguments) || {});
         // A tool may return a string, or { text, structured } — the latter also

@@ -1,6 +1,6 @@
 # Quick Start — UnleashWP AI Forge
 
-AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress. It ships with one plugin today — the **Changelog Generator** — so this guide installs AI Forge and uses that first plugin. No account, token or cookie required to start.
+AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress. It ships with one plugin today — the **Changelog Generator** — so this guide installs AI Forge and uses that first plugin. No account or password needed — but connecting your WordPress.org login is **required**, or the counts come back inaccurate.
 
 Below: from nothing to a WordPress release changelog in about a minute.
 
@@ -18,7 +18,20 @@ No install? Use `npx`:
 npx @unleashwp/ai-forge@latest changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 ```
 
-## 2. Generate a changelog
+## 2. Connect WordPress.org (required)
+
+AI Forge counts changes and contributors from WordPress.org Trac, which blocks
+logged-out scripts — so a session cookie is required or the counts are inaccurate.
+Import it from a browser you're already signed in to:
+
+```bash
+uwp-ai-forge cookie-import <chrome|safari|firefox|edge>
+```
+
+Or connect it in the app's **Setup → Connectors**. It stays on your computer.
+Until connected, the tools refuse rather than return wrong numbers.
+
+## 3. Generate a changelog
 
 ```bash
 uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
@@ -30,7 +43,7 @@ Prints a ready-to-edit **release-post template**: headline, count line, the two 
 - Add `--json` → structured data.
 - `uwp-ai-forge -h` → every command.
 
-## 3. Pick your surface
+## 4. Pick your surface
 
 | You want… | Do this |
 | --- | --- |
@@ -38,12 +51,9 @@ Prints a ready-to-edit **release-post template**: headline, count line, the two 
 | **Ask Claude Code / Codex** | `claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp`, then ask: *"WordPress 7.1 changelog for July 15–22, as a post."* |
 | **A window in Claude Desktop** | `npm run mcpb:pack`, then install `unleashwp-ai-forge.mcpb` from Settings → Extensions |
 
-## Optional: connect for more
+## Optional: GitHub token
 
-Both optional — AI Forge runs without them.
-
-- **GitHub token** → raises the API limit from 60 to 5,000/h (no scopes needed). `gh auth login`, or paste one in **Settings → Connectors**.
-- **wordpress.org cookie** → turns on `--deep` (full Trac ticket text). Import it in the Setup UI, or `uwp-ai-forge cookie-import <chrome|safari|firefox|edge>`.
+- **GitHub token** → raises the API limit from 60 to 5,000/h (no scopes needed). `gh auth login`, or paste one in **Settings → Connectors**. This one is optional; the WordPress.org connection in step 2 is the required credential.
 
 ## More
 

@@ -7,101 +7,97 @@ AI Forge is a small program you run on your own computer. It is two things at on
 - **A home for WordPress plugins.** You keep the ones you want; AI Forge runs them and gives them one clean interface.
 - **A bridge to your AI.** AI Forge plugs into Claude Code, Claude Desktop and Codex, so your assistant can use those plugins directly and hand you the results.
 
-It comes with **one plugin to start: the Changelog Generator** — it builds the list of everything that changed in a WordPress release between two dates, ready to paste into a release post. More plugins will follow; the changelog is just the first, not the whole of AI Forge.
+It comes with **one plugin to start: the Changelog Generator** — it builds the list of everything that changed in a WordPress release between two dates, ready to paste into a release post. More plugins will follow.
 
-This page shows you how to install AI Forge and try that first plugin. You can use it three ways: type one command, click buttons in your browser, or just **ask Claude or Codex**.
+You can use it three ways: type one command, click buttons in your browser, or just **ask Claude or Codex**.
 
 ---
 
-## 🪄 Easiest way: let Claude or Codex install it for you
+## Install in about a minute
 
-Do you use [Claude Code](https://claude.com/claude-code) or Codex? Then you don't have to do anything yourself.
-
-**Copy the whole box below, paste it as your message, and send it.** Your assistant will install AI Forge, connect it, test it, and walk you through the rest — one step at a time.
+**Using Claude Code?** Add it as a plugin — two lines, then restart:
 
 ```text
-Install "UnleashWP AI Forge" for me and walk me through it step by step. It is an
-npm package called @unleashwp/ai-forge (its command is "uwp-ai-forge"). Do the work
-yourself, run the commands, and after each step tell me in one plain sentence what
-happened. Stop and ask me whenever something needs a decision.
-
-Please do these steps in order:
-1. Check I have Node 18 or newer: run `node -v`. If it is missing or older, tell me
-   how to get it from https://nodejs.org and stop there.
-2. Install AI Forge for me: `npm install -g @unleashwp/ai-forge`. Then prove it worked by
-   running `uwp-ai-forge -h`.
-3. Connect AI Forge to you, so from now on I can just ask you for changelogs:
-   - Claude Code: `claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp`
-   - Codex: add an MCP server with command "npx" and
-     args ["-y", "@unleashwp/ai-forge@latest", "mcp"]
-4. Test it: run
-   `uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post`
-   and show me the result.
-5. Only if I say yes: help me add an optional GitHub token (for a higher rate
-   limit) and a wordpress.org cookie (for full ticket text). Otherwise skip this.
-6. Finish by telling me, in plain words, the three ways I can use AI Forge from now on:
-   a terminal command, a browser page (`uwp-ai-forge serve` at http://localhost:4321),
-   or simply asking you.
-
-Go one step at a time and keep it simple.
+/plugin marketplace add unleash-wp/ai-forge
+/plugin install uwp-ai-forge@unleashwp-ai-forge
 ```
 
-That's it. It checks your computer, installs AI Forge, hooks it up to your assistant, tests it, and shows you how to use it.
-
----
-
-## 🧑‍💻 Other easy way: one command
-
-Prefer to do it yourself? You need one free program first: **[Node.js](https://nodejs.org), version 18 or newer** (it runs tools like this). Then run:
+**Prefer the command line?** You need [Node.js](https://nodejs.org) 18 or newer, then:
 
 ```bash
 npm install -g @unleashwp/ai-forge
 ```
 
-Now you have a command called **`uwp-ai-forge`**. Try it:
-
-```bash
-uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
-```
-
-This prints a ready-to-edit release post for WordPress 7.1 between those two dates. Change the dates and the milestone to whatever you need.
-
-No account. No password. Nothing to sign up for. It just works.
+That puts `uwp-ai-forge` on your PATH (`uwp` and `forge` are aliases).
 
 ---
 
-## How do I actually use it?
+## Connect WordPress.org — required
 
-Pick whatever feels comfortable:
+AI Forge reads WordPress.org Trac to count changes and contributors. Trac blocks
+logged-out scripts with a bot wall, so **without a logged-in WordPress.org session
+the contributor and Core ticket counts come back inaccurate.** Connect once —
+AI Forge imports the cookie from a browser you're already signed in to:
 
-- **Add it to Claude Code as a plugin** — run `/plugin marketplace add unleash-wp/ai-forge`, then `/plugin install uwp-ai-forge@unleashwp-ai-forge`, and restart. AI Forge connects automatically; now just ask.
-- **Type a command** — like the example above. Run `uwp-ai-forge -h` to see everything it can do.
-- **Click instead of type** — run `uwp-ai-forge serve`, then open **http://localhost:4321** in your browser. Pick your dates, press a button, copy the result.
-- **Just ask your AI** — once it's connected, talk to it in plain language:
+```bash
+uwp-ai-forge cookie-import <chrome|safari|firefox|edge>
+```
+
+Or open the app (`uwp-ai-forge serve`), go to **Setup → Connectors**, and sign in
+to WordPress.org there. The cookie stays on your own computer and is sent only to
+WordPress.org. Until you connect, the tools refuse rather than return wrong numbers.
+
+---
+
+## Let your AI install it for you
+
+Use Claude Code or Codex? Paste this and send it:
+
+```text
+Install "UnleashWP AI Forge" (npm package @unleashwp/ai-forge, command
+"uwp-ai-forge"). First ask me whether I want to use its browser app or do
+everything here in chat, then do the setup yourself — install it, connect it to
+you as an MCP server, and connect WordPress.org (required, or the counts are
+wrong). Run the commands, and after each step tell me in one sentence what
+happened. Stop and ask me only when something truly needs my decision.
+```
+
+Your assistant checks Node, installs AI Forge, wires it up, walks you through the
+required WordPress.org connection, and tests it.
+
+---
+
+## Use it
+
+- **Type a command** — run `uwp-ai-forge -h` to see everything it can do:
+  ```bash
+  uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+  ```
+- **Click instead of type** — run `uwp-ai-forge serve`, then open **http://localhost:4321**. Pick your dates, press a button, copy the result.
+- **Just ask your AI** — once it's connected:
   - *"Give me the WordPress 7.1 changelog for July 15 to 22, as a post."*
-  - *"How many changes landed in Gutenberg and Core between 2026-07-19 and today?"*
   - *"Draft the WordPress 7.1 release post and link every highlight to its source."*
 
 ---
 
-## Do I need a GitHub token or a password?
+## Do I need a GitHub token?
 
-**No. Everything works without one.** Two things are *optional* and only make it a bit nicer:
+**No — that one is optional.** A GitHub token only lets AI Forge ask GitHub more
+often per hour (60 → 5,000). No password, no special permissions. Add it later in
+**Settings → Connectors** if AI Forge tells you it hit a limit.
 
-- **A GitHub token** — lets AI Forge ask GitHub more often per hour. No password, no special permissions. Skip it unless AI Forge tells you it hit a limit.
-- **A wordpress.org login cookie** — turns on "deep mode", which adds the full ticket text to each change. Only if you want that extra detail.
-
-You can add both later, inside the app, on the **Settings → Connectors** screen. They stay on your own computer and are never shared.
+(The **WordPress.org connection above is required** — that's the one credential
+AI Forge can't work correctly without.)
 
 ---
 
 ## Want more?
 
-- 📖 **[Handbook](https://unleash-wp.github.io/ai-forge/)** — the complete guide, and the single source of truth: what it is, all three install paths, example prompts, connectors, the changelog generator, and how to build a plugin.
+- 📖 **[Handbook](https://unleash-wp.github.io/ai-forge/)** — the complete guide: what it is, all install paths, example prompts, connectors, the changelog generator, and how to build a plugin.
 - **[Quick Start](QUICKSTART.md)** — the short version of this page.
 - **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)** — reference pages on GitHub.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — add your own plugin. Every plugin is just a folder.
 
 ---
 
-*An independent project by Benjamin Zekavica (Morvance). Not affiliated with the WordPress Foundation or Automattic Inc.*
+*An independent project by UnleashWP (Benjamin Zekavica, Morvance). Not affiliated with the WordPress Foundation or Automattic Inc.*
