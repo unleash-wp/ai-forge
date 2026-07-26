@@ -55,7 +55,9 @@ export async function runSelfUpdate() {
     }
     if (method === 'git') {
       await run('git', ['pull', '--ff-only']);
-      await run('npm', ['install', '--no-audit', '--no-fund']);
+      // --ignore-scripts skips the `prepare` webpack build here; we run the build
+      // explicitly next, so this avoids building the bundle twice.
+      await run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund']);
       await run('npm', ['run', 'build']);
       return { ok: true, method, restart: true };
     }
