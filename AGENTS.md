@@ -1,52 +1,52 @@
-# wp-release-helper - instructions for coding agents (Codex & others)
+# UnleashWP AI Forge — instructions for coding agents (Codex & others)
 
-This repo turns a date window into a WordPress release-post changelog for Core +
-Gutenberg. **Zero dependencies, plain Node ≥18** - nothing to install or build.
+AI Forge is a **plugin platform for WordPress tooling** that bridges to your AI
+over MCP. **Zero runtime dependencies, plain Node ≥18.** Every capability is a
+plugin under `plugins/<id>`; the one bundled plugin is the **Changelog Generator**.
+
+Human docs: the **[Handbook](https://unleash-wp.github.io/ai-forge/)** (the single
+source of truth) and `CONTRIBUTING.md`. This file is the quick map for agents
+working *in* the repo.
 
 ## Task: produce a release changelog / post
 
 1. Ask the user (or infer) the **start date, end date, and milestone** (e.g. `7.1`).
-2. Run:
+2. Run (from a checkout, the entry is `bin/ai-forge.mjs`; installed, it's `uwp-ai-forge`):
    ```bash
    node bin/ai-forge.mjs changelog --since <start> --until <end> --milestone <x.y> --post
    ```
-   Output modes:
-   - `--post` → a ready-to-edit release-post template (headline, "N issues"
-     count line, the two canonical source links, a highlights placeholder, and
-     the grouped changelog as raw material).
+   - `--post` → a ready-to-edit release-post template (headline, count line, the
+     two canonical source links, a highlights placeholder, and the grouped changelog).
    - no flag → full technical report (summary table + grouped changelog).
-   - `--json` → structured data for further processing.
-3. **Read the tickets in full** before writing. The CLI gives ticket numbers,
-   summaries and metadata cookie-free, but not the ticket descriptions. To read
-   them, add `--deep` (works in any environment, including Codex):
+   - `--json` → structured data.
+3. **Read the tickets before writing.** The CLI gives ticket numbers, summaries
+   and metadata cookie-free, but not the descriptions. Add `--deep` for those:
    ```bash
    WPORG_TRAC_COOKIE='<wp.org cookie>' node bin/ai-forge.mjs changelog \
      --since <start> --until <end> --milestone <x.y> --deep --json
    ```
-   Descriptions land in `core.ticketDetails` and Uncategorized changesets get
-   their real component. For ticket *comments*, use the `wporg-context` MCP
-   `get-ticket {id}` if available. No cookie → descriptions can't be read (Trac
-   blocks cookieless scripts); ground the prose in the summaries + full Core
-   changeset commit messages instead, and say descriptions were not read.
-4. Fill the highlights: **1–3 short paragraphs, each sentence backed by a real
-   PR or Trac ticket you read.** Link them inline. Do not invent features, do not
-   estimate counts or dates - the tool's numbers and links are the source of
-   truth.
+   No cookie → descriptions can't be read; ground the prose in the summaries +
+   full Core changeset commit messages, and say descriptions were not read.
+4. **Every highlight sentence must trace to a real PR or Trac ticket you read.**
+   Link inline. Never invent features or estimate counts — the tool's numbers and
+   links are the source of truth.
 
 ## Optional
 
 - `gh auth login` raises the GitHub API rate limit from 60/h to 5000/h.
-- `node bin/ai-forge.mjs serve` opens a browser UI at
-  http://localhost:4321 (date-range picker, Copy post / Copy Markdown).
-- `npm link` installs a short `uwp` command so you can run `uwp …` instead.
+- `node bin/ai-forge.mjs serve` opens the browser app at http://localhost:4321.
+- `npm test` runs the unit tests; `npm run build` builds the browser bundle.
 
 ## Where things are
 
-- `bin/ai-forge.mjs` - CLI entry (dispatches `changelog`, `serve`, `mcp`, …).
-- `tools/changelog/lib/report.mjs` - fetch + aggregate pipeline.
-- `tools/changelog/lib/format.mjs` - Markdown report (`toMarkdown`) + post template (`toPost`).
-- `tools/changelog/server.mjs` - the changelog plugin (routes, MCP tools, CLI command).
-- `src/server.mjs` - the core `serve` shell; `src/mcp-server.mjs` - `mcp` (stdio).
+- `bin/ai-forge.mjs` — CLI entry (dispatches `serve`, `mcp`, `update`, `changelog`, …).
+- `src/` — the core platform: `server.mjs` (the `serve` shell), `mcp-server.mjs`
+  (the `mcp` stdio server), `plugins.mjs` (the plugin loader), `connectors/` (GitHub +
+  wordpress.org credential stores and the connector registry).
+- `plugins/<id>/` — a plugin: `plugin.json` (manifest) + `server.mjs` (exports
+  `routes` / `mcpTools` / `skills` / `commands`) + `client.jsx` (the React UI).
+  Bundled plugins ship here; community installs land in `~/.config/uwp-ai-forge/plugins`.
+- `plugins/changelog/lib/report.mjs` — the fetch + aggregate pipeline;
+  `plugins/changelog/lib/format.mjs` — Markdown report + post template.
 - Sources: Gutenberg = `WordPress/gutenberg`; Core = `WordPress/wordpress-develop`
-  mirror; Core component grouping = `WordPress/Documentation-Issue-Tracker`
-  dev-notes tracker (cookie-free GitHub JSON).
+  mirror; Core grouping = `WordPress/Documentation-Issue-Tracker` dev-notes tracker.
