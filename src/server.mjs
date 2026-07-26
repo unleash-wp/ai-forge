@@ -33,6 +33,7 @@ function execCmd(argv) {
   });
 }
 import { checkUpdates } from './update.mjs';
+import { runSelfUpdate, detectInstall } from './self-update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
 import { tmpdir } from 'node:os';
@@ -159,6 +160,14 @@ export function startServer({ port = 4321, quiet = false } = {}) {
       return;
     }
 
+    // One-click self-update of the whole app. Runs the fixed update command for
+    // how this copy was installed (git / global npm / npx). The client reloads
+    // afterwards; server-side changes need an AI Forge restart (restart flag).
+    if (url.pathname === '/api/self-update' && req.method === 'POST') {
+      json(res, 200, await runSelfUpdate());
+      return;
+    }
+
     // Install a tool from a GitHub repo the user typed. Runs third-party code
     // after the rebuild - only ever triggered by the user's own action here.
     if (url.pathname === '/api/plugins/install' && req.method === 'POST') {
@@ -217,6 +226,7 @@ export function startServer({ port = 4321, quiet = false } = {}) {
       json(res, 200, {
         version: VERSION,
         installed: isInstalled(),
+        install: detectInstall(), // git | global | npx — drives the self-updater UI
         connectors: await listConnectors(),
         mcp: { available: wporgAvailable() },
       });

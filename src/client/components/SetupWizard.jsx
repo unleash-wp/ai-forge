@@ -265,7 +265,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   // Updates
   const [updates, setUpdates] = useState([]);
   const [checking, setChecking] = useState(false);
-  const [updating, setUpdating] = useState('');
+  const [selfUpdating, setSelfUpdating] = useState(false);
 
   // Contribute: live "good first issue" list from the public repo. Intentionally a
   // direct external fetch (GitHub, not a Forge /api route), so it must NOT go
@@ -282,6 +282,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   const gh = connectorStatus(status, 'github-token');
   const trac = connectorStatus(status, 'wporg-cookie');
   const version = (status && status.version) || '';
+  const install = (status && status.install) || 'git'; // git | global | npx
+  const manualCmd = install === 'git' ? 'git pull && npm install && npm run build' : 'npm i -g @unleashwp/ai-forge@latest';
   const browser = currentBrowser();
   const toggle = (id) => setOpenId((o) => (o === id ? null : id));
 
@@ -289,23 +291,21 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
     setChecking(true);
     apiFetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {}).finally(() => setChecking(false));
   }
-  // One-click install of a listed update. Same server flow the Plugins screen
-  // uses (fetch the source, rebuild, reload the tool registry) — user-initiated,
-  // never automatic. The bundle changes, so reload the page once it's done.
-  function installUpdate(u) {
-    setUpdating(u.id);
-    apiFetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', ids: [u.id] }) })
+  // One-click self-update of the whole app. The server runs the fixed update
+  // command for how this copy was installed (git pull + build, or npm i -g). User-
+  // initiated, never automatic. The client bundle is served fresh, so a reload
+  // applies UI + tool changes; server code needs an AI Forge restart.
+  function selfUpdate() {
+    setSelfUpdating(true);
+    apiFetch('/api/self-update', { method: 'POST' })
       .then((r) => r.json())
       .then((d) => {
-        if (d.ok && (!d.errors || !d.errors.length)) {
-          core.toast(t('Updated to %s — reloading…', u.latest), 'success');
-          setTimeout(() => window.location.reload(), 1000);
-        } else {
-          core.toast((d.errors && d.errors.join(', ')) || d.error || t('Update failed.'));
-          setUpdating('');
-        }
+        if (!d.ok) { core.toast(d.error || t('Update failed.')); setSelfUpdating(false); return; }
+        if (d.method === 'npx') { core.toast(t('npx already runs the latest version.'), 'success'); setSelfUpdating(false); return; }
+        core.toast(t('Updated — reloading…'), 'success');
+        setTimeout(() => window.location.reload(), 1200);
       })
-      .catch(() => { core.toast(t('Update failed.')); setUpdating(''); });
+      .catch(() => { core.toast(t('Update failed.')); setSelfUpdating(false); });
   }
   useEffect(() => { if (open) checkUpdatesNow(); }, [open]);
 
@@ -611,10 +611,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                           {updates.map((u) => (
                             <HStack key={u.id} justify="space-between" gap="3" flexWrap="wrap">
                               <Text fontSize="0.8125rem" color="ui.text">{u.name}: {u.current} to <chakra.b color="ui.heading">{u.latest}</chakra.b></Text>
-                              <HStack gap="3" flexWrap="wrap">
-                                <Link href={u.url} target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Release notes ↗')}</Link>
-                                <BusyBtn busy={updating === u.id} onClick={() => installUpdate(u)}>{updating === u.id ? t('Installing…') : t('Install update')}</BusyBtn>
-                              </HStack>
+                              <Link href={u.url} target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Release notes ↗')}</Link>
                             </HStack>
                           ))}
                         </Stack>
@@ -625,12 +622,22 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                         </HStack>
                       )}
                     </Box>
-                    <Text fontSize="0.75rem" color="ui.muted" mt="4" mb="1.5">{t('Get the latest version:')}</Text>
-                    <Flex align="stretch" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" overflow="hidden">
-                      <chakra.pre flex="1" minW="0" alignSelf="center" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto">git pull &amp;&amp; npm install</chakra.pre>
-                      <CopyIconBtn copied={copiedId === 'git'} onCopy={() => copyStr('git pull && npm install', 'git')} label={t('Copy')} />
-                    </Flex>
-                    <Link href={REPO_URL + '/releases'} target="_blank" rel="noopener" display="inline-block" mt="3" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('All releases ↗')}</Link>
+                    {install === 'npx' ? (
+                      <Text fontSize="0.8125rem" color="ui.muted" mt="4">{t('You started AI Forge with npx — it already runs the latest version each time.')}</Text>
+                    ) : (
+                      <Stack gap="2.5" mt="5" align="flex-start">
+                        <BusyBtn busy={selfUpdating} variant="primary" onClick={selfUpdate}>{selfUpdating ? t('Updating…') : t('Update AI Forge')}</BusyBtn>
+                        <Text fontSize="0.75rem" color="ui.muted">{t('Updates the whole app from here. Server changes apply after you restart AI Forge.')}</Text>
+                        <chakra.details>
+                          <chakra.summary cursor="pointer" fontSize="0.75rem" color="ui.muted" _hover={{ color: 'ui.heading' }}>{t('Or update manually')}</chakra.summary>
+                          <Flex mt="2" align="stretch" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" overflow="hidden">
+                            <chakra.pre flex="1" minW="0" alignSelf="center" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto">{manualCmd}</chakra.pre>
+                            <CopyIconBtn copied={copiedId === 'git'} onCopy={() => copyStr(manualCmd, 'git')} label={t('Copy')} />
+                          </Flex>
+                        </chakra.details>
+                      </Stack>
+                    )}
+                    <Link href={REPO_URL + '/releases'} target="_blank" rel="noopener" display="inline-block" mt="4" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('All releases ↗')}</Link>
                   </Tabs.Content>
 
                   <Tabs.Content value="help" mt="0">
