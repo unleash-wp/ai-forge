@@ -45,6 +45,7 @@
   a{color:var(--navy);text-decoration:none}
   :root[data-theme="dark"] a{color:#8ea2ff}
   @media (prefers-color-scheme:dark){a{color:#8ea2ff}}
+  :root[data-theme="light"] a{color:var(--navy)}   /* forced light on a dark OS: keep readable navy links */
   a:hover{text-decoration:underline}
   code,pre,kbd{font-family:"Ubuntu Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
 
@@ -128,8 +129,8 @@
 
   @media(max-width:860px){
     nav.side{position:fixed;top:3.6rem;left:0;width:15.5rem;z-index:15;transform:translateX(-102%);
-      transition:transform .25s;box-shadow:var(--shadow)}
-    nav.side.open{transform:none}
+      transition:transform .25s;box-shadow:var(--shadow);visibility:hidden}   /* hidden = out of tab order when closed */
+    nav.side.open{transform:none;visibility:visible}
     #navBtn{display:grid}
   }
 </style>
@@ -204,7 +205,7 @@
 
       <h3>③ In Claude Desktop: one-click bundle</h3>
       <p class="muted">The full visual app renders as a window inside the assistant.</p>
-      <p>Install the <code>.mcpb</code> bundle from the <a href="https://github.com/unleash-wp/ai-forge/releases" target="_blank" rel="noopener">latest release</a> (double-click to Claude Desktop), or add the same plugin as in ①. Then a prompt like <i>"open AI Forge"</i> renders the app.</p>
+      <p>Install the <code>.mcpb</code> bundle from the <a href="https://github.com/unleash-wp/ai-forge/releases" target="_blank" rel="noopener">latest release</a> (double-click to open in Claude Desktop), or add the same plugin as in ①. Then a prompt like <i>"open AI Forge"</i> renders the app.</p>
 
       <div class="note">
         <b>One thing before your first full changelog:</b> connect GitHub. A full changelog makes ~50 GitHub API calls, and without auth you're capped at 60/hour. The browser app has a one-click "Sign in with GitHub" (see <a href="#connectors">Connectors</a>), or have the <code>gh</code> CLI logged in. The base changelog itself needs <b>no account and no WordPress.org login</b>.

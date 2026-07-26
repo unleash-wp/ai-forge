@@ -9,26 +9,30 @@ import { fetchJSON } from '../core.jsx';
 import { useT } from '../i18n.jsx';
 import { Button } from '../ui';
 
-export default function GithubDeviceConnect({ onConnected, size = 'sm' }) {
+export default function GithubDeviceConnect({ onConnected }) {
   const t = useT();
   const [flow, setFlow] = useState(null); // { user_code, verification_uri }
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const timer = useRef(null);
+  const mounted = useRef(true);
 
-  useEffect(() => () => clearTimeout(timer.current), []);
+  // Clear the pending timer AND stop the in-flight poll from re-scheduling or
+  // calling setState after unmount (e.g. the Settings dialog closes mid-flow).
+  useEffect(() => () => { mounted.current = false; clearTimeout(timer.current); }, []);
 
   function fail(text) { clearTimeout(timer.current); setBusy(false); setFlow(null); setMsg(text); }
 
   function poll(ms) {
     timer.current = setTimeout(() => {
       fetchJSON('/api/github-token/device/poll', { method: 'POST' }).then(({ data }) => {
+        if (!mounted.current) return;
         if (data.status === 'connected') { setBusy(false); setFlow(null); setMsg(''); onConnected && onConnected(); return; }
         if (data.status === 'pending') { poll((data.interval || ms / 1000) * 1000); return; }
         fail(data.status === 'expired' ? t('The code expired — try again.')
           : data.status === 'denied' ? t('Access was denied.')
           : (data.message || t('Sign-in failed.')));
-      }).catch(() => fail(t('Sign-in failed.')));
+      }).catch(() => { if (mounted.current) fail(t('Sign-in failed.')); });
     }, ms);
   }
 
@@ -62,7 +66,7 @@ export default function GithubDeviceConnect({ onConnected, size = 'sm' }) {
 
   return (
     <Box>
-      <Button variant="primary" size={size} onClick={start} disabled={busy} alignSelf="flex-start">
+      <Button variant="primary" size="sm" onClick={start} disabled={busy} alignSelf="flex-start">
         {busy ? t('Connecting…') : t('Sign in with GitHub')}
       </Button>
       {msg && <Text mt="1.5" fontSize="0.75rem" color="ui.bad">{msg}</Text>}
