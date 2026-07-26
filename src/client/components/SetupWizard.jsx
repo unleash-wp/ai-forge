@@ -21,6 +21,9 @@ const ICON_WORDPRESS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden
 // Claude Code + Codex: official marks (Claude Code keeps its brand colour).
 const ICON_CLAUDE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path clip-rule="evenodd" fill-rule="evenodd" fill="#D97757" d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"/></svg>';
 const ICON_CODEX = '<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" aria-hidden="true"><path clip-rule="evenodd" d="M8.086.457a6.105 6.105 0 013.046-.415c1.333.153 2.521.72 3.564 1.7a.117.117 0 00.107.029c1.408-.346 2.762-.224 4.061.366l.063.03.154.076c1.357.703 2.33 1.77 2.918 3.198.278.679.418 1.388.421 2.126a5.655 5.655 0 01-.18 1.631.167.167 0 00.04.155 5.982 5.982 0 011.578 2.891c.385 1.901-.01 3.615-1.183 5.14l-.182.22a6.063 6.063 0 01-2.934 1.851.162.162 0 00-.108.102c-.255.736-.511 1.364-.987 1.992-1.199 1.582-2.962 2.462-4.948 2.451-1.583-.008-2.986-.587-4.21-1.736a.145.145 0 00-.14-.032c-.518.167-1.04.191-1.604.185a5.924 5.924 0 01-2.595-.622 6.058 6.058 0 01-2.146-1.781c-.203-.269-.404-.522-.551-.821a7.74 7.74 0 01-.495-1.283 6.11 6.11 0 01-.017-3.064.166.166 0 00.008-.074.115.115 0 00-.037-.064 5.958 5.958 0 01-1.38-2.202 5.196 5.196 0 01-.333-1.589 6.915 6.915 0 01.188-2.132c.45-1.484 1.309-2.648 2.577-3.493.282-.188.55-.334.802-.438.286-.12.573-.22.861-.304a.129.129 0 00.087-.087A6.016 6.016 0 015.635 2.31C6.315 1.464 7.132.846 8.086.457zm-.804 7.85a.848.848 0 00-1.473.842l1.694 2.965-1.688 2.848a.849.849 0 001.46.864l1.94-3.272a.849.849 0 00.007-.854l-1.94-3.393zm5.446 6.24a.849.849 0 000 1.695h4.848a.849.849 0 000-1.696h-4.848z"/></svg>';
+// Claude Desktop: the official Claude sunburst (brand colour), distinct from the
+// Claude Code bracket mark above.
+const ICON_CLAUDE_DESKTOP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#D97757" fill-rule="nonzero" d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z"/></svg>';
 // Nav + action marks (currentColor, stroke).
 const ICON_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>';
 const ICON_UNLINK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg>';
@@ -313,8 +316,10 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
     setRegistering(agent);
     fetchJSON('/api/connectors/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agent }) })
       .then(({ data }) => {
-        if (data && data.ok) { setRegistered((r) => ({ ...r, [agent]: true })); core.toast(t('Registered in %s', name), 'success'); }
-        else core.toast((data && data.error) || t('Could not register automatically — copy the command.'));
+        if (data && data.ok) {
+          setRegistered((r) => ({ ...r, [agent]: true }));
+          core.toast(agent === 'claude-desktop' ? t('Registered — restart Claude Desktop to finish.') : t('Registered in %s', name), 'success');
+        } else core.toast((data && data.error) || t('Could not register automatically — copy the command.'));
       })
       .finally(() => setRegistering(''));
   }
@@ -389,6 +394,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
     'github-token': { icon: ICON_GITHUB, name: 'GitHub', desc: t('Raises the API limit to 5,000 requests per hour.') },
     'wporg-cookie': { icon: ICON_WORDPRESS, name: 'WordPress.org', desc: t('Adds full ticket text for deep mode.') },
     claude: { icon: ICON_CLAUDE, name: 'Claude Code', desc: t('Register Forge as an MCP server in %s.', 'Claude Code') },
+    'claude-desktop': { icon: ICON_CLAUDE_DESKTOP, name: 'Claude Desktop', desc: t('Register Forge as an MCP server in the %s app.', 'Claude Desktop') },
     codex: { icon: ICON_CODEX, name: 'Codex', desc: t('Add Forge as an MCP server in %s.', 'Codex') },
   };
 
@@ -445,6 +451,26 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
             </HStack>
           </chakra.form>
           {ckMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>}
+        </Stack>
+      );
+    }
+    if (c.id === 'claude-desktop') {
+      const name = 'Claude Desktop';
+      const local = registered[c.id];
+      const isReg = local === undefined ? !!(c.status && c.status.registered) : local;
+      if (isReg) {
+        return (
+          <HStack justify="space-between" gap="3" flexWrap="wrap">
+            <Text fontSize="0.8125rem" color="ui.muted">{t('Registered in %s.', name)}</Text>
+            <DisconnectBtn onClick={() => unregisterAgent(c.id)} />
+          </HStack>
+        );
+      }
+      // No CLI to copy — one click writes the config, then the user restarts the app.
+      return (
+        <Stack gap="2.5">
+          <BusyBtn variant="primary" busy={registering === c.id} onClick={() => registerAgent(c.id, name)} alignSelf="flex-start">{t('Connect %s', name)}</BusyBtn>
+          <Text fontSize="0.75rem" color="ui.muted">{t('Requires the Claude Desktop app. Restart it after connecting.')}</Text>
         </Stack>
       );
     }
@@ -530,12 +556,17 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="connectors" mt="0">
                     <TabTitle>{t('Connectors')}</TabTitle>
-                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code and Codex register Forge as an MCP server to query it live.')}</TabIntro>
+                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code, Claude Desktop and Codex register Forge as an MCP server to query it live.')}</TabIntro>
                     <Stack gap="3">
                       {((status && status.connectors) || []).map((c) => {
                         const p = PRESENT[c.id];
                         if (!p) return null;
-                        const ok = c.kind === 'credential' ? !!(c.status && c.status.set) : undefined;
+                        // The title carries a green check when connected — for the MCP
+                        // agents (Claude Code/Desktop, Codex) too, with a just-done
+                        // register/unregister winning over the config probe.
+                        const local = registered[c.id];
+                        const isReg = local === undefined ? !!(c.status && c.status.registered) : local;
+                        const ok = c.kind === 'credential' ? !!(c.status && c.status.set) : isReg;
                         return (
                           <ConnectorCard key={c.id} icon={p.icon} name={p.name} required={c.required} desc={p.desc} status={ok} open={openId === c.id} onToggle={() => toggle(c.id)}>
                             {renderBody(c)}

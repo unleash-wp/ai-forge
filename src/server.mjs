@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from './connectors/github-token.mjs';
 import { startDeviceFlow, pollDeviceFlow } from './connectors/github-device.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
-import { listConnectors } from './connectors/registry.mjs';
+import { listConnectors, registerDesktop, unregisterDesktop } from './connectors/registry.mjs';
 import { VERSION } from './version.mjs';
 import { FONT_FACE_CSS } from './fonts.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
@@ -296,6 +296,12 @@ export function startServer({ port = 4321, quiet = false } = {}) {
     // isn't installed we say so and the copy line is the fallback.
     if (url.pathname === '/api/connectors/register' && req.method === 'POST') {
       const agent = (JSON.parse(await readBody(req) || '{}').agent || '').trim();
+      // Claude Desktop has no CLI — merge Forge into its JSON config file instead.
+      if (agent === 'claude-desktop') {
+        try { registerDesktop(); json(res, 200, { ok: true }); }
+        catch (err) { json(res, 200, { ok: false, error: err.message }); }
+        return;
+      }
       const argv = REGISTER_CMDS[agent];
       if (!argv) { json(res, 400, { error: 'unknown agent' }); return; }
       try {
@@ -315,6 +321,11 @@ export function startServer({ port = 4321, quiet = false } = {}) {
     // Disconnect: run the agent's `mcp remove forge`. Already-gone counts as success.
     if (url.pathname === '/api/connectors/unregister' && req.method === 'POST') {
       const agent = (JSON.parse(await readBody(req) || '{}').agent || '').trim();
+      if (agent === 'claude-desktop') {
+        try { unregisterDesktop(); json(res, 200, { ok: true }); }
+        catch (err) { json(res, 200, { ok: false, error: err.message }); }
+        return;
+      }
       const argv = UNREGISTER_CMDS[agent];
       if (!argv) { json(res, 400, { error: 'unknown agent' }); return; }
       try {

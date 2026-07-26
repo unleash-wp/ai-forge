@@ -4,9 +4,9 @@
 // this instead of hardcoding four cards + a hand-maintained status shape. A
 // second tool can add connectors by exporting `connectors` from its server.mjs —
 // read at runtime via loadPlugins(), never a static tools/* import (cycle guard).
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { loadPlugins } from '../plugins.mjs';
 import { tokenStatus } from './github-token.mjs';
 import { deviceFlowConfigured } from './github-device.mjs';
@@ -25,8 +25,44 @@ function agentHasForge(agent) {
     if (agent === 'codex') {
       return { registered: /\[mcp_servers\.forge\]/.test(readFileSync(join(homedir(), '.codex', 'config.toml'), 'utf8')) };
     }
+    if (agent === 'claude-desktop') {
+      const d = JSON.parse(readFileSync(desktopConfigPath(), 'utf8'));
+      return { registered: !!(d.mcpServers && d.mcpServers.forge) };
+    }
   } catch { /* no config or unreadable */ }
   return { registered: false };
+}
+
+// Claude Desktop has no CLI — it reads a JSON config at launch. So the one-click
+// "Connect" merges Forge in (and out) of that file directly; the user restarts
+// the app to apply. Same server command the CLI agents register.
+const DESKTOP_ENTRY = { command: 'npx', args: ['-y', '@unleashwp/ai-forge@latest', 'mcp'] };
+
+export function desktopConfigPath() {
+  const home = homedir();
+  if (process.platform === 'darwin') return join(home, 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json');
+  if (process.platform === 'win32') return join(process.env.APPDATA || join(home, 'AppData', 'Roaming'), 'Claude', 'claude_desktop_config.json');
+  return join(home, '.config', 'Claude', 'claude_desktop_config.json');
+}
+function readDesktopConfig() {
+  try { return JSON.parse(readFileSync(desktopConfigPath(), 'utf8')); } catch { return {}; }
+}
+function writeDesktopConfig(cfg) {
+  const p = desktopConfigPath();
+  mkdirSync(dirname(p), { recursive: true });
+  writeFileSync(p, JSON.stringify(cfg, null, 2) + '\n');
+}
+// Merge Forge into the Claude Desktop config, preserving any other servers.
+export function registerDesktop() {
+  const cfg = readDesktopConfig();
+  cfg.mcpServers = cfg.mcpServers || {};
+  cfg.mcpServers.forge = { ...DESKTOP_ENTRY };
+  writeDesktopConfig(cfg);
+}
+export function unregisterDesktop() {
+  const cfg = readDesktopConfig();
+  if (cfg.mcpServers) delete cfg.mcpServers.forge;
+  writeDesktopConfig(cfg);
 }
 
 // The kinds a connector can be. `credential` has a store + status; `command` is a
@@ -57,6 +93,9 @@ const coreConnectors = [
     },
   },
   { id: 'claude', kind: 'command', required: false, command: mcpAddCmd('claude'), status: () => agentHasForge('claude') },
+  // Claude Desktop registers via a config-file merge (no CLI), so it carries no
+  // copy-paste `command`; the UI shows a one-click Connect + a restart hint.
+  { id: 'claude-desktop', kind: 'command', required: false, status: () => agentHasForge('claude-desktop') },
   { id: 'codex', kind: 'command', required: false, command: mcpAddCmd('codex'), status: () => agentHasForge('codex') },
 ];
 
