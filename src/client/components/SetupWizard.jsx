@@ -85,13 +85,13 @@ const WAYS = [
   { title: 'Report a bug or idea', desc: 'Open an issue on GitHub.', url: REPO_URL + '/issues/new' },
   { title: 'Pick a good first issue', desc: 'Small, friendly tasks to start with.', url: REPO_URL + '/labels/good%20first%20issue' },
   { title: 'Build a tool', desc: 'Every tool is a plugin. Add your own.', url: REPO_URL + '/blob/main/CONTRIBUTING.md' },
-  { title: 'Star the repo', desc: 'Help other people find Forge.', url: REPO_URL },
+  { title: 'Star the repo', desc: 'Help other people find AI Forge.', url: REPO_URL },
 ];
 const FAQ = [
   { q: 'Do I need a GitHub account?', a: 'No. A token is optional, but it raises the API limit to 5,000 per hour.' },
   { q: 'What is deep mode?', a: 'It adds full ticket text from WordPress.org. It needs the wordpress.org cookie connector.' },
   { q: 'Where are my keys stored?', a: 'On your machine, in owner-only files. They are never shared.' },
-  { q: 'How do I update Forge?', a: 'Run git pull, then npm install. See the Updates tab.' },
+  { q: 'How do I update AI Forge?', a: 'Run git pull, then npm install. See the Updates tab.' },
 ];
 const STEPS = [
   'Connect GitHub and WordPress.org in the Connectors tab.',
@@ -393,9 +393,9 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   const PRESENT = {
     'github-token': { icon: ICON_GITHUB, name: 'GitHub', desc: t('Raises the API limit to 5,000 requests per hour.') },
     'wporg-cookie': { icon: ICON_WORDPRESS, name: 'WordPress.org', desc: t('Adds full ticket text for deep mode.') },
-    claude: { icon: ICON_CLAUDE, name: 'Claude Code', desc: t('Register Forge as an MCP server in %s.', 'Claude Code') },
-    'claude-desktop': { icon: ICON_CLAUDE_DESKTOP, name: 'Claude Desktop', desc: t('Register Forge as an MCP server in the %s app.', 'Claude Desktop') },
-    codex: { icon: ICON_CODEX, name: 'Codex', desc: t('Add Forge as an MCP server in %s.', 'Codex') },
+    claude: { icon: ICON_CLAUDE, name: 'Claude Code', desc: t('Register AI Forge as an MCP server in %s.', 'Claude Code') },
+    'claude-desktop': { icon: ICON_CLAUDE_DESKTOP, name: 'Claude Desktop', desc: t('Register AI Forge as an MCP server in the %s app.', 'Claude Desktop') },
+    codex: { icon: ICON_CODEX, name: 'Codex', desc: t('Add AI Forge as an MCP server in %s.', 'Codex') },
   };
 
   function renderBody(c) {
@@ -556,7 +556,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="connectors" mt="0">
                     <TabTitle>{t('Connectors')}</TabTitle>
-                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code, Claude Desktop and Codex register Forge as an MCP server to query it live.')}</TabIntro>
+                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code, Claude Desktop and Codex register AI Forge as an MCP server to query it live.')}</TabIntro>
                     <Stack gap="3">
                       {((status && status.connectors) || []).map((c) => {
                         const p = PRESENT[c.id];
@@ -613,7 +613,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="help" mt="0">
                     <TabTitle>{t('Help')}</TabTitle>
-                    <TabIntro>{t('New to Forge? Here is how to get going, plus answers to common questions.')}</TabIntro>
+                    <TabIntro>{t('New to AI Forge? Here is how to get going, plus answers to common questions.')}</TabIntro>
                     <Stack gap="6" maxW="46rem">
                       <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="5" py="4">
                         <Heading as="h3" fontSize="0.9375rem" fontWeight="700" color="ui.heading" mb="3.5">{t('How it works')}</Heading>
@@ -703,7 +703,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                       <Tabs.Content value="contribute" mt="0">
                         <Stack gap="5" maxW="46rem">
                           <Box borderRadius="forge" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" px="5" py="4">
-                            <Text fontSize="0.9375rem" fontWeight="700" color="ui.heading" lineHeight="1.5">{t('Forge is open source, built by the community.')}</Text>
+                            <Text fontSize="0.9375rem" fontWeight="700" color="ui.heading" lineHeight="1.5">{t('AI Forge is open source, built by the community.')}</Text>
                             <Text fontSize="0.8125rem" color="ui.muted" mt="1" lineHeight="1.55">{t('Every fix, idea, or new tool makes it better for the whole WordPress world. Jump in, you are welcome here.')}</Text>
                           </Box>
 
