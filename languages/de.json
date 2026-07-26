@@ -48,7 +48,7 @@
   "Delete all local settings for this browser? This cannot be undone.": "Alle lokalen Einstellungen für diesen Browser löschen? Das kann nicht rückgängig gemacht werden.",
   "Delete everything": "Alles löschen",
   "Cancel": "Abbrechen",
-  "Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code, Claude Desktop and Codex register AI Forge as an MCP server to query it live.": "Tools holen ihre Daten von diesen Anbietern. GitHub und WordPress.org werden für jedes Tool benötigt. Claude Code, Claude Desktop und Codex registrieren AI Forge als MCP-Server, um es live abzufragen.",
+  "Your tools get their data from here. GitHub and WordPress.org power every tool. Connect Claude Code, Claude Desktop or Codex so you can query AI Forge straight from your AI.": "Deine Tools holen ihre Daten von hier. GitHub und WordPress.org braucht jedes Tool. Verbinde Claude Code, Claude Desktop oder Codex, damit du AI Forge direkt aus deiner KI abfragen kannst.",
   "Required": "Erforderlich",
   "Connected": "Verbunden",
   "Not connected": "Nicht verbunden",
