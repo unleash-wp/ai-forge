@@ -18,10 +18,16 @@ import { dirname, join } from 'node:path';
 // Package root = the folder above src/ (this file lives in src/).
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// How was this copy installed? Path shape + a .git marker tell us.
+// How was this copy installed? Path shape + a .git marker tell us. A copy under
+// node_modules is either a project dependency (a host package.json sits above
+// node_modules → 'local', not self-updatable from here) or a global install (npm
+// prefix, no host package.json → 'global').
 export function detectInstall() {
   if (/[\\/](_npx|\.npm[\\/]_npx)[\\/]/.test(ROOT)) return 'npx';
   if (existsSync(join(ROOT, '.git'))) return 'git';
+  if (/[\\/]node_modules[\\/]@unleashwp[\\/]ai-forge$/.test(ROOT)) {
+    return existsSync(join(ROOT, '..', '..', '..', 'package.json')) ? 'local' : 'global';
+  }
   return 'global';
 }
 
@@ -41,6 +47,11 @@ export async function runSelfUpdate() {
   try {
     if (method === 'npx') {
       return { ok: true, method, restart: false, message: 'npx always runs the latest — nothing to update.' };
+    }
+    if (method === 'local') {
+      // A project dependency: updating the global copy wouldn't touch it, so don't
+      // silently mutate the user's environment — tell them where to update.
+      return { ok: true, method, restart: false, message: 'AI Forge is installed as a project dependency — update it with `npm update @unleashwp/ai-forge` in that project.' };
     }
     if (method === 'git') {
       await run('git', ['pull', '--ff-only']);

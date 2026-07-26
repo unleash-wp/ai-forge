@@ -6,7 +6,7 @@ import { dirname, join } from 'node:path';
 import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from './connectors/github-token.mjs';
 import { startDeviceFlow, pollDeviceFlow } from './connectors/github-device.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
-import { listConnectors, registerDesktop, unregisterDesktop } from './connectors/registry.mjs';
+import { listConnectors, registerDesktop, unregisterDesktop, SERVER_ID } from './connectors/registry.mjs';
 import { VERSION } from './version.mjs';
 import { FONT_FACE_CSS } from './fonts.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
@@ -17,12 +17,12 @@ import { loadPlugins } from './plugins.mjs';
 // the command), so there is nothing to inject. Falls back to copy when the CLI
 // isn't on PATH. Claude uses --scope user so it registers globally.
 const REGISTER_CMDS = {
-  claude: ['claude', 'mcp', 'add', '--scope', 'user', 'uwp-ai-forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
-  codex: ['codex', 'mcp', 'add', 'uwp-ai-forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
+  claude: ['claude', 'mcp', 'add', '--scope', 'user', SERVER_ID, '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
+  codex: ['codex', 'mcp', 'add', SERVER_ID, '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
 };
 const UNREGISTER_CMDS = {
-  claude: ['claude', 'mcp', 'remove', 'uwp-ai-forge'],
-  codex: ['codex', 'mcp', 'remove', 'uwp-ai-forge'],
+  claude: ['claude', 'mcp', 'remove', SERVER_ID],
+  codex: ['codex', 'mcp', 'remove', SERVER_ID],
 };
 
 function execCmd(argv) {
@@ -43,12 +43,28 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 // header wordmark now lives in the React bundle, not injected here.
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 
-export function startServer({ port = 4321, quiet = false } = {}) {
+// State-changing routes that write credentials, install/run code, or self-update.
+// The MCP-app internal server (internal:true) is reachable only through the
+// forge_api proxy, which a prompt-injected model can call on hosts that don't
+// honor the tool's app-only visibility hint — so these are hard-blocked there.
+// Setup happens in `serve` (a real browser) or via the MCPB user_config env; the
+// tool's read/data routes stay open so the app window still works.
+const ADMIN_ROUTES = new Set([
+  '/api/github-token', '/api/github-token/enable', '/api/github-token/device/start', '/api/github-token/device/poll',
+  '/api/cookie', '/api/cookie/import',
+  '/api/connectors/register', '/api/connectors/unregister',
+  '/api/self-update',
+  '/api/plugins/install', '/api/plugins/upload', '/api/plugins/bulk', '/api/plugins/uninstall', '/api/plugins/toggle',
+  '/api/installed',
+]);
+
+export function startServer({ port = 4321, quiet = false, internal = false } = {}) {
   // Load tool plugins; reloadable so install/uninstall picks up changes without
   // a server restart (the client rebuild + reload picks up the new bundle).
   let pluginsReady = loadPlugins();
   const reloadPlugins = () => { pluginsReady = loadPlugins(); return pluginsReady; };
   const server = createServer(async (req, res) => {
+   try {
     const url = new URL(req.url, `http://localhost:${port}`);
 
     // Anti-DNS-rebinding: only serve requests addressed to a local host. A rebound
@@ -63,6 +79,13 @@ export function startServer({ port = 4321, quiet = false } = {}) {
     // Sec-Fetch-Site/Origin and pass. Reads (GET/HEAD) return only public data.
     if (req.method !== 'GET' && req.method !== 'HEAD' && isCrossSite(req)) {
       json(res, 403, { error: 'cross-site request refused' });
+      return;
+    }
+
+    // App-window backstop (see ADMIN_ROUTES): deny credential/install/self-update
+    // routes on the forge_api-reachable internal server.
+    if (internal && req.method !== 'GET' && req.method !== 'HEAD' && ADMIN_ROUTES.has(url.pathname)) {
+      json(res, 403, { error: 'not available in the app window' });
       return;
     }
 
@@ -421,6 +444,13 @@ export function startServer({ port = 4321, quiet = false } = {}) {
 
     res.writeHead(404, { 'Cache-Control': 'no-store' });
     res.end('Not found');
+   } catch (err) {
+    // Top-level boundary: a throw/rejection in any route (e.g. malformed JSON
+    // body, a network blip during device-flow polling) returns a 500 instead of
+    // crashing the process under Node's unhandled-rejection default.
+    try { if (!res.headersSent) json(res, 500, { error: 'internal error' }); else res.end(); }
+    catch { /* response already torn down */ }
+   }
   });
 
   server.on('error', (err) => {
@@ -464,6 +494,14 @@ function isCrossSite(req) {
   if (origin) {
     try { return new URL(origin).host !== req.headers.host; } catch { return true; }
   }
+  // Legacy browsers that send neither Sec-Fetch-Site nor Origin still send a
+  // Referer on a cross-site form POST — reject when it points at another host. A
+  // caller with no Referer at all is the CLI / loopback proxy / tests (not a
+  // browser), so it passes.
+  const referer = req.headers.referer;
+  if (referer) {
+    try { return new URL(referer).host !== req.headers.host; } catch { return true; }
+  }
   return false;
 }
 
@@ -492,10 +530,11 @@ function writeDisabled(set) {
 function clearDisabled(id) { const s = readDisabled(); if (s.delete(id)) writeDisabled(s); }
 
 function readBody(req) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     let data = '';
-    req.on('data', (c) => { data += c; if (data.length > 1e6) req.destroy(); });
+    req.on('data', (c) => { data += c; if (data.length > 1e6) { req.destroy(); reject(new Error('body too large')); } });
     req.on('end', () => resolve(data));
+    req.on('error', reject); // socket error mid-body: settle, don't leak the promise
   });
 }
 

@@ -72,9 +72,19 @@ export async function generate(opts, onStep = () => {}) {
   return { meta, report };
 }
 
-// Date-only -> full-day bounds; ISO strings pass through untouched.
+// Date-only -> full-day bounds; ISO strings pass through untouched. A shape-valid
+// but impossible date (2026-13-45) is rejected here with a clear message instead
+// of being forwarded to GitHub and surfacing as a raw 422.
 export function normDate(v, isEnd) {
   if (!v || v === true) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return `${v}T${isEnd ? '23:59:59' : '00:00:00'}Z`;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (m) {
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    const dt = new Date(Date.UTC(y, mo - 1, d));
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) {
+      throw new Error(`invalid date: ${v} (use YYYY-MM-DD)`);
+    }
+    return `${v}T${isEnd ? '23:59:59' : '00:00:00'}Z`;
+  }
   return v;
 }

@@ -26,7 +26,10 @@ export async function fetchTracker(milestone) {
   const files = listing.filter((f) => f.name.endsWith('.json') && f.download_url);
   const map = new Map();
   await pool(files, 8, async (f) => {
-    const data = await fetchRaw(f.download_url);
+    // One flaky component file (transient raw.githubusercontent.com 5xx / non-JSON)
+    // must not fail the whole changelog — skip it, keep the rest of the map.
+    let data;
+    try { data = await fetchRaw(f.download_url); } catch { return; }
     for (const t of data.tickets || []) {
       map.set(t.id, {
         component: t.component,
