@@ -5,12 +5,27 @@
 // - the free core stays free). Contributors add a folder; nothing else to wire.
 import { readdirSync, existsSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { VERSION } from './version.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
-const TOOLS = join(DIR, '..', 'tools');
+const TOOLS = join(DIR, '..', 'tools'); // bundled tools, shipped inside the package
 const CORE_VERSION = VERSION;
+
+// Community/extension plugins live OUTSIDE the package, in the user's config dir,
+// so a package update that replaces the install directory (npm i -g / npx) never
+// deletes them. loadPlugins() scans this alongside the bundled tools.
+export function userPluginsDir() {
+  const base = process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
+  return join(base, 'uwp-ai-forge', 'tools');
+}
+
+// Is `id` a bundled tool (ships with the package)? Bundled tools can't be
+// uninstalled — they come back on the next update.
+export function isBundledPlugin(id) {
+  return existsSync(join(TOOLS, String(id), 'plugin.json'));
+}
 
 // Compare two "x.y.z" strings: -1 if a < b, 0 if equal, 1 if a > b.
 function cmpVersion(a, b) {
@@ -34,12 +49,14 @@ export function satisfiesCore(range, core = CORE_VERSION) {
   return c >= 0;
 }
 
-export async function loadPlugins() {
-  const plugins = [];
-  if (!existsSync(TOOLS)) return plugins;
-  for (const id of readdirSync(TOOLS).sort()) {
+// Scan one tools/ root into `byId` (keyed by manifest id). Called for the bundled
+// dir first, then the user dir — so a user plugin with the same id overrides the
+// bundled one (a community fork), and community ids are simply added.
+async function scanDir(root, byId) {
+  if (!existsSync(root)) return;
+  for (const id of readdirSync(root).sort()) {
     if (id.startsWith('_')) continue; // _template etc. are copy-me examples, not live tools
-    const dir = join(TOOLS, id);
+    const dir = join(root, id);
     if (!statSync(dir).isDirectory()) continue;
     const manifestPath = join(dir, 'plugin.json');
     if (!existsSync(manifestPath)) continue;
@@ -63,7 +80,7 @@ export async function loadPlugins() {
         console.error(`plugin "${id}": server.mjs failed to load (${err.message})`);
       }
     }
-    plugins.push({
+    byId.set(manifest.id || id, {
       manifest,
       routes: (mod && mod.routes) || [],
       commands: (mod && mod.commands) || [],
@@ -72,5 +89,11 @@ export async function loadPlugins() {
       uiResources: (mod && mod.uiResources) || [],
     });
   }
-  return plugins;
+}
+
+export async function loadPlugins() {
+  const byId = new Map();
+  await scanDir(TOOLS, byId);            // bundled (shipped with the package)
+  await scanDir(userPluginsDir(), byId); // community installs (survive updates)
+  return [...byId.values()];
 }
