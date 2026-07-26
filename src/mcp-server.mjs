@@ -9,6 +9,7 @@
 import { loadPlugins } from './plugins.mjs';
 import { startInternalServer, forgeAppHtml, appAvailable } from './mcp-app.mjs';
 import { VERSION } from './version.mjs';
+import { SERVER_ID } from './connectors/registry.mjs';
 
 const PROTOCOL = '2024-11-05';
 
@@ -79,7 +80,7 @@ export async function startMcpServer() {
     if (id == null) return; // notification (e.g. notifications/initialized): no reply
 
     if (method === 'initialize') {
-      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {}, prompts: {}, resources: {} }, serverInfo: { name: 'uwp-ai-forge', version: VERSION } });
+      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {}, prompts: {}, resources: {} }, serverInfo: { name: SERVER_ID, version: VERSION } });
     }
     if (method === 'ping') return ok(id, {});
     // MCP Apps: the ui:// HTML panels tools render in (rendered in a sandboxed

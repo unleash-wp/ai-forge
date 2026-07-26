@@ -28,7 +28,9 @@ export function parseCommit(c) {
   const csMatch = msg.match(/git-svn-id:\s*\S+@(\d+)/) || msg.match(/(?:trunk|branches\/[\d.]+)@(\d+)/);
   const changeset = csMatch ? Number(csMatch[1]) : null;
 
-  const propsMatch = msg.match(/^Props[:\s]+([^.]+)\.?\s*$/im);
+  // Capture the whole Props line (a name with a dot no longer truncates it, and
+  // `.` here can't span newlines — no `s` flag); strip an optional trailing period.
+  const propsMatch = msg.match(/^Props[:\s]+(.+?)\.?\s*$/im);
   const props = propsMatch
     ? propsMatch[1].split(',').map((s) => s.trim()).filter(Boolean)
     : [];

@@ -15,7 +15,10 @@ const BUNDLE = join(DIR, '..', 'dist', 'main.js');
 // Start the existing HTTP server on an ephemeral loopback port, quietly (stdout
 // is reserved for JSON-RPC). Resolves the chosen port.
 export async function startInternalServer() {
-  const server = startServer({ port: 0, quiet: true });
+  // internal:true blocks the credential/install/self-update routes — this server
+  // is reachable only through the forge_api proxy, which the model can reach on
+  // hosts that don't enforce the tool's app-only visibility.
+  const server = startServer({ port: 0, quiet: true, internal: true });
   await once(server, 'listening');
   return { port: server.address().port, server };
 }

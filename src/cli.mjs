@@ -36,7 +36,7 @@ export async function run(argv) {
     console.log('Updating AI Forge…');
     const r = await runSelfUpdate();
     if (!r.ok) throw new Error(r.error);
-    if (r.method === 'npx') console.log('npx already runs the latest version — nothing to update.');
+    if (r.message) console.log(r.message); // npx / project-dependency: nothing to run here
     else console.log('Success: AI Forge is up to date.' + (r.restart ? ' Restart any running `uwp-ai-forge serve` or MCP to load server changes.' : ''));
     return;
   }

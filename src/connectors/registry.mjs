@@ -30,8 +30,10 @@ function agentHasForge(agent) {
       return { registered: !!(d.mcpServers && d.mcpServers[SERVER_ID]) };
     }
     if (agent === 'codex') {
-      // TOML table header: bare hyphenated key, or quoted — match both.
-      return { registered: /\[mcp_servers\.["']?uwp-ai-forge["']?\]/.test(readFileSync(join(homedir(), '.codex', 'config.toml'), 'utf8')) };
+      // TOML table header: bare hyphenated key, or quoted — match both. Built from
+      // SERVER_ID so it can't drift from the id the register command writes.
+      const rx = new RegExp('\\[mcp_servers\\.["\']?' + SERVER_ID + '["\']?\\]');
+      return { registered: rx.test(readFileSync(join(homedir(), '.codex', 'config.toml'), 'utf8')) };
     }
     if (agent === 'claude-desktop') {
       const d = JSON.parse(readFileSync(desktopConfigPath(), 'utf8'));
@@ -53,7 +55,13 @@ export function desktopConfigPath() {
   return join(home, '.config', 'Claude', 'claude_desktop_config.json');
 }
 function readDesktopConfig() {
-  try { return JSON.parse(readFileSync(desktopConfigPath(), 'utf8')); } catch { return {}; }
+  let raw;
+  try { raw = readFileSync(desktopConfigPath(), 'utf8'); }
+  catch { return {}; } // no config file yet — starting fresh is fine
+  // File exists but doesn't parse: refuse rather than overwrite, or a one-click
+  // Connect would silently wipe the user's other MCP servers.
+  try { return JSON.parse(raw); }
+  catch { throw new Error('Your Claude Desktop config is not valid JSON. Fix it first so your other MCP servers are not lost.'); }
 }
 function writeDesktopConfig(cfg) {
   const p = desktopConfigPath();
