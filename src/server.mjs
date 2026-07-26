@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { execFile } from 'node:child_process';
 import { readFileSync, existsSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -10,6 +11,27 @@ import { VERSION } from './version.mjs';
 import { FONT_FACE_CSS } from './fonts.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
+
+// Fixed argv per agent for the one-click "Register in …" button — Forge runs the
+// same `mcp add` command the copy-paste card shows. Whitelisted (no user input in
+// the command), so there is nothing to inject. Falls back to copy when the CLI
+// isn't on PATH. Claude uses --scope user so it registers globally.
+const REGISTER_CMDS = {
+  claude: ['claude', 'mcp', 'add', '--scope', 'user', 'forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
+  codex: ['codex', 'mcp', 'add', 'forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
+};
+const UNREGISTER_CMDS = {
+  claude: ['claude', 'mcp', 'remove', 'forge'],
+  codex: ['codex', 'mcp', 'remove', 'forge'],
+};
+
+function execCmd(argv) {
+  return new Promise((resolve, reject) => {
+    execFile(argv[0], argv.slice(1), { timeout: 30000 }, (err, stdout, stderr) => {
+      if (err) { err.stderr = stderr; reject(err); } else resolve(stdout);
+    });
+  });
+}
 import { checkUpdates } from './update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
@@ -266,6 +288,44 @@ export function startServer({ port = 4321, quiet = false } = {}) {
 
     if (url.pathname === '/api/github-token/device/poll' && req.method === 'POST') {
       json(res, 200, await pollDeviceFlow());
+      return;
+    }
+
+    // One-click "Register in Claude Code / Codex": run the same mcp-add command the
+    // copy card shows. On success the agent has Forge as an MCP server; if its CLI
+    // isn't installed we say so and the copy line is the fallback.
+    if (url.pathname === '/api/connectors/register' && req.method === 'POST') {
+      const agent = (JSON.parse(await readBody(req) || '{}').agent || '').trim();
+      const argv = REGISTER_CMDS[agent];
+      if (!argv) { json(res, 400, { error: 'unknown agent' }); return; }
+      try {
+        await execCmd(argv);
+        json(res, 200, { ok: true });
+      } catch (err) {
+        const stderr = String(err.stderr || '');
+        // Re-clicking after it's already registered is a success, not an error.
+        if (/already\s+(exists|configured|registered)/i.test(stderr)) { json(res, 200, { ok: true }); return; }
+        json(res, 200, { ok: false, error: err.code === 'ENOENT'
+          ? `The ${agent} CLI isn't on your PATH — copy the command and run it in a terminal instead.`
+          : stderr.trim() || err.message });
+      }
+      return;
+    }
+
+    // Disconnect: run the agent's `mcp remove forge`. Already-gone counts as success.
+    if (url.pathname === '/api/connectors/unregister' && req.method === 'POST') {
+      const agent = (JSON.parse(await readBody(req) || '{}').agent || '').trim();
+      const argv = UNREGISTER_CMDS[agent];
+      if (!argv) { json(res, 400, { error: 'unknown agent' }); return; }
+      try {
+        await execCmd(argv);
+        json(res, 200, { ok: true });
+      } catch (err) {
+        const stderr = String(err.stderr || '');
+        if (/not\s+found|no\s+such|does\s*n.?t\s+exist/i.test(stderr)) { json(res, 200, { ok: true }); return; }
+        json(res, 200, { ok: false, error: err.code === 'ENOENT'
+          ? `The ${agent} CLI isn't on your PATH.` : stderr.trim() || err.message });
+      }
       return;
     }
 
