@@ -6,6 +6,5 @@
   "coreVersion": ">=0.1.0",
   "icon": "code",
   "author": "UnleashWP",
-  "price": "free",
-  "updateSource": "github:unleash-wp/ai-forge"
+  "price": "free"
 }

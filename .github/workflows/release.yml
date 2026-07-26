@@ -34,17 +34,21 @@ jobs:
         run: npm ci --ignore-scripts
 
       # One version source = package.json. The tag must match it, and every derived
-      # file (manifest.json) must be in sync — run `node scripts/sync-version.mjs`.
+      # file (manifest.json AND every tools/*/plugin.json) must already be in sync.
+      # Running sync-version must produce no changes — otherwise a derived version
+      # drifted and would ship (e.g. a bundled plugin.json flagged as "update
+      # available" against its own release).
       - name: Check versions are in sync
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PKG="$(node -p "require('./package.json').version")"
-          MAN="$(node -p "require('./manifest.json').version")"
           if [ "$TAG" != "$PKG" ]; then
             echo "Tag $GITHUB_REF_NAME does not match package.json version $PKG" >&2; exit 1
           fi
-          if [ "$MAN" != "$PKG" ]; then
-            echo "manifest.json ($MAN) != package.json ($PKG) — run: node scripts/sync-version.mjs" >&2; exit 1
+          node scripts/sync-version.mjs
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Derived versions out of sync with package.json ($PKG). Run: node scripts/sync-version.mjs, commit, re-tag." >&2
+            git --no-pager diff HEAD; exit 1
           fi
 
       - name: Build the browser UI bundle

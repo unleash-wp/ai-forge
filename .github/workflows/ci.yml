@@ -8,12 +8,15 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [18, 20, 22, 24]   # engines says >=18 — test the floor, not just latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }}
           cache: npm
 
       # Install without the prepare build, then build explicitly so a broken
@@ -24,8 +27,13 @@ jobs:
       - name: Build the browser UI bundle
         run: npm run build
 
+      # `node --check` only checks the first path it is given, so loop — and cover
+      # src/connectors and the tool plugins, not just src/*.mjs.
       - name: Syntax-check all source modules
-        run: node --check src/*.mjs bin/*.mjs webpack.config.cjs
+        run: |
+          for f in src/*.mjs src/connectors/*.mjs tools/*/*.mjs tools/*/lib/*.mjs bin/*.mjs webpack.config.cjs; do
+            node --check "$f"
+          done
 
       - name: Unit tests
         run: node --test

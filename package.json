@@ -28,7 +28,7 @@
     "new-tool": "node scripts/new-tool.mjs",
     "mcpb:pack": "node scripts/sync-version.mjs && npm run build && npx -y @anthropic-ai/mcpb pack . unleashwp-ai-forge.mcpb",
     "wiki:publish": "bash scripts/publish-wiki.sh",
-    "version": "node scripts/sync-version.mjs && git add manifest.json",
+    "version": "node scripts/sync-version.mjs",
     "test": "node --test",
     "prepare": "webpack --mode production",
     "prepublishOnly": "npm run build && node --test"
