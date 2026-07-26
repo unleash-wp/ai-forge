@@ -253,7 +253,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
       json(res, 200, {
         version: VERSION,
         installed: isInstalled(),
-        install: detectInstall(), // git | global | npx — drives the self-updater UI
+        install: detectInstall(), // git | global | npx | local — drives the self-updater UI
         connectors: await listConnectors(),
         mcp: { available: wporgAvailable() },
       });

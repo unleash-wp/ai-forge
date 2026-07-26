@@ -478,7 +478,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
           {browser && <BusyBtn busy={busy === 'wp-import'} onClick={importCookie} alignSelf="flex-start">{t('Import from %s', BROWSER_NAMES[browser])}</BusyBtn>}
           <chakra.form onSubmit={(e) => e.preventDefault()} m="0">
             <HStack gap="2" align="center">
-              <Box flex="1"><TextInput size="sm" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={(e) => saveCookie(e.clipboardData.getData('text'))} placeholder="Or paste wporg_logged_in=…; wporg_sec=…" spellCheck="false" /></Box>
+              <Box flex="1"><TextInput size="sm" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={(e) => saveCookie(e.clipboardData.getData('text'))} placeholder={t('Or paste wporg_logged_in=…; wporg_sec=…')} spellCheck="false" /></Box>
               <BusyBtn busy={busy === 'wp-cookie'} variant="ghost" onClick={saveCookie} flex="none">{t('Connect')}</BusyBtn>
             </HStack>
           </chakra.form>

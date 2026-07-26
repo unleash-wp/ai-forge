@@ -117,10 +117,10 @@ function changelogBodyHtml(data) {
   }
   cl += '<section class="cl-group">' + groupHeadHtml('Core', s.trac, meta.coreBranch);
   if (report.core.tracker) {
-    cl += '<p class="cl-note">Grouped via <code>' + esc(report.core.tracker.slug) + '</code> dev-notes tracker.</p>';
+    cl += '<p class="cl-note">' + __('Grouped via the %s dev-notes tracker.', '<code>' + esc(report.core.tracker.slug) + '</code>') + '</p>';
     sortGroups(report.core.byComponent, true).forEach((g) => { cl += coreGroup(g[0], g[1]); });
   } else {
-    if (meta.trackerMissing) cl += '<p class="cl-note">No dev-notes tracker for this milestone. Core stays ungrouped.</p>';
+    if (meta.trackerMissing) cl += '<p class="cl-note">' + __('No dev-notes tracker for this milestone. Core stays ungrouped.') + '</p>';
     cl += '<ul class="cl-list">' + report.core.commits.map(coreItem).join('') + '</ul>';
   }
   cl += '</section>';
