@@ -5,15 +5,18 @@
 // explicitly chose (a URL they typed, a file they picked). Never from a source
 // that came from page content or another tool. A plugin repo/zip has plugin.json
 // at its root (one tool per repo).
-import { existsSync, readFileSync, rmSync, cpSync, mkdtempSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, cpSync, mkdtempSync, readdirSync, statSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
+import { userPluginsDir, isBundledPlugin } from './plugins.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(DIR, '..');
-const TOOLS = join(ROOT, 'tools');
+// Community plugins install into the user's config dir, NOT the package — so an
+// app update (npm i -g / npx replaces the install dir) never deletes them.
+const TOOLS = userPluginsDir();
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/; // no dots/slashes/underscores -> no path traversal
 
 export function parseSource(source) {
@@ -75,6 +78,7 @@ export function installArchive(archivePath, kind, { toolsDir = TOOLS } = {}) {
   const pluginDir = locatePluginDir(extracted);
   const manifest = readManifest(pluginDir);
   const dest = join(toolsDir, manifest.id);
+  mkdirSync(toolsDir, { recursive: true }); // the user plugins dir may not exist yet
   rmSync(dest, { recursive: true, force: true }); // reinstall / update overwrites
   cpSync(pluginDir, dest, { recursive: true });
   return manifest;
@@ -89,6 +93,8 @@ export async function installFromSource(source) {
 
 export function uninstall(id, { toolsDir = TOOLS } = {}) {
   if (!ID_RE.test(String(id || ''))) throw new Error('invalid tool id');
+  // Bundled tools ship with the app and would return on the next update — refuse.
+  if (isBundledPlugin(id)) throw new Error('bundled tools ship with the app and can\'t be removed');
   const dest = join(toolsDir, id);
   if (!existsSync(dest) || !statSync(dest).isDirectory()) throw new Error('tool not installed');
   rmSync(dest, { recursive: true, force: true });
