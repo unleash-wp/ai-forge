@@ -220,12 +220,20 @@ function CopyIconBtn({ copied, onCopy, label }) {
   );
 }
 
-function CmdPanel({ id, cmd, copiedId, onCopy }) {
+function CmdPanel({ id, cmd, copiedId, onCopy, onRegister, registerLabel, registerBusy }) {
   return (
-    <Flex align="stretch" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" overflow="hidden">
-      <chakra.code flex="1" minW="0" alignSelf="center" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{cmd}</chakra.code>
-      <CopyIconBtn copied={copiedId === id} onCopy={onCopy} label={__('Copy command')} />
-    </Flex>
+    <Stack gap="2.5">
+      {onRegister && (
+        <BusyBtn variant="primary" busy={registerBusy} onClick={onRegister} alignSelf="flex-start">
+          {registerLabel}
+        </BusyBtn>
+      )}
+      <Flex align="stretch" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" overflow="hidden">
+        <chakra.code flex="1" minW="0" alignSelf="center" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{cmd}</chakra.code>
+        <CopyIconBtn copied={copiedId === id} onCopy={onCopy} label={__('Copy command')} />
+      </Flex>
+      {onRegister && <Text fontSize="0.75rem" color="ui.muted">{__('One click if the CLI is installed — or copy and run it yourself.')}</Text>}
+    </Stack>
   );
 }
 
@@ -242,6 +250,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   const [copiedId, setCopiedId] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [busy, setBusy] = useState('');
+  const [registering, setRegistering] = useState('');
+  const [registered, setRegistered] = useState({});
 
   // General
   const { locale, setLocale, t } = useI18n();
@@ -296,6 +306,25 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .catch(() => core.toast('Copy failed'));
   }
   function copyCmd(id, cmd) { copyStr(cmd, id); }
+
+  // One-click: the server runs the agent's `mcp add` command. On success, mark it
+  // registered; if the CLI is missing, surface the message and leave the copy line.
+  function registerAgent(agent, name) {
+    setRegistering(agent);
+    fetchJSON('/api/connectors/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agent }) })
+      .then(({ data }) => {
+        if (data && data.ok) { setRegistered((r) => ({ ...r, [agent]: true })); core.toast(t('Registered in %s', name), 'success'); }
+        else core.toast((data && data.error) || t('Could not register automatically — copy the command.'));
+      })
+      .finally(() => setRegistering(''));
+  }
+  function unregisterAgent(agent) {
+    fetchJSON('/api/connectors/unregister', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agent }) })
+      .then(({ data }) => {
+        if (data && data.ok) { setRegistered((r) => ({ ...r, [agent]: false })); refreshStatus(); }
+        else core.toast((data && data.error) || t('Could not remove.'));
+      });
+  }
 
   function testGh() {
     setGhMsg({ text: 'Checking…', kind: '' });
@@ -420,7 +449,20 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       );
     }
     if (c.kind === 'command') {
-      return <CmdPanel id={c.id} cmd={c.command} copiedId={copiedId} onCopy={() => copyCmd(c.id, c.command)} />;
+      const name = (PRESENT[c.id] && PRESENT[c.id].name) || c.id;
+      const local = registered[c.id]; // true | false | undefined (a just-done action wins over the probe)
+      const isReg = local === undefined ? !!(c.status && c.status.registered) : local;
+      if (isReg) {
+        return (
+          <HStack justify="space-between" gap="3" flexWrap="wrap">
+            <Text fontSize="0.8125rem" color="ui.muted">{t('Registered in %s.', name)}</Text>
+            <DisconnectBtn onClick={() => unregisterAgent(c.id)} />
+          </HStack>
+        );
+      }
+      return <CmdPanel id={c.id} cmd={c.command} copiedId={copiedId} onCopy={() => copyCmd(c.id, c.command)}
+        onRegister={() => registerAgent(c.id, name)} registerLabel={t('Register in %s', name)}
+        registerBusy={registering === c.id} />;
     }
     return null;
   }
