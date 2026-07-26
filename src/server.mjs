@@ -39,6 +39,11 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 // header wordmark now lives in the React bundle, not injected here.
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 
+// Shown by the mandatory wordpress.org gate on tool data routes (see below).
+const WPORG_HTTP_MSG = 'wordpress.org connection required — open Setup and sign in to WordPress.org, ' +
+  'or run `uwp-ai-forge cookie-import <chrome|safari|firefox|edge>`. ' +
+  'AI Forge needs it or contributor and Core ticket counts are inaccurate.';
+
 
 export function startServer({ port = 4321, quiet = false, internal = false } = {}) {
   // Load tool plugins; reloadable so install/uninstall picks up changes without
@@ -256,6 +261,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
 
     // Proxy a WordPress.org data call through the MCP (provider: trac|github|make).
     if (url.pathname === '/api/mcp/execute' && req.method === 'POST') {
+      if (!resolveCookie()) { json(res, 403, { error: WPORG_HTTP_MSG }); return; }
       try {
         const { provider, tool, params } = JSON.parse(await readBody(req) || '{}');
         if (!provider || !tool) throw new Error('provider and tool are required');
@@ -418,6 +424,10 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
       if (disabledNow.has(p.manifest.id)) continue; // deactivated tools serve nothing
       for (const r of p.routes) {
         if (req.method === r.method && url.pathname === r.path) {
+          // Mandatory wordpress.org gate: a tool data route returns counts that are
+          // wrong without a logged-in Trac session, so refuse until connected. The
+          // setup/connector routes above stay open so the user can connect first.
+          if (!resolveCookie()) { json(res, 403, { error: WPORG_HTTP_MSG }); return; }
           await r.handler(req, res, url, {
             json,
             query: url.searchParams,
