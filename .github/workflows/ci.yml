@@ -6,34 +6,43 @@ on:
   pull_request:
 
 jobs:
-  build-test:
+  # Runtime floor: the shipped package runs on Node >=18 (users get a prebuilt
+  # dist, they never build), so syntax-check + tests must pass down to 18. No
+  # build here — the build toolchain (Babel 8) needs Node >=22 and would falsely
+  # fail the 18/20 legs.
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [18, 20, 22, 24]   # engines says >=18 — test the floor, not just latest
+        node: [18, 20, 22, 24]
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-
-      # Install without the prepare build, then build explicitly so a broken
-      # bundle is its own clearly-labelled failing step.
-      - name: Install
+      - name: Install (no build)
         run: npm ci --ignore-scripts
-
-      - name: Build the browser UI bundle
-        run: npm run build
-
       # `node --check` only checks the first path it is given, so loop — and cover
-      # src/connectors and the tool plugins, not just src/*.mjs.
+      # src/connectors, the tool plugins and scripts, not just src/*.mjs.
       - name: Syntax-check all source modules
         run: |
-          for f in src/*.mjs src/connectors/*.mjs tools/*/*.mjs tools/*/lib/*.mjs bin/*.mjs webpack.config.cjs; do
+          for f in src/*.mjs src/connectors/*.mjs tools/*/*.mjs tools/*/lib/*.mjs scripts/*.mjs bin/*.mjs webpack.config.cjs; do
             node --check "$f"
           done
-
       - name: Unit tests
         run: node --test
+
+  # Build coverage: the webpack/Babel toolchain runs on the release Node version.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install (no prepare build)
+        run: npm ci --ignore-scripts
+      - name: Build the browser UI bundle
+        run: npm run build
