@@ -12,6 +12,13 @@ import { tokenStatus } from './github-token.mjs';
 import { deviceFlowConfigured } from './github-device.mjs';
 import { resolveCookie, cookiePath } from './wporg-cookie.mjs';
 
+// The MCP server id — the key each agent registers Forge under (claude mcp add
+// <id>, the mcpServers.<id> config key, the MCPB manifest name). One constant so
+// the register command, the config probe and the Desktop merge never drift. It
+// mirrors the product ("UnleashWP AI Forge") and the npm package (@unleashwp/
+// ai-forge). Changing it orphans existing registrations — pick it once.
+export const SERVER_ID = 'uwp-ai-forge';
+
 // Is Forge already registered as an MCP server in this agent? Read the agent's own
 // config file directly — instant, no subprocess (the `mcp get` CLI actually
 // *connects* to the server, ~3s). Reflects external add/remove on the next
@@ -20,14 +27,15 @@ function agentHasForge(agent) {
   try {
     if (agent === 'claude') {
       const d = JSON.parse(readFileSync(join(homedir(), '.claude.json'), 'utf8'));
-      return { registered: !!(d.mcpServers && d.mcpServers.forge) };
+      return { registered: !!(d.mcpServers && d.mcpServers[SERVER_ID]) };
     }
     if (agent === 'codex') {
-      return { registered: /\[mcp_servers\.forge\]/.test(readFileSync(join(homedir(), '.codex', 'config.toml'), 'utf8')) };
+      // TOML table header: bare hyphenated key, or quoted — match both.
+      return { registered: /\[mcp_servers\.["']?uwp-ai-forge["']?\]/.test(readFileSync(join(homedir(), '.codex', 'config.toml'), 'utf8')) };
     }
     if (agent === 'claude-desktop') {
       const d = JSON.parse(readFileSync(desktopConfigPath(), 'utf8'));
-      return { registered: !!(d.mcpServers && d.mcpServers.forge) };
+      return { registered: !!(d.mcpServers && d.mcpServers[SERVER_ID]) };
     }
   } catch { /* no config or unreadable */ }
   return { registered: false };
@@ -56,12 +64,12 @@ function writeDesktopConfig(cfg) {
 export function registerDesktop() {
   const cfg = readDesktopConfig();
   cfg.mcpServers = cfg.mcpServers || {};
-  cfg.mcpServers.forge = { ...DESKTOP_ENTRY };
+  cfg.mcpServers[SERVER_ID] = { ...DESKTOP_ENTRY };
   writeDesktopConfig(cfg);
 }
 export function unregisterDesktop() {
   const cfg = readDesktopConfig();
-  if (cfg.mcpServers) delete cfg.mcpServers.forge;
+  if (cfg.mcpServers) delete cfg.mcpServers[SERVER_ID];
   writeDesktopConfig(cfg);
 }
 
@@ -75,7 +83,7 @@ export const CONNECTOR_KINDS = ['credential', 'command', 'oauth-device'];
 // so the copy-paste card, the one-click "Register" button (server runs the same
 // command) and any installer step stay in sync. Claude gets `--scope user` so it
 // registers globally, not tied to whatever directory the server runs from.
-const mcpAddCmd = (agent) => `${agent} mcp add ${agent === 'claude' ? '--scope user ' : ''}forge -- npx -y @unleashwp/ai-forge@latest mcp`;
+const mcpAddCmd = (agent) => `${agent} mcp add ${agent === 'claude' ? '--scope user ' : ''}${SERVER_ID} -- npx -y @unleashwp/ai-forge@latest mcp`;
 
 // Core connectors, in setup order. `status()` returns the per-connector status
 // the UI renders (never the secret itself); `command` is the line for command-kind.

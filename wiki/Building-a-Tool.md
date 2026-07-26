@@ -1,6 +1,6 @@
 # Building a Tool
 
-Forge is a plugin platform. **Every tool is a folder under `tools/`** — add one and it appears in the rail, the CLI, and (if you export them) the MCP surface. Nothing in the shell needs changing.
+AI Forge is a plugin platform. **Every tool is a folder under `tools/`** — add one and it appears in the rail, the CLI, and (if you export them) the MCP surface. Nothing in the shell needs changing.
 
 The full guide lives in [CONTRIBUTING.md](https://github.com/unleash-wp/ai-forge/blob/main/CONTRIBUTING.md). This is the shape of it.
 

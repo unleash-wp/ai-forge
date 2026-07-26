@@ -1,6 +1,6 @@
 # The Changelog Tool
 
-The first plugin Forge ships with (bundled, free) — one tool on the platform, not a core feature. Give it a date window and a milestone; it produces a grounded release-post changelog for WordPress Core + Gutenberg.
+The first plugin AI Forge ships with (bundled, free) — one tool on the platform, not a core feature. Give it a date window and a milestone; it produces a grounded release-post changelog for WordPress Core + Gutenberg.
 
 ## Command
 
@@ -24,7 +24,7 @@ Run `ai-forge -h` for the full list.
 
 ## Where the data comes from
 
-| Surface | Where changes live | Forge reads |
+| Surface | Where changes live | AI Forge reads |
 | --- | --- | --- |
 | **Gutenberg** | GitHub PRs on `wp/<milestone>` | commits + `[Type]` labels |
 | **Core** | Trac tickets, committed to SVN | the `WordPress/wordpress-develop` git mirror |
@@ -42,8 +42,8 @@ Everything the CLI needs is on GitHub: **cookie-free, deterministic, runs in CI 
 
 ## Deep mode
 
-`--deep` fills each change's description. The cookie-free baseline uses the Core commit body; with the wordpress.org cookie set, Forge additionally pulls the Trac ticket description (via the `mcp-context-wporg` provider when available) so Uncategorized changesets get their real component and full text. Without the cookie it degrades to summaries and tells you so.
+`--deep` fills each change's description. The cookie-free baseline uses the Core commit body; with the wordpress.org cookie set, AI Forge additionally pulls the Trac ticket description (via the `mcp-context-wporg` provider when available) so Uncategorized changesets get their real component and full text. Without the cookie it degrades to summaries and tells you so.
 
 ## The grounding rule
 
-Forge **never invents features and never estimates counts.** The numbers and links it prints are the source of truth. When you write the highlights (1–3 short paragraphs), back every sentence with a real PR or Trac ticket and link it inline.
+AI Forge **never invents features and never estimates counts.** The numbers and links it prints are the source of truth. When you write the highlights (1–3 short paragraphs), back every sentence with a real PR or Trac ticket and link it inline.

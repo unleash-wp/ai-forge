@@ -1,10 +1,10 @@
 {
   "manifest_version": "0.3",
-  "name": "unleashwp-ai-forge",
+  "name": "uwp-ai-forge",
   "display_name": "UnleashWP AI Forge",
   "version": "0.1.4",
   "description": "Turn a date window into a release-post changelog for WordPress Core + Gutenberg, right inside Claude Desktop.",
-  "long_description": "UnleashWP AI Forge is a hub for WordPress release tooling. This bundle registers Forge as an MCP server so Claude can call its tools live — get_changelog, list_milestones, list_branches, show_changelog — and open the full Forge app as a window. Optional credentials raise the GitHub API limit and enable deep mode (full Trac ticket text).",
+  "long_description": "UnleashWP AI Forge is a hub for WordPress release tooling. This bundle registers AI Forge as an MCP server so Claude can call its tools live — get_changelog, list_milestones, list_branches, show_changelog — and open the full AI Forge app as a window. Optional credentials raise the GitHub API limit and enable deep mode (full Trac ticket text).",
   "author": {
     "name": "Benjamin Zekavica",
     "url": "https://unleash-wp.com"
@@ -41,7 +41,7 @@
     "github_token": {
       "type": "string",
       "title": "GitHub token (optional)",
-      "description": "Raises the GitHub API limit from 60 to 5,000 requests/hour. No scopes needed — Forge only reads public repos. Leave empty to run at 60/hour.",
+      "description": "Raises the GitHub API limit from 60 to 5,000 requests/hour. No scopes needed — AI Forge only reads public repos. Leave empty to run at 60/hour.",
       "required": false,
       "sensitive": true
     },

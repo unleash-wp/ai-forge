@@ -3,8 +3,8 @@
 // tools that tool plugins declare via `mcpTools` in their server.mjs. This is
 // the "Funkstelle": agents pull Forge's data live and keep working with it.
 //
-// Register it (the server is named "forge"; the command it runs is `uwp mcp`):
-//   Claude Code:  claude mcp add forge -- uwp mcp
+// Register it (the server id is "uwp-ai-forge"; the command it runs is `uwp mcp`):
+//   Claude Code:  claude mcp add uwp-ai-forge -- uwp mcp
 //   Codex:        add an MCP server { command = "uwp", args = ["mcp"] }
 import { loadPlugins } from './plugins.mjs';
 import { startInternalServer, forgeAppHtml, appAvailable } from './mcp-app.mjs';
@@ -65,7 +65,7 @@ export async function startMcpServer() {
       run: async () => ({ text: 'Opening UnleashWP AI Forge…', structured: {} }),
     });
     uiResources.set('ui://forge/app', {
-      uri: 'ui://forge/app', name: 'forge', description: 'UnleashWP AI Forge — the full app.',
+      uri: 'ui://forge/app', name: 'uwp-ai-forge', description: 'UnleashWP AI Forge — the full app.',
       html: forgeAppHtml(), permissions: { clipboardWrite: {} },
     });
   }
@@ -79,7 +79,7 @@ export async function startMcpServer() {
     if (id == null) return; // notification (e.g. notifications/initialized): no reply
 
     if (method === 'initialize') {
-      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {}, prompts: {}, resources: {} }, serverInfo: { name: 'forge', version: VERSION } });
+      return ok(id, { protocolVersion: PROTOCOL, capabilities: { tools: {}, prompts: {}, resources: {} }, serverInfo: { name: 'uwp-ai-forge', version: VERSION } });
     }
     if (method === 'ping') return ok(id, {});
     // MCP Apps: the ui:// HTML panels tools render in (rendered in a sandboxed

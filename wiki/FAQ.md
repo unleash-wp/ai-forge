@@ -2,11 +2,11 @@
 
 ### Do I need a GitHub account?
 
-No. A token is optional — it raises the API limit from 60 to 5,000 requests per hour. Forge reads only public repositories, so the token needs **no scopes**.
+No. A token is optional — it raises the API limit from 60 to 5,000 requests per hour. AI Forge reads only public repositories, so the token needs **no scopes**.
 
 ### What is deep mode?
 
-It adds the full Trac ticket text (description + real component) to each change. It needs the **wordpress.org cookie** connector. Without it, Forge grounds the changelog in ticket summaries and Core commit messages instead. See [Connectors](Connectors).
+It adds the full Trac ticket text (description + real component) to each change. It needs the **wordpress.org cookie** connector. Without it, AI Forge grounds the changelog in ticket summaries and Core commit messages instead. See [Connectors](Connectors).
 
 ### Where are my keys stored?
 
@@ -22,9 +22,9 @@ No. The `.mcpb` bundle runs on the Node that Claude Desktop ships. For the termi
 
 ### Why does it need `git`?
 
-Forge lists branches with `git ls-remote`, which is **not** subject to the GitHub API rate limit — so the milestone/branch pickers keep working even when a token is throttled. If `git` is unavailable it falls back to the REST API.
+AI Forge lists branches with `git ls-remote`, which is **not** subject to the GitHub API rate limit — so the milestone/branch pickers keep working even when a token is throttled. If `git` is unavailable it falls back to the REST API.
 
-### How do I update Forge?
+### How do I update AI Forge?
 
 - **npm / npx:** `npx @unleashwp/ai-forge@latest …` always uses the current release; a global install updates with `npm i -g @unleashwp/ai-forge@latest`.
 - **Claude Code / Codex:** the MCP command uses `@latest`, so it updates itself.

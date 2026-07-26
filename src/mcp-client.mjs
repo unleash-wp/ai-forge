@@ -69,7 +69,7 @@ export function mcpSession(id, calls, { timeout = 30000 } = {}) {
 
     (async () => {
       try {
-        await req('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'forge', version: VERSION } });
+        await req('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'uwp-ai-forge', version: VERSION } });
         send({ jsonrpc: '2.0', method: 'notifications/initialized' });
         const results = [];
         for (const c of calls) {

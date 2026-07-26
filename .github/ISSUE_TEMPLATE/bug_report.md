@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Something in Forge or a tool is broken
+about: Something in AI Forge or a tool is broken
 title: ''
 labels: bug
 ---

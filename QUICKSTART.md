@@ -1,6 +1,6 @@
 # Quick Start — UnleashWP AI Forge
 
-Forge is UnleashWP's AI tool + **plugin platform** for WordPress. It ships with one plugin today — the **Changelog Generator** — so this guide installs Forge and uses that first plugin. No account, token or cookie required to start.
+AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress. It ships with one plugin today — the **Changelog Generator** — so this guide installs AI Forge and uses that first plugin. No account, token or cookie required to start.
 
 Below: from nothing to a WordPress release changelog in about a minute.
 
@@ -35,16 +35,16 @@ Prints a ready-to-edit **release-post template**: headline, count line, the two 
 | You want… | Do this |
 | --- | --- |
 | **A UI** | `ai-forge serve` → `http://localhost:4321` (date picker + Copy buttons) |
-| **Ask Claude Code / Codex** | `claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp`, then ask: *"WordPress 7.1 changelog for July 15–22, as a post."* |
+| **Ask Claude Code / Codex** | `claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp`, then ask: *"WordPress 7.1 changelog for July 15–22, as a post."* |
 | **A window in Claude Desktop** | `npm run mcpb:pack`, then install `unleashwp-ai-forge.mcpb` from Settings → Extensions |
 
 ## Optional: connect for more
 
-Both optional — Forge runs without them.
+Both optional — AI Forge runs without them.
 
 - **GitHub token** → raises the API limit from 60 to 5,000/h (no scopes needed). `gh auth login`, or paste one in **Settings → Connectors**.
 - **wordpress.org cookie** → turns on `--deep` (full Trac ticket text). Import it in the Setup UI, or `ai-forge cookie-import <chrome|safari|firefox|edge>`.
 
 ## More
 
-Full docs are in the [**Wiki**](https://github.com/unleash-wp/ai-forge/wiki): Installation, Connectors, Using Forge from Claude & Codex, the Changelog tool, and building your own tool.
+Full docs are in the [**Wiki**](https://github.com/unleash-wp/ai-forge/wiki): Installation, Connectors, Using AI Forge from Claude & Codex, the Changelog tool, and building your own tool.

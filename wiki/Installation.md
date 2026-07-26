@@ -1,6 +1,6 @@
 # Installation
 
-Forge runs in four places. Pick whichever fits how you work — they share the same core.
+AI Forge runs in four places. Pick whichever fits how you work — they share the same core.
 
 ## npm (terminal)
 
@@ -19,21 +19,21 @@ npx @unleashwp/ai-forge@latest changelog --since 2026-07-15 --until 2026-07-22 -
 
 ## Claude Code / Codex (MCP server)
 
-Register Forge once; the agent then calls its tools live.
+Register AI Forge once; the agent then calls its tools live.
 
 ```bash
 # Claude Code
-claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp
+claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp
 
 # Codex — add an MCP server:
 #   command = "npx", args = ["-y", "@unleashwp/ai-forge@latest", "mcp"]
 ```
 
-The MCP server is named **`forge`**. See **[Using Forge from Claude & Codex](Using-Forge-from-Claude-and-Codex)**.
+The MCP server is named **`forge`**. See **[Using AI Forge from Claude & Codex](Using-AI Forge-from-Claude-and-Codex)**.
 
 ## Claude Desktop (one-click bundle)
 
-Forge ships as an **MCPB** bundle — a single `.mcpb` file you install from Claude Desktop's Extensions screen. Claude Desktop bundles its own Node, so there is no local Node requirement.
+AI Forge ships as an **MCPB** bundle — a single `.mcpb` file you install from Claude Desktop's Extensions screen. Claude Desktop bundles its own Node, so there is no local Node requirement.
 
 ```bash
 git clone https://github.com/unleash-wp/ai-forge
@@ -46,7 +46,7 @@ Then open **Claude Desktop → Settings → Extensions** and install `unleashwp-
 
 ## Claude Code plugin (marketplace)
 
-The repo ships a Claude Code plugin manifest, so you can add Forge through the plugin marketplace flow. The plugin registers the same `forge` MCP server via `npx @unleashwp/ai-forge@latest mcp`.
+The repo ships a Claude Code plugin manifest, so you can add AI Forge through the plugin marketplace flow. The plugin registers the same `forge` MCP server via `npx @unleashwp/ai-forge@latest mcp`.
 
 ## Development (clone + build)
 

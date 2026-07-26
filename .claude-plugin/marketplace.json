@@ -6,7 +6,7 @@
     {
       "name": "forge",
       "source": "./",
-      "description": "Forge's MCP tools + skills: WordPress Core/Gutenberg release changelogs, milestones and branches — queryable live from your AI coding agent."
+      "description": "AI Forge's MCP tools + skills: WordPress Core/Gutenberg release changelogs, milestones and branches — queryable live from your AI coding agent."
     }
   ]
 }
