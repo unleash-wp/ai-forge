@@ -1,6 +1,6 @@
 # Contributing to UnleashWP AI Forge
 
-Forge is UnleashWP's self-hosted **plugin platform** for WordPress (and an AI
+AI Forge is UnleashWP's self-hosted **plugin platform** for WordPress (and an AI
 bridge over MCP). The **core is the platform** — a plain Node server plus a React
 browser UI (the shell). **Every tool is a plugin** — a folder under `tools/`,
 including the changelog. Nothing in the shell is a "feature" tool; adding a tool
@@ -131,7 +131,7 @@ The Changelog plugin does this: `ai-forge changelog --since <date> --until
 <date> [--milestone x.y] [--post|--json]` (alias `uwp changelog …`).
 
 **MCP tools.** Export `mcpTools` and `uwp mcp` serves them over stdio (the MCP
-transport), so Claude Code and Codex register Forge once and call your tool
+transport), so Claude Code and Codex register AI Forge once and call your tool
 live. Each tool has a JSON-Schema `inputSchema`; `run(args)` returns a string
 (or any value, JSON-stringified). `uwp mcp` aggregates the tools from every
 installed plugin.
@@ -145,7 +145,7 @@ export const mcpTools = [
 ```
 
 Register the server (named `forge`; the command it runs is `uwp mcp`): Claude
-Code `claude mcp add forge -- uwp mcp`; Codex adds an MCP server with
+Code `claude mcp add uwp-ai-forge -- uwp mcp`; Codex adds an MCP server with
 `command = "uwp"`, `args = ["mcp"]`. Keep `stdout` for JSON-RPC only — send any
 logging to `stderr`. The Changelog tool ships `get_changelog`, `list_milestones`
 and `list_branches` tools plus a `write_release_post` skill (MCP prompt).

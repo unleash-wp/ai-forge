@@ -3,7 +3,7 @@ const HELP = `ai-forge — a hub for WordPress release and dev tooling. Every to
 Usage:
   ai-forge serve [--port <n>]       Open the browser UI.
   ai-forge mcp                      Run as an MCP server (stdio) for Claude Code /
-                                    Codex: claude mcp add forge -- ai-forge mcp
+                                    Codex: claude mcp add uwp-ai-forge -- ai-forge mcp
   ai-forge skills [<name>]          List the AI skills tools provide, or print one.
   ai-forge cookie-import <browser>  Import the wordpress.org cookie from a local
                                     browser (chrome|safari|firefox|edge, macOS).

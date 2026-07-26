@@ -17,12 +17,12 @@ import { loadPlugins } from './plugins.mjs';
 // the command), so there is nothing to inject. Falls back to copy when the CLI
 // isn't on PATH. Claude uses --scope user so it registers globally.
 const REGISTER_CMDS = {
-  claude: ['claude', 'mcp', 'add', '--scope', 'user', 'forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
-  codex: ['codex', 'mcp', 'add', 'forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
+  claude: ['claude', 'mcp', 'add', '--scope', 'user', 'uwp-ai-forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
+  codex: ['codex', 'mcp', 'add', 'uwp-ai-forge', '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
 };
 const UNREGISTER_CMDS = {
-  claude: ['claude', 'mcp', 'remove', 'forge'],
-  codex: ['codex', 'mcp', 'remove', 'forge'],
+  claude: ['claude', 'mcp', 'remove', 'uwp-ai-forge'],
+  codex: ['codex', 'mcp', 'remove', 'uwp-ai-forge'],
 };
 
 function execCmd(argv) {
@@ -318,7 +318,7 @@ export function startServer({ port = 4321, quiet = false } = {}) {
       return;
     }
 
-    // Disconnect: run the agent's `mcp remove forge`. Already-gone counts as success.
+    // Disconnect: run the agent's `mcp remove uwp-ai-forge`. Already-gone counts as success.
     if (url.pathname === '/api/connectors/unregister' && req.method === 'POST') {
       const agent = (JSON.parse(await readBody(req) || '{}').agent || '').trim();
       if (agent === 'claude-desktop') {

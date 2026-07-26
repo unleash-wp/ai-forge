@@ -1,4 +1,4 @@
-<!-- Thanks for contributing to UnleashWP Forge! -->
+<!-- Thanks for contributing to UnleashWP AI Forge! -->
 
 ## What this changes
 

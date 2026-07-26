@@ -1,6 +1,6 @@
 # Quick Start
 
-Forge is UnleashWP's AI tool + **plugin platform** for WordPress; it ships with one plugin today, the **Changelog Generator**. This guide installs Forge and uses that first plugin — from nothing to a WordPress release changelog in about a minute.
+AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress; it ships with one plugin today, the **Changelog Generator**. This guide installs AI Forge and uses that first plugin — from nothing to a WordPress release changelog in about a minute.
 
 ## 1. Install
 
@@ -22,7 +22,7 @@ That prints a ready-to-edit **release-post template**: a headline, a count line,
 - Add `--json` for structured data.
 - Run `ai-forge -h` for every command.
 
-That's it — no account, no token, no cookie required. Forge reads everything it needs from public GitHub data. A GitHub token and a wordpress.org cookie are **optional** and only unlock higher rate limits and deep mode — see **[Connectors](Connectors)**.
+That's it — no account, no token, no cookie required. AI Forge reads everything it needs from public GitHub data. A GitHub token and a wordpress.org cookie are **optional** and only unlock higher rate limits and deep mode — see **[Connectors](Connectors)**.
 
 ## Prefer clicking?
 
@@ -34,15 +34,15 @@ Opens a browser UI at `http://localhost:4321` with a date-range picker and Copy 
 
 ## Prefer asking an AI?
 
-Register Forge once as an MCP server, then just ask Claude Code or Codex:
+Register AI Forge once as an MCP server, then just ask Claude Code or Codex:
 
 ```bash
-claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp
+claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp
 ```
 
 > "Give me the WordPress 7.1 release changelog for July 15–22, as a post."
 
-The agent calls Forge's tools and drafts the post grounded in the real PRs and tickets. See **[Using Forge from Claude & Codex](Using-Forge-from-Claude-and-Codex)**.
+The agent calls AI Forge's tools and drafts the post grounded in the real PRs and tickets. See **[Using AI Forge from Claude & Codex](Using-AI Forge-from-Claude-and-Codex)**.
 
 ## Next steps
 

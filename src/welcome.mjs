@@ -35,7 +35,7 @@ export function renderWelcome() {
     '    ' + cyan('ai-forge serve') + dim('   → http://localhost:4321'),
     '',
     '  ' + bold('Use it from your AI') + dim('  — Claude Code / Codex'),
-    '    ' + cyan('claude mcp add forge -- npx -y @unleashwp/ai-forge@latest mcp'),
+    '    ' + cyan('claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp'),
     '',
     '  ' + bold('Make a changelog now'),
     '    ' + cyan('ai-forge changelog --since <date> --until <date> --milestone <x.y> --post'),

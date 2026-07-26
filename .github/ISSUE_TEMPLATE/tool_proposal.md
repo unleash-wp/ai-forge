@@ -1,6 +1,6 @@
 ---
 name: Tool proposal
-about: Propose a new tool (plugin) for Forge
+about: Propose a new tool (plugin) for AI Forge
 title: 'Tool: '
 labels: tool-proposal
 ---
