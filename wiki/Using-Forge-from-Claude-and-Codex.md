@@ -42,7 +42,7 @@ AI Forge also ships **skills** — reusable AI instructions served as MCP prompt
 
 - `write_release_post` — teaches the agent to draft a release post from the changelog data while respecting the grounding rule (every highlight traces to a real PR or ticket).
 
-List them from the CLI with `ai-forge skills`, or print one with `ai-forge skills write_release_post`.
+List them from the CLI with `uwp-ai-forge skills`, or print one with `uwp-ai-forge skills write_release_post`.
 
 ## The app window (MCP Apps)
 

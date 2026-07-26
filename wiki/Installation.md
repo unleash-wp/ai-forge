@@ -5,11 +5,11 @@ AI Forge runs in four places. Pick whichever fits how you work — they share th
 ## npm (terminal)
 
 ```bash
-npm install -g @unleashwp/ai-forge   # the `ai-forge` command (aliases: uwp, forge)
+npm install -g @unleashwp/ai-forge   # the `uwp-ai-forge` command (aliases: uwp, forge)
 gh auth login                     # optional: raises the GitHub API limit to 5000/h
 ```
 
-`ai-forge` is now on your PATH. The core CLI is dependency-free (plain Node ≥ 18, uses the global `fetch`); the browser UI (`ai-forge serve`) is a webpack/React bundle that ships **pre-built** in the package, so there is nothing to compile.
+`uwp-ai-forge` is now on your PATH. The core CLI is dependency-free (plain Node ≥ 18, uses the global `fetch`); the browser UI (`uwp-ai-forge serve`) is a webpack/React bundle that ships **pre-built** in the package, so there is nothing to compile.
 
 Run it without a global install using `npx`:
 
@@ -37,7 +37,7 @@ AI Forge ships as an **MCPB** bundle — a single `.mcpb` file you install from 
 
 ```bash
 git clone https://github.com/unleash-wp/ai-forge
-cd ai-forge
+cd uwp-ai-forge
 npm install
 npm run mcpb:pack        # builds dist/ and packs unleashwp-ai-forge.mcpb
 ```
@@ -52,7 +52,7 @@ The repo ships a Claude Code plugin manifest, so you can add AI Forge through th
 
 ```bash
 git clone https://github.com/unleash-wp/ai-forge
-cd ai-forge
+cd uwp-ai-forge
 npm install                 # installs build deps + builds the UI bundle (dist/)
 node bin/ai-forge.mjs -h
 ```

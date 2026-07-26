@@ -15,7 +15,7 @@ Both connectors below are **optional** — AI Forge runs without them. They only
 Three ways to connect, in order of convenience:
 
 1. **`gh` CLI** — if you are logged in (`gh auth login`), AI Forge detects the token automatically.
-2. **Setup UI** — in `ai-forge serve`, open **Settings → Connectors → GitHub** and paste a token (create one with every scope unchecked).
+2. **Setup UI** — in `uwp-ai-forge serve`, open **Settings → Connectors → GitHub** and paste a token (create one with every scope unchecked).
 3. **Environment** — set `GITHUB_TOKEN` (this always wins and is read live).
 
 ## WordPress.org (deep mode)
@@ -28,7 +28,7 @@ Three ways to connect, in order of convenience:
 
 Trac's CSV export is behind a bot wall for plain scripts, so deep mode needs a logged-in wordpress.org session cookie. Ways to provide it:
 
-1. **Import from your browser** — in the Setup UI, "Import from &lt;browser&gt;" reads the cookie from a browser where you are logged in (macOS; approve the Keychain prompt). On the CLI: `ai-forge cookie-import <chrome|safari|firefox|edge>`.
+1. **Import from your browser** — in the Setup UI, "Import from &lt;browser&gt;" reads the cookie from a browser where you are logged in (macOS; approve the Keychain prompt). On the CLI: `uwp-ai-forge cookie-import <chrome|safari|firefox|edge>`.
 2. **Paste manually** — log in at wordpress.org, then DevTools → Application → Cookies → copy `wporg_logged_in` + `wporg_sec` as `name=value; name=value`.
 3. **Environment** — set `WPORG_TRAC_COOKIE` (always wins, read live).
 

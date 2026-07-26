@@ -283,7 +283,9 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   const trac = connectorStatus(status, 'wporg-cookie');
   const version = (status && status.version) || '';
   const install = (status && status.install) || 'git'; // git | global | npx
-  const manualCmd = install === 'git' ? 'git pull && npm install && npm run build' : 'npm i -g @unleashwp/ai-forge@latest';
+  // The self-updater has its own branded command (wp-cli style) — same for every
+  // install method, no raw git/npm chain to show.
+  const manualCmd = 'uwp-ai-forge update';
   const browser = currentBrowser();
   const toggle = (id) => setOpenId((o) => (o === id ? null : id));
 

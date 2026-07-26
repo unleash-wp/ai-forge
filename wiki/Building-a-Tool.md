@@ -27,9 +27,9 @@ npm run build      # or: npm run watch
 | Export | Becomes |
 | --- | --- |
 | `routes` | HTTP endpoints, mounted under `/api/<your-id>/`. |
-| `commands` | Terminal subcommands — `ai-forge <name> …`. |
-| `mcpTools` | Tools served over `ai-forge mcp` (stdio) to Claude Code / Codex. |
-| `skills` | Reusable AI prompts, served as MCP prompts and via `ai-forge skills`. |
+| `commands` | Terminal subcommands — `uwp-ai-forge <name> …`. |
+| `mcpTools` | Tools served over `uwp-ai-forge mcp` (stdio) to Claude Code / Codex. |
+| `skills` | Reusable AI prompts, served as MCP prompts and via `uwp-ai-forge skills`. |
 | `uiResources` | MCP-App panels rendered in a sandboxed iframe inside the conversation. |
 | `connectors` | Credential / command connectors that show up on the Setup screen. |
 
@@ -37,7 +37,7 @@ Import shared logic from `../../src/`. Credential/setup routes stay in the core 
 
 ## Keep the core lean
 
-The CLI has **zero runtime dependencies** — Node built-ins and the global `fetch` only. React / webpack / Babel are build-time devDependencies that produce the browser bundle and never load in the CLI. Keep new tools the same way, so `ai-forge` stays install-free and works in CI and Codex.
+The CLI has **zero runtime dependencies** — Node built-ins and the global `fetch` only. React / webpack / Babel are build-time devDependencies that produce the browser bundle and never load in the CLI. Keep new tools the same way, so `uwp-ai-forge` stays install-free and works in CI and Codex.
 
 ## Guidelines
 
