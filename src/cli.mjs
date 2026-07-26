@@ -1,17 +1,19 @@
-const HELP = `ai-forge — a hub for WordPress release and dev tooling. Every tool is a plugin.
+const HELP = `uwp-ai-forge — a hub for WordPress release and dev tooling. Every tool is a plugin.
+(short alias: uwp)
 
 Usage:
-  ai-forge serve [--port <n>]       Open the browser UI.
-  ai-forge mcp                      Run as an MCP server (stdio) for Claude Code /
-                                    Codex: claude mcp add uwp-ai-forge -- ai-forge mcp
-  ai-forge skills [<name>]          List the AI skills tools provide, or print one.
-  ai-forge cookie-import <browser>  Import the wordpress.org cookie from a local
-                                    browser (chrome|safari|firefox|edge, macOS).
-  ai-forge <tool> [options]         Run a tool's own command (listed below).
-  -h, --help                        Show this help.
+  uwp-ai-forge serve [--port <n>]       Open the browser UI.
+  uwp-ai-forge update                   Update AI Forge to the latest version.
+  uwp-ai-forge mcp                      Run as an MCP server (stdio) for Claude Code /
+                                        Codex: claude mcp add uwp-ai-forge -- uwp-ai-forge mcp
+  uwp-ai-forge skills [<name>]          List the AI skills tools provide, or print one.
+  uwp-ai-forge cookie-import <browser>  Import the wordpress.org cookie from a local
+                                        browser (chrome|safari|firefox|edge, macOS).
+  uwp-ai-forge <tool> [options]         Run a tool's own command (listed below).
+  -h, --help                            Show this help.
 
 Example:
-  ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+  uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 `;
 
 export async function run(argv) {
@@ -27,6 +29,18 @@ export async function run(argv) {
     return startMcpServer();
   }
 
+  // `uwp-ai-forge update` — self-update the whole app (wp-cli style). Runs the
+  // right command for how this copy was installed; see self-update.mjs.
+  if (args._[0] === 'update') {
+    const { runSelfUpdate } = await import('./self-update.mjs');
+    console.log('Updating AI Forge…');
+    const r = await runSelfUpdate();
+    if (!r.ok) throw new Error(r.error);
+    if (r.method === 'npx') console.log('npx already runs the latest version — nothing to update.');
+    else console.log('Success: AI Forge is up to date.' + (r.restart ? ' Restart any running `uwp-ai-forge serve` or MCP to load server changes.' : ''));
+    return;
+  }
+
   if (args._[0] === 'skills') {
     const { loadPlugins } = await import('./plugins.mjs');
     const skills = (await loadPlugins()).flatMap((p) => p.skills || []);
@@ -35,11 +49,11 @@ export async function run(argv) {
       if (!skills.length) { console.log('No skills installed.'); return; }
       console.log('Skills (AI instructions the tools provide):\n');
       for (const s of skills) console.log(`  ${s.name.padEnd(24)} ${s.description || ''}`);
-      console.log('\nRun `ai-forge skills <name> [--arg value]` to print one.');
+      console.log('\nRun `uwp-ai-forge skills <name> [--arg value]` to print one.');
       return;
     }
     const skill = skills.find((s) => s.name === name);
-    if (!skill) throw new Error(`unknown skill: ${name} (run \`ai-forge skills\` to list)`);
+    if (!skill) throw new Error(`unknown skill: ${name} (run \`uwp-ai-forge skills\` to list)`);
     console.log(skill.build ? skill.build(args) : (skill.instructions || ''));
     return;
   }
@@ -48,7 +62,7 @@ export async function run(argv) {
     const { importWporgCookie } = await import('./cookie-import.mjs');
     const { saveCookie, validateCookie } = await import('./connectors/wporg-cookie.mjs');
     const browser = args.browser ?? args._[1];
-    if (!browser) throw new Error('usage: ai-forge cookie-import <chrome|safari|firefox|edge>');
+    if (!browser) throw new Error('usage: uwp-ai-forge cookie-import <chrome|safari|firefox|edge>');
     const cookie = importWporgCookie(browser); // value stays local; never printed
     const path = saveCookie(cookie);
     console.log(`Imported wporg_logged_in + wporg_sec from ${browser}, saved to ${path}.`);
@@ -83,14 +97,14 @@ export async function run(argv) {
     const cmds = (await loadPlugins()).flatMap((p) => p.commands || []);
     if (cmds.length) {
       console.log('Tool commands:');
-      for (const c of cmds) console.log(`  ai-forge ${c.name.padEnd(16)} ${c.summary || ''}`);
+      for (const c of cmds) console.log(`  uwp-ai-forge ${c.name.padEnd(16)} ${c.summary || ''}`);
       console.log('');
     }
     return;
   }
 
   console.log(HELP);
-  throw new Error(`unknown command: ${args._[0]} (run \`ai-forge -h\`)`);
+  throw new Error(`unknown command: ${args._[0]} (run \`uwp-ai-forge -h\`)`);
 }
 
 // Minimal flag parser: --key value, --key=value, --flag, --no-flag, and positionals.

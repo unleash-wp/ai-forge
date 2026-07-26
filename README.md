@@ -21,7 +21,7 @@ Do you use [Claude Code](https://claude.com/claude-code) or Codex? Then you don'
 
 ```text
 Install "UnleashWP AI Forge" for me and walk me through it step by step. It is an
-npm package called @unleashwp/ai-forge (its command is "ai-forge"). Do the work
+npm package called @unleashwp/ai-forge (its command is "uwp-ai-forge"). Do the work
 yourself, run the commands, and after each step tell me in one plain sentence what
 happened. Stop and ask me whenever something needs a decision.
 
@@ -29,18 +29,18 @@ Please do these steps in order:
 1. Check I have Node 18 or newer: run `node -v`. If it is missing or older, tell me
    how to get it from https://nodejs.org and stop there.
 2. Install AI Forge for me: `npm install -g @unleashwp/ai-forge`. Then prove it worked by
-   running `ai-forge -h`.
+   running `uwp-ai-forge -h`.
 3. Connect AI Forge to you, so from now on I can just ask you for changelogs:
    - Claude Code: `claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp`
    - Codex: add an MCP server with command "npx" and
      args ["-y", "@unleashwp/ai-forge@latest", "mcp"]
 4. Test it: run
-   `ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post`
+   `uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post`
    and show me the result.
 5. Only if I say yes: help me add an optional GitHub token (for a higher rate
    limit) and a wordpress.org cookie (for full ticket text). Otherwise skip this.
 6. Finish by telling me, in plain words, the three ways I can use AI Forge from now on:
-   a terminal command, a browser page (`ai-forge serve` at http://localhost:4321),
+   a terminal command, a browser page (`uwp-ai-forge serve` at http://localhost:4321),
    or simply asking you.
 
 Go one step at a time and keep it simple.
@@ -58,10 +58,10 @@ Prefer to do it yourself? You need one free program first: **[Node.js](https://n
 npm install -g @unleashwp/ai-forge
 ```
 
-Now you have a command called **`ai-forge`**. Try it:
+Now you have a command called **`uwp-ai-forge`**. Try it:
 
 ```bash
-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 ```
 
 This prints a ready-to-edit release post for WordPress 7.1 between those two dates. Change the dates and the milestone to whatever you need.
@@ -74,8 +74,8 @@ No account. No password. Nothing to sign up for. It just works.
 
 Pick whatever feels comfortable:
 
-- **Type a command** — like the example above. Run `ai-forge -h` to see everything it can do.
-- **Click instead of type** — run `ai-forge serve`, then open **http://localhost:4321** in your browser. Pick your dates, press a button, copy the result.
+- **Type a command** — like the example above. Run `uwp-ai-forge -h` to see everything it can do.
+- **Click instead of type** — run `uwp-ai-forge serve`, then open **http://localhost:4321** in your browser. Pick your dates, press a button, copy the result.
 - **Just ask your AI** — once it's connected (the magic box above), say: *"Give me the WordPress 7.1 changelog for July 15 to 22, as a post."* Claude or Codex does the rest.
 
 ---

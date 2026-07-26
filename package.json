@@ -4,9 +4,9 @@
   "description": "UnleashWP AI Forge — a hub for WordPress release tooling. Runs a browser UI, a zero-dependency CLI, and an MCP server (`uwp mcp`) so Claude Code and Codex can query its tools and skills live.",
   "type": "module",
   "bin": {
-    "ai-forge": "bin/ai-forge.mjs",
+    "uwp-ai-forge": "bin/ai-forge.mjs",
     "uwp": "bin/ai-forge.mjs",
-    "forge": "bin/ai-forge.mjs"
+    "ai-forge": "bin/ai-forge.mjs"
   },
   "engines": {
     "node": ">=18"

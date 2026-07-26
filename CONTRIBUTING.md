@@ -10,7 +10,7 @@ needs no changes to the shell.
 
 ```bash
 git clone https://github.com/unleash-wp/ai-forge
-cd ai-forge
+cd uwp-ai-forge
 npm install        # installs build deps + builds the UI bundle (dist/)
 npm run build      # rebuild the bundle after any client change
 node bin/ai-forge.mjs serve   # -> http://localhost:4321
@@ -127,7 +127,7 @@ export const commands = [
 ];
 ```
 
-The Changelog plugin does this: `ai-forge changelog --since <date> --until
+The Changelog plugin does this: `uwp-ai-forge changelog --since <date> --until
 <date> [--milestone x.y] [--post|--json]` (alias `uwp changelog …`).
 
 **MCP tools.** Export `mcpTools` and `uwp mcp` serves them over stdio (the MCP

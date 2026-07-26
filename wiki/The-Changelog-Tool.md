@@ -5,7 +5,7 @@ The first plugin AI Forge ships with (bundled, free) — one tool on the platfor
 ## Command
 
 ```bash
-ai-forge changelog --since <YYYY-MM-DD> --until <YYYY-MM-DD> [options]
+uwp-ai-forge changelog --since <YYYY-MM-DD> --until <YYYY-MM-DD> [options]
 ```
 
 | Flag | Effect |
@@ -20,7 +20,7 @@ ai-forge changelog --since <YYYY-MM-DD> --until <YYYY-MM-DD> [options]
 | `--no-labels` | Skip fetching Gutenberg `[Type]` labels. |
 | `--no-dev-notes` | Skip the dev-notes classification. |
 
-Run `ai-forge -h` for the full list.
+Run `uwp-ai-forge -h` for the full list.
 
 ## Where the data comes from
 

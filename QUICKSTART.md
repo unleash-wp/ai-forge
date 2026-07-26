@@ -10,7 +10,7 @@ Below: from nothing to a WordPress release changelog in about a minute.
 npm install -g @unleashwp/ai-forge
 ```
 
-Puts `ai-forge` on your PATH (`uwp` and `forge` are aliases). Plain Node ≥ 18, zero runtime dependencies; the browser UI ships pre-built.
+Puts `uwp-ai-forge` on your PATH (`uwp` and `forge` are aliases). Plain Node ≥ 18, zero runtime dependencies; the browser UI ships pre-built.
 
 No install? Use `npx`:
 
@@ -21,20 +21,20 @@ npx @unleashwp/ai-forge@latest changelog --since 2026-07-15 --until 2026-07-22 -
 ## 2. Generate a changelog
 
 ```bash
-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
+uwp-ai-forge changelog --since 2026-07-15 --until 2026-07-22 --milestone 7.1 --post
 ```
 
 Prints a ready-to-edit **release-post template**: headline, count line, the two canonical source links, a highlights placeholder, and the grouped Core + Gutenberg changelog.
 
 - Drop `--post` → full technical report.
 - Add `--json` → structured data.
-- `ai-forge -h` → every command.
+- `uwp-ai-forge -h` → every command.
 
 ## 3. Pick your surface
 
 | You want… | Do this |
 | --- | --- |
-| **A UI** | `ai-forge serve` → `http://localhost:4321` (date picker + Copy buttons) |
+| **A UI** | `uwp-ai-forge serve` → `http://localhost:4321` (date picker + Copy buttons) |
 | **Ask Claude Code / Codex** | `claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp`, then ask: *"WordPress 7.1 changelog for July 15–22, as a post."* |
 | **A window in Claude Desktop** | `npm run mcpb:pack`, then install `unleashwp-ai-forge.mcpb` from Settings → Extensions |
 
@@ -43,7 +43,7 @@ Prints a ready-to-edit **release-post template**: headline, count line, the two 
 Both optional — AI Forge runs without them.
 
 - **GitHub token** → raises the API limit from 60 to 5,000/h (no scopes needed). `gh auth login`, or paste one in **Settings → Connectors**.
-- **wordpress.org cookie** → turns on `--deep` (full Trac ticket text). Import it in the Setup UI, or `ai-forge cookie-import <chrome|safari|firefox|edge>`.
+- **wordpress.org cookie** → turns on `--deep` (full Trac ticket text). Import it in the Setup UI, or `uwp-ai-forge cookie-import <chrome|safari|firefox|edge>`.
 
 ## More
 

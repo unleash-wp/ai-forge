@@ -13,7 +13,7 @@ release-post changelog for Core + Gutenberg. Zero dependencies, plain Node ≥18
    - `--post` prints a fill-in release-post template (headline, count line,
      source links, highlights placeholder + the grouped changelog).
    - Drop `--post` for the full technical report; add `--json` for raw data.
-   - Prefer `ai-forge changelog …` (alias `uwp`) if the package is installed.
+   - Prefer `uwp-ai-forge changelog …` (alias `uwp`) if the package is installed.
 3. **Read the tickets** - the CLI gives ticket summaries + metadata cookie-free,
    but for the ticket description/discussion read each Core ticket
    (`core.commits[].tickets` in `--json`) via the `wporg-context` MCP
