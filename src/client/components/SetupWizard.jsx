@@ -265,6 +265,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   // Updates
   const [updates, setUpdates] = useState([]);
   const [checking, setChecking] = useState(false);
+  const [updating, setUpdating] = useState('');
 
   // Contribute: live "good first issue" list from the public repo. Intentionally a
   // direct external fetch (GitHub, not a Forge /api route), so it must NOT go
@@ -287,6 +288,24 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   function checkUpdatesNow() {
     setChecking(true);
     apiFetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {}).finally(() => setChecking(false));
+  }
+  // One-click install of a listed update. Same server flow the Plugins screen
+  // uses (fetch the source, rebuild, reload the tool registry) — user-initiated,
+  // never automatic. The bundle changes, so reload the page once it's done.
+  function installUpdate(u) {
+    setUpdating(u.id);
+    apiFetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', ids: [u.id] }) })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok && (!d.errors || !d.errors.length)) {
+          core.toast(t('Updated to %s — reloading…', u.latest), 'success');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          core.toast((d.errors && d.errors.join(', ')) || d.error || t('Update failed.'));
+          setUpdating('');
+        }
+      })
+      .catch(() => { core.toast(t('Update failed.')); setUpdating(''); });
   }
   useEffect(() => { if (open) checkUpdatesNow(); }, [open]);
 
@@ -578,7 +597,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="updates" mt="0">
                     <TabTitle>{t('Updates')}</TabTitle>
-                    <TabIntro>{t('Updates come from the public GitHub repo. Nothing installs on its own. You update with git when you want.')}</TabIntro>
+                    <TabIntro>{t('Updates come from the public GitHub repo. Nothing installs by itself — check when you want, then install with one click.')}</TabIntro>
                     <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" p="4">
                       <Flex align="center" justify="space-between" gap="3" flexWrap="wrap">
                         <Box>
@@ -592,7 +611,10 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                           {updates.map((u) => (
                             <HStack key={u.id} justify="space-between" gap="3" flexWrap="wrap">
                               <Text fontSize="0.8125rem" color="ui.text">{u.name}: {u.current} to <chakra.b color="ui.heading">{u.latest}</chakra.b></Text>
-                              <Link href={u.url} target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Release notes ↗')}</Link>
+                              <HStack gap="3" flexWrap="wrap">
+                                <Link href={u.url} target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Release notes ↗')}</Link>
+                                <BusyBtn busy={updating === u.id} onClick={() => installUpdate(u)}>{updating === u.id ? t('Installing…') : t('Install update')}</BusyBtn>
+                              </HStack>
                             </HStack>
                           ))}
                         </Stack>
