@@ -1,4 +1,4 @@
-const HELP = `uwp-ai-forge — a hub for WordPress release and dev tooling. Every tool is a plugin.
+const HELP = `uwp-ai-forge — a hub for WordPress release and dev tooling. Each plugin adds a feature.
 (short alias: uwp)
 
 Usage:
@@ -6,10 +6,10 @@ Usage:
   uwp-ai-forge update                   Update AI Forge to the latest version.
   uwp-ai-forge mcp                      Run as an MCP server (stdio) for Claude Code /
                                         Codex: claude mcp add uwp-ai-forge -- uwp-ai-forge mcp
-  uwp-ai-forge skills [<name>]          List the AI skills tools provide, or print one.
+  uwp-ai-forge skills [<name>]          List the AI skills plugins provide, or print one.
   uwp-ai-forge cookie-import <browser>  Import the wordpress.org cookie from a local
                                         browser (chrome|safari|firefox|edge, macOS).
-  uwp-ai-forge <tool> [options]         Run a tool's own command (listed below).
+  uwp-ai-forge <plugin> [options]       Run a plugin's own command (listed below).
   -h, --help                            Show this help.
 
 Example:
@@ -47,7 +47,7 @@ export async function run(argv) {
     const name = args._[1];
     if (!name) {
       if (!skills.length) { console.log('No skills installed.'); return; }
-      console.log('Skills (AI instructions the tools provide):\n');
+      console.log('Skills (AI instructions the plugins provide):\n');
       for (const s of skills) console.log(`  ${s.name.padEnd(24)} ${s.description || ''}`);
       console.log('\nRun `uwp-ai-forge skills <name> [--arg value]` to print one.');
       return;
@@ -96,7 +96,7 @@ export async function run(argv) {
     const { loadPlugins } = await import('./plugins.mjs');
     const cmds = (await loadPlugins()).flatMap((p) => p.commands || []);
     if (cmds.length) {
-      console.log('Tool commands:');
+      console.log('Plugin commands:');
       for (const c of cmds) console.log(`  uwp-ai-forge ${c.name.padEnd(16)} ${c.summary || ''}`);
       console.log('');
     }

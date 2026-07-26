@@ -59,7 +59,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
       apiFetch('/api/plugins/upload', { method: 'POST', body: file }));
   }
   function remove(id, name) {
-    if (!window.confirm(t('Remove "%s"? This deletes it from tools/ and rebuilds.', name))) return;
+    if (!window.confirm(t('Remove "%s"? This deletes it from plugins/ and rebuilds.', name))) return;
     afterInstall(t('Removing %s… rebuilding.', name),
       apiFetch('/api/plugins/uninstall', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }));
   }
@@ -79,7 +79,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
     apiFetch('/api/updates').then((r) => r.json()).then((d) => {
       const list = d.updates || [];
       setUpdates(list);
-      setUpdMsg(list.length ? t('%s update(s) available', list.length) : t('All tools are up to date.'));
+      setUpdMsg(list.length ? t('%s update(s) available', list.length) : t('All plugins are up to date.'));
     }).catch(() => setUpdMsg(t('Update check failed.')));
   }
 
@@ -96,8 +96,8 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   function applyBulk() {
     const ids = [...selected];
     if (!bulk || !ids.length) return;
-    if (bulk === 'remove' && !window.confirm(t('Remove %s tool(s)? This deletes them and rebuilds.', ids.length))) return;
-    setErr(''); setBusy(t(VERB[bulk]) + ' ' + t('%s tool(s)…', ids.length));
+    if (bulk === 'remove' && !window.confirm(t('Remove %s plugin(s)? This deletes them and rebuilds.', ids.length))) return;
+    setErr(''); setBusy(t(VERB[bulk]) + ' ' + t('%s plugin(s)…', ids.length));
     apiFetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: bulk, ids }) })
       .then((r) => r.json())
       .then((d) => {
@@ -126,7 +126,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
           <Flex align="center" gap="3" flexWrap="wrap" justify="flex-end">
             {updMsg && <Text fontSize="0.8125rem" color="ui.muted">{updMsg}</Text>}
             <Button variant="ghost" size="sm" onClick={checkUpdates}>{t('Check for updates')}</Button>
-            <TextInput maxW="18rem" value={iq} onChange={(e) => setIq(e.target.value)} placeholder={t('Search installed tools…')} spellCheck="false" />
+            <TextInput maxW="18rem" value={iq} onChange={(e) => setIq(e.target.value)} placeholder={t('Search installed plugins…')} spellCheck="false" />
           </Flex>
         </Flex>
       )}
@@ -158,7 +158,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
               <Box flex="1" minW="0">
                 <HStack gap="2">
                   <chakra.h3 m="0" fontSize="0.9375rem" fontWeight="600" color="ui.heading" letterSpacing="-.01em">{t(p.name)}</chakra.h3>
-                  {soleInstalled && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">{t('Only tool')}</Badge>}
+                  {soleInstalled && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">{t('Only plugin')}</Badge>}
                   {!active && <Badge variant="subtle" textTransform="uppercase" fontSize="0.625rem" color="ui.muted" bg="ui.tagbg">{t('Inactive')}</Badge>}
                   {up && <Badge bg="navy" color="white" fontSize="0.625rem">{t('Update available')}</Badge>}
                 </HStack>
@@ -174,7 +174,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
             </Flex>
           );
         })}
-        {shown.length === 0 && <Box px="5" py="12" textAlign="center" color="ui.muted" fontSize="0.875rem">{t('No tools match.')}</Box>}
+        {shown.length === 0 && <Box px="5" py="12" textAlign="center" color="ui.muted" fontSize="0.875rem">{t('No plugins match.')}</Box>}
       </Box>
     </>
   );

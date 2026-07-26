@@ -4,8 +4,8 @@
 
 AI Forge is a small program you run on your own computer. It is two things at once:
 
-- **A home for WordPress tools.** Every tool is a plugin. You keep the ones you want; AI Forge runs them and gives them one clean interface.
-- **A bridge to your AI.** AI Forge plugs into Claude Code, Claude Desktop and Codex, so your assistant can use those tools directly and hand you the results.
+- **A home for WordPress plugins.** You keep the ones you want; AI Forge runs them and gives them one clean interface.
+- **A bridge to your AI.** AI Forge plugs into Claude Code, Claude Desktop and Codex, so your assistant can use those plugins directly and hand you the results.
 
 It comes with **one plugin to start: the Changelog Generator** — it builds the list of everything that changed in a WordPress release between two dates, ready to paste into a release post. More plugins will follow; the changelog is just the first, not the whole of AI Forge.
 
@@ -94,8 +94,8 @@ You can add both later, inside the app, on the **Settings → Connectors** scree
 ## Want more?
 
 - **[Quick Start](QUICKSTART.md)** — the short version of this page.
-- **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)** — every detail: install options, connectors, using AI Forge from Claude & Codex, and building your own tool.
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — add your own tool. Every tool is just a folder.
+- **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)** — every detail: install options, connectors, using AI Forge from Claude & Codex, and building your own plugin.
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** — add your own plugin. Every plugin is just a folder.
 
 ---
 

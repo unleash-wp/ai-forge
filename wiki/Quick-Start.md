@@ -47,5 +47,5 @@ The agent calls AI Forge's tools and drafts the post grounded in the real PRs an
 ## Next steps
 
 - **[Connectors](Connectors)** — raise the GitHub limit to 5,000/h and turn on deep mode.
-- **[The Changelog Tool](The-Changelog-Tool)** — all the flags and how the counts are derived.
+- **[The Changelog Plugin](The-Changelog-Tool)** — all the flags and how the counts are derived.
 - **[Installation](Installation)** — the Claude Desktop one-click bundle and the dev setup.

@@ -1,6 +1,6 @@
-# The Changelog Tool
+# The Changelog Plugin
 
-The first plugin AI Forge ships with (bundled, free) — one tool on the platform, not a core feature. Give it a date window and a milestone; it produces a grounded release-post changelog for WordPress Core + Gutenberg.
+The first plugin AI Forge ships with (bundled, free) — one plugin on the platform, not a core feature. Give it a date window and a milestone; it produces a grounded release-post changelog for WordPress Core + Gutenberg.
 
 ## Command
 

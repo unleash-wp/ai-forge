@@ -47,4 +47,4 @@ Both optional — AI Forge runs without them.
 
 ## More
 
-Full docs are in the [**Wiki**](https://github.com/unleash-wp/ai-forge/wiki): Installation, Connectors, Using AI Forge from Claude & Codex, the Changelog tool, and building your own tool.
+Full docs are in the [**Wiki**](https://github.com/unleash-wp/ai-forge/wiki): Installation, Connectors, Using AI Forge from Claude & Codex, the Changelog plugin, and building your own plugin.

@@ -115,7 +115,7 @@ export default function Installer({ status, onDone }) {
               </chakra.details>
               <Text as="span" fontSize="0.7813rem" color={msgColor(ckMsg.kind)}>{ckMsg.text}</Text>
               {escape && (
-                <Box mt="4" pt="4" borderTop="1px solid" borderColor="ui.border" fontSize="0.8125rem" color="ui.muted">{t("Trac isn't reachable right now (bot wall or expired cookie). You can")} <chakra.button type="button" onClick={finish} css={linkBtn}>{t('continue anyway')}</chakra.button>{t('. The tool runs cookie-free and you can add the cookie later in Setup.')}</Box>
+                <Box mt="4" pt="4" borderTop="1px solid" borderColor="ui.border" fontSize="0.8125rem" color="ui.muted">{t("Trac isn't reachable right now (bot wall or expired cookie). You can")} <chakra.button type="button" onClick={finish} css={linkBtn}>{t('continue anyway')}</chakra.button>{t('. The plugin runs cookie-free and you can add the cookie later in Setup.')}</Box>
               )}
             </Box>
           )}

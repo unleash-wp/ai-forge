@@ -84,7 +84,7 @@ const DATA = [
 const WAYS = [
   { title: 'Report a bug or idea', desc: 'Open an issue on GitHub.', url: REPO_URL + '/issues/new' },
   { title: 'Pick a good first issue', desc: 'Small, friendly tasks to start with.', url: REPO_URL + '/labels/good%20first%20issue' },
-  { title: 'Build a tool', desc: 'Every tool is a plugin. Add your own.', url: REPO_URL + '/blob/main/CONTRIBUTING.md' },
+  { title: 'Build a plugin', desc: 'Each plugin adds a feature. Add your own.', url: REPO_URL + '/blob/main/CONTRIBUTING.md' },
   { title: 'Star the repo', desc: 'Help other people find AI Forge.', url: REPO_URL },
 ];
 const FAQ = [
@@ -588,7 +588,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="connectors" mt="0">
                     <TabTitle>{t('Connectors')}</TabTitle>
-                    <TabIntro>{t('Your tools get their data from here. GitHub and WordPress.org power every tool. Connect Claude Code, Claude Desktop or Codex so you can query AI Forge straight from your AI.')}</TabIntro>
+                    <TabIntro>{t('Your plugins get their data from here. GitHub and WordPress.org power every plugin. Connect Claude Code, Claude Desktop or Codex so you can query AI Forge straight from your AI.')}</TabIntro>
                     <Stack gap="3">
                       {((status && status.connectors) || []).map((c) => {
                         const p = PRESENT[c.id];
@@ -748,7 +748,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                         <Stack gap="5" maxW="46rem">
                           <Box borderRadius="forge" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" px="5" py="4">
                             <Text fontSize="0.9375rem" fontWeight="700" color="ui.heading" lineHeight="1.5">{t('AI Forge is open source, built by the community.')}</Text>
-                            <Text fontSize="0.8125rem" color="ui.muted" mt="1" lineHeight="1.55">{t('Every fix, idea, or new tool makes it better for the whole WordPress world. Jump in, you are welcome here.')}</Text>
+                            <Text fontSize="0.8125rem" color="ui.muted" mt="1" lineHeight="1.55">{t('Every fix, idea, or new plugin makes it better for the whole WordPress world. Jump in, you are welcome here.')}</Text>
                           </Box>
 
                           <SimpleGrid columns={{ base: 1, sm: 2 }} gap="3">

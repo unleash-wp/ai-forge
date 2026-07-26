@@ -2,8 +2,8 @@
 
 AI Forge is UnleashWP's self-hosted **plugin platform** for WordPress (and an AI
 bridge over MCP). The **core is the platform** — a plain Node server plus a React
-browser UI (the shell). **Every tool is a plugin** — a folder under `tools/`,
-including the changelog. Nothing in the shell is a "feature" tool; adding a tool
+browser UI (the shell). **Every feature is a plugin** — a folder under `plugins/`,
+including the changelog. Nothing in the shell is a built-in feature; adding a plugin
 needs no changes to the shell.
 
 ## Run it locally
@@ -20,13 +20,13 @@ The core CLI (`bin/` + `src/*.mjs`) has **zero runtime dependencies**. React,
 webpack and Babel are build-time devDependencies that only produce the browser
 bundle - they never load in the CLI. Keep it that way.
 
-## Build a tool
+## Build a plugin
 
-A tool is a folder `tools/<id>/` with up to three files. Copy `tools/_template/`
+A plugin is a folder `plugins/<id>/` with up to three files. Copy `plugins/_template/`
 to start:
 
 ```
-tools/<id>/
+plugins/<id>/
   plugin.json    manifest (required)
   client.jsx     a default-exported React component (the UI)
   server.mjs     optional backend routes
@@ -38,7 +38,7 @@ tools/<id>/
 {
   "id": "my-tool",
   "name": "My Tool",
-  "description": "One line shown under the tool title.",
+  "description": "One line shown under the plugin title.",
   "version": "0.1.0",
   "coreVersion": ">=0.1.0",
   "icon": "code",
@@ -49,9 +49,9 @@ tools/<id>/
 ```
 
 `id` must match the folder name. `name` + `icon` render the rail entry;
-`description` fills the tool head. `price` and `updateSource` are forward-looking
+`description` fills the plugin head. `price` and `updateSource` are forward-looking
 hooks: `updateSource` powers the free "update available" note (via GitHub
-Releases); `price` stays `"free"` for community tools.
+Releases); `price` stays `"free"` for community plugins.
 
 `icon` is a keyword from the built-in RemixIcon palette (unknown → a plug icon):
 `code`, `git-commit`, `changelog`, `article`, `list`, `sparkling`, `magic`,
@@ -74,7 +74,7 @@ export default function MyTool() {
 ```
 
 **Shared component library.** Import the design-system primitives from
-`../../src/client/ui` instead of styling raw elements, so every tool looks and
+`../../src/client/ui` instead of styling raw elements, so every plugin looks and
 behaves the same:
 
 ```jsx
@@ -90,7 +90,7 @@ import { ToolIcon } from '../../src/client/icons.jsx';
 Style with Chakra props + the shared design tokens (`bg="ui.surface"`,
 `color="ui.heading"`, `colorPalette="brand"`) — see **Frontend & styles** below.
 The shell owns the header, rail, setup wizard and toast; don't re-render those.
-`tools/_template/client.jsx` is a working example that uses these.
+`plugins/_template/client.jsx` is a working example that uses these.
 
 ### 3. `server.mjs` - optional backend
 
@@ -113,9 +113,9 @@ export const routes = [
 ```
 
 Import shared logic from `../../src/`. Credential/setup routes stay in the core
-shell because every tool shares them.
+shell because every plugin shares them.
 
-**Terminal commands.** Export `commands` and your tool is runnable from the CLI
+**Terminal commands.** Export `commands` and your plugin is runnable from the CLI
 as `uwp <name> …` — handy for scripting or feeding data to Claude Code / Codex.
 Each command gets `(args, ctx)`: `args` is the parsed flags (`args._` holds
 positionals), `ctx` is `{ log, error }`. They show up under `uwp -h`.
@@ -147,10 +147,10 @@ export const mcpTools = [
 Register the server (named `forge`; the command it runs is `uwp mcp`): Claude
 Code `claude mcp add uwp-ai-forge -- uwp mcp`; Codex adds an MCP server with
 `command = "uwp"`, `args = ["mcp"]`. Keep `stdout` for JSON-RPC only — send any
-logging to `stderr`. The Changelog tool ships `get_changelog`, `list_milestones`
+logging to `stderr`. The Changelog plugin ships `get_changelog`, `list_milestones`
 and `list_branches` tools plus a `write_release_post` skill (MCP prompt).
 
-**Skills.** Export `skills` — reusable AI instructions your tool provides. They
+**Skills.** Export `skills` — reusable AI instructions your plugin provides. They
 are served as MCP prompts over `uwp mcp` (so Claude Code / Codex can pull them)
 and printed by `uwp skills [<name>]`. `build(args)` returns the prompt text.
 
@@ -182,17 +182,17 @@ export const mcpTools = [
 ```
 
 The panel HTML speaks the MCP Apps postMessage dialect (`ui/initialize`, then
-handle `ui/notifications/tool-result`); see `tools/changelog/app.html` for a
-zero-dependency vanilla example. The Changelog tool ships `show_changelog`.
+handle `ui/notifications/tool-result`); see `plugins/changelog/app.html` for a
+zero-dependency vanilla example. The Changelog plugin ships `show_changelog`.
 
 ### Register + run
 
 Scaffold from the template with `npm run new-tool -- <id> [Display Name]` (copies
-`tools/_template` to `tools/<id>/` and patches the manifest), or copy the folder
+`plugins/_template` to `plugins/<id>/` and patches the manifest), or copy the folder
 by hand. Then `npm run build` (or `npm run watch` for a rebuild-on-save loop),
-restart `serve`, and your tool appears in the rail. Discovery is automatic
+restart `serve`, and your plugin appears in the rail. Discovery is automatic
 (server: `src/plugins.mjs`; client: `import.meta.webpackContext`). Folders
-starting with `_` (like `_template`) are skipped, and a tool whose manifest
+starting with `_` (like `_template`) are skipped, and a plugin whose manifest
 `coreVersion` the running core does not satisfy is skipped with a console note.
 
 ## Frontend & styles
@@ -232,13 +232,13 @@ props are mobile-first objects — `columns={{ base: 1, md: 2 }}`,
 
 **Shared primitives live in `src/client/ui/`** (`Button`, `Select`, `TextInput`,
 `TextArea`, `Checkbox`) — thin wrappers over Chakra that fix the app's API and
-defaults. Import those rather than raw Chakra inputs so every tool matches. The
+defaults. Import those rather than raw Chakra inputs so every plugin matches. The
 shell components (`Header`, `Rail`, `Footer`, `SetupWizard`, `Installer`,
 `PluginsManager`) are plain Chakra components under `src/client/components/`.
 
 **The `Provider`** (`src/client/ui/Provider.jsx`) wraps the app with
 `ChakraProvider value={system}` + `next-themes` for the light/dark toggle
-(`defaultTheme="system"`). It's mounted once in `index.jsx`; a tool never touches
+(`defaultTheme="system"`). It's mounted once in `index.jsx`; a plugin never touches
 it.
 
 **Adding a token or a variant:** extend `theme.js` (`tokens` for a raw value,
@@ -268,7 +268,7 @@ outside React use `__('Generate')`. Wrapping more strings only helps translators
 
 ## Hooks & filters
 
-Tools extend the shell without editing it, WordPress-style. `src/client/hooks.js`
+Plugins extend the shell without editing it, WordPress-style. `src/client/hooks.js`
 exports `addAction`/`doAction` and `addFilter`/`applyFilters` (priority-ordered),
 also on `window.forge.hooks` and the `core` context.
 
@@ -278,7 +278,7 @@ addFilter('forge.plugins', (list) => [...list, myTool]);   // add/hide/reorder r
 addAction('forge.tool.open', (id) => { /* react when a tool opens */ });
 ```
 
-Fire your own points from a tool with `doAction('mytool.thing', data)` /
+Fire your own points from a plugin with `doAction('mytool.thing', data)` /
 `applyFilters('mytool.value', value)` so other plugins can hook in.
 
 ## Quality gate

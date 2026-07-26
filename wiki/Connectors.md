@@ -1,6 +1,6 @@
 # Connectors
 
-Connectors are the credentials a tool uses to reach its data providers. AI Forge stores them **on your machine, in owner-only files** (`~/.config/wp-trac/`), and sends them only to the provider they belong to. They are never printed and never leave your device.
+Connectors are the credentials a plugin uses to reach its data providers. AI Forge stores them **on your machine, in owner-only files** (`~/.config/wp-trac/`), and sends them only to the provider they belong to. They are never printed and never leave your device.
 
 Both connectors below are **optional** — AI Forge runs without them. They only raise limits and unlock deep mode.
 

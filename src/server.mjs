@@ -129,7 +129,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         // footgun one: you can't deactivate your last active tool (an empty app).
         if (!body.enabled) {
           const active = (await pluginsReady).filter((p) => !set.has(p.manifest.id));
-          if (active.length <= 1 && active.some((p) => p.manifest.id === id)) throw new Error('cannot deactivate your only active tool');
+          if (active.length <= 1 && active.some((p) => p.manifest.id === id)) throw new Error('cannot deactivate your only active plugin');
         }
         if (body.enabled) set.delete(id); else set.add(id);
         writeDisabled(set);
@@ -155,12 +155,12 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         for (const id of list) {
           try {
             if (action === 'deactivate') {
-              if (active.has(id) && active.size <= 1) { errors.push(id + ': only active tool, skipped'); continue; }
+              if (active.has(id) && active.size <= 1) { errors.push(id + ': only active plugin, skipped'); continue; }
               const set = readDisabled(); set.add(id); writeDisabled(set); active.delete(id);
             } else if (action === 'activate') {
               const set = readDisabled(); set.delete(id); writeDisabled(set); active.add(id);
             } else if (action === 'remove') {
-              if (installed.size <= 1) { errors.push(id + ': only installed tool, skipped'); continue; }
+              if (installed.size <= 1) { errors.push(id + ': only installed plugin, skipped'); continue; }
               uninstall(id); clearDisabled(id); installed.delete(id); active.delete(id); needBuild = true;
             } else if (action === 'update') {
               const p = plugins.find((x) => x.manifest.id === id);
@@ -230,7 +230,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
     if (url.pathname === '/api/plugins/uninstall' && req.method === 'POST') {
       try {
         const id = (JSON.parse(await readBody(req) || '{}').id || '').trim();
-        if ((await pluginsReady).length <= 1) throw new Error('cannot remove your only installed tool');
+        if ((await pluginsReady).length <= 1) throw new Error('cannot remove your only installed plugin');
         uninstall(id);
         clearDisabled(id); // a fresh reinstall should come back active
         await rebuild();
