@@ -1,37 +1,33 @@
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { readFileSync, existsSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from './connectors/github-token.mjs';
 import { startDeviceFlow, pollDeviceFlow } from './connectors/github-device.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
-import { listConnectors, registerDesktop, unregisterDesktop, SERVER_ID } from './connectors/registry.mjs';
+import { listConnectors, registerDesktop, unregisterDesktop, SERVER_ID, NPX_MCP } from './connectors/registry.mjs';
 import { VERSION } from './version.mjs';
 import { FONT_FACE_CSS } from './fonts.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 
-// Fixed argv per agent for the one-click "Register in …" button — Forge runs the
-// same `mcp add` command the copy-paste card shows. Whitelisted (no user input in
-// the command), so there is nothing to inject. Falls back to copy when the CLI
-// isn't on PATH. Claude uses --scope user so it registers globally.
+// Fixed argv for the one-click "Register in …" button — the same `mcp add` command
+// the copy card shows. Whitelisted (no user input), so nothing to inject; falls
+// back to copy when the CLI isn't on PATH. Claude uses --scope user.
 const REGISTER_CMDS = {
-  claude: ['claude', 'mcp', 'add', '--scope', 'user', SERVER_ID, '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
-  codex: ['codex', 'mcp', 'add', SERVER_ID, '--', 'npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'],
+  claude: ['claude', 'mcp', 'add', '--scope', 'user', SERVER_ID, '--', ...NPX_MCP],
+  codex: ['codex', 'mcp', 'add', SERVER_ID, '--', ...NPX_MCP],
 };
 const UNREGISTER_CMDS = {
   claude: ['claude', 'mcp', 'remove', SERVER_ID],
   codex: ['codex', 'mcp', 'remove', SERVER_ID],
 };
 
-function execCmd(argv) {
-  return new Promise((resolve, reject) => {
-    execFile(argv[0], argv.slice(1), { timeout: 30000 }, (err, stdout, stderr) => {
-      if (err) { err.stderr = stderr; reject(err); } else resolve(stdout);
-    });
-  });
-}
+// execFile as a promise; on failure rejects with an Error carrying .stdout/.stderr.
+const execFileP = promisify(execFile);
+const execCmd = (argv) => execFileP(argv[0], argv.slice(1), { timeout: 30000 });
 import { checkUpdates } from './update.mjs';
 import { runSelfUpdate, detectInstall } from './self-update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
@@ -43,24 +39,6 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 // header wordmark now lives in the React bundle, not injected here.
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 
-// State-changing routes that write credentials, install/run code, or self-update.
-// The MCP-app internal server (internal:true) is reachable only through the
-// forge_api proxy, which a prompt-injected model can call on hosts that don't
-// honor the tool's app-only visibility hint — so these are hard-blocked there.
-// Setup happens in `serve` (a real browser) or via the MCPB user_config env; the
-// tool's read/data routes stay open so the app window still works.
-const ADMIN_ROUTES = new Set([
-  '/api/github-token', '/api/github-token/enable', '/api/github-token/device/start', '/api/github-token/device/poll',
-  '/api/github-token/test', '/api/cookie/test', // credential-validity oracles — setup-only, not needed in the window
-  '/api/cookie', '/api/cookie/import',
-  '/api/connectors/register', '/api/connectors/unregister',
-  '/api/self-update',
-  // Proxies arbitrary tool calls to the wporg MCP with the user's live cookie/token —
-  // the app never calls it, so keep it off the forge_api-reachable internal server.
-  '/api/mcp/execute',
-  '/api/plugins/install', '/api/plugins/upload', '/api/plugins/bulk', '/api/plugins/uninstall', '/api/plugins/toggle',
-  '/api/installed',
-]);
 
 export function startServer({ port = 4321, quiet = false, internal = false } = {}) {
   // Load tool plugins; reloadable so install/uninstall picks up changes without
@@ -86,9 +64,13 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
       return;
     }
 
-    // App-window backstop (see ADMIN_ROUTES): deny credential/install/self-update
-    // routes on the forge_api-reachable internal server.
-    if (internal && req.method !== 'GET' && req.method !== 'HEAD' && ADMIN_ROUTES.has(url.pathname)) {
+    // App-window backstop: the MCP-app internal server is reached only through the
+    // forge_api proxy, which a prompt-injected model can call on hosts that don't
+    // honor the tool's app-only visibility hint. Make it strictly read-only — deny
+    // every state-changing method — so neither a core route nor any third-party
+    // plugin route can mutate through it. Setup happens in `serve` (a real browser)
+    // or via the MCPB user_config env; the tool's read/data routes stay open.
+    if (internal && req.method !== 'GET' && req.method !== 'HEAD') {
       json(res, 403, { error: 'not available in the app window' });
       return;
     }

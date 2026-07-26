@@ -19,6 +19,11 @@ import { resolveCookie, cookiePath } from './wporg-cookie.mjs';
 // ai-forge). Changing it orphans existing registrations — pick it once.
 export const SERVER_ID = 'uwp-ai-forge';
 
+// The command every agent runs Forge with — one source for the register argv,
+// the copy-paste line and the Desktop config, so the exec path and the paste
+// path can never diverge.
+export const NPX_MCP = ['npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'];
+
 // Is Forge already registered as an MCP server in this agent? Read the agent's own
 // config file directly — instant, no subprocess (the `mcp get` CLI actually
 // *connects* to the server, ~3s). Reflects external add/remove on the next
@@ -46,7 +51,7 @@ function agentHasForge(agent) {
 // Claude Desktop has no CLI — it reads a JSON config at launch. So the one-click
 // "Connect" merges Forge in (and out) of that file directly; the user restarts
 // the app to apply. Same server command the CLI agents register.
-const DESKTOP_ENTRY = { command: 'npx', args: ['-y', '@unleashwp/ai-forge@latest', 'mcp'] };
+const DESKTOP_ENTRY = { command: NPX_MCP[0], args: NPX_MCP.slice(1) };
 
 export function desktopConfigPath() {
   const home = homedir();
@@ -81,17 +86,14 @@ export function unregisterDesktop() {
   writeDesktopConfig(cfg);
 }
 
-// The kinds a connector can be. `credential` has a store + status; `command` is a
-// copy-paste line (register Forge as an MCP server); `oauth-device` marks a
-// credential that can be filled via an OAuth device flow (GitHub sign-in) — the
-// same store, just a one-click acquisition path (see github-device.mjs).
-export const CONNECTOR_KINDS = ['credential', 'command', 'oauth-device'];
+// A connector's `kind`: `credential` has a store + status; `command` is a
+// copy-paste line that registers Forge as an MCP server in an agent.
 
 // The line Claude Code / Codex run to register Forge as an MCP server. One source
 // so the copy-paste card, the one-click "Register" button (server runs the same
 // command) and any installer step stay in sync. Claude gets `--scope user` so it
 // registers globally, not tied to whatever directory the server runs from.
-const mcpAddCmd = (agent) => `${agent} mcp add ${agent === 'claude' ? '--scope user ' : ''}${SERVER_ID} -- npx -y @unleashwp/ai-forge@latest mcp`;
+const mcpAddCmd = (agent) => `${agent} mcp add ${agent === 'claude' ? '--scope user ' : ''}${SERVER_ID} -- ${NPX_MCP.join(' ')}`;
 
 // Core connectors, in setup order. `status()` returns the per-connector status
 // the UI renders (never the secret itself); `command` is the line for command-kind.

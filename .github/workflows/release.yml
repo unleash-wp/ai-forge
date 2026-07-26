@@ -34,7 +34,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       # One version source = package.json. The tag must match it, and every derived
-      # file (manifest.json AND every tools/*/plugin.json) must already be in sync.
+      # file (manifest.json AND every plugins/*/plugin.json) must already be in sync.
       # Running sync-version must produce no changes — otherwise a derived version
       # drifted and would ship (e.g. a bundled plugin.json flagged as "update
       # available" against its own release).

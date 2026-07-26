@@ -27,7 +27,8 @@ jobs:
       # src/connectors, the tool plugins and scripts, not just src/*.mjs.
       - name: Syntax-check all source modules
         run: |
-          for f in src/*.mjs src/connectors/*.mjs tools/*/*.mjs tools/*/lib/*.mjs scripts/*.mjs bin/*.mjs webpack.config.cjs; do
+          shopt -s nullglob   # an unmatched glob must expand to nothing, not a literal path
+          for f in src/*.mjs src/connectors/*.mjs plugins/*/*.mjs plugins/*/lib/*.mjs scripts/*.mjs bin/*.mjs webpack.config.cjs; do
             node --check "$f"
           done
       - name: Unit tests

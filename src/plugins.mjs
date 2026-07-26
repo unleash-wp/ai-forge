@@ -53,41 +53,52 @@ export function satisfiesCore(range, core = CORE_VERSION) {
 // bundled dir first, then the user dir — so a user plugin with the same id
 // overrides the bundled one (a community fork), and community ids are added.
 async function scanDir(root, byId) {
-  if (!existsSync(root)) return;
-  for (const id of readdirSync(root).sort()) {
+  let ids;
+  // A user plugins dir can be a dangling symlink, a file, or unreadable — one bad
+  // dir must never reject loadPlugins() (that would 500 every route, including the
+  // bundled tool). Treat an unlistable root as empty.
+  try { ids = readdirSync(root).sort(); } catch { return; }
+  for (const id of ids) {
     if (id.startsWith('_')) continue; // _template etc. are copy-me examples, not live tools
-    const dir = join(root, id);
-    if (!statSync(dir).isDirectory()) continue;
-    const manifestPath = join(dir, 'plugin.json');
-    if (!existsSync(manifestPath)) continue;
-    let manifest;
     try {
-      manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    } catch (err) {
-      console.error(`plugin "${id}": ignored, bad plugin.json (${err.message})`);
-      continue;
-    }
-    if (!satisfiesCore(manifest.coreVersion)) {
-      console.error(`plugin "${id}": needs core ${manifest.coreVersion}, running ${CORE_VERSION} - skipped`);
-      continue;
-    }
-    let mod = null;
-    const serverPath = join(dir, 'server.mjs');
-    if (existsSync(serverPath)) {
+      const dir = join(root, id);
+      if (!statSync(dir).isDirectory()) continue; // statSync follows symlinks — a dangling one throws, caught here
+      const manifestPath = join(dir, 'plugin.json');
+      if (!existsSync(manifestPath)) continue;
+      let manifest;
       try {
-        mod = await import(pathToFileURL(serverPath).href);
+        manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
       } catch (err) {
-        console.error(`plugin "${id}": server.mjs failed to load (${err.message})`);
+        console.error(`plugin "${id}": ignored, bad plugin.json (${err.message})`);
+        continue;
       }
+      if (!satisfiesCore(manifest.coreVersion)) {
+        console.error(`plugin "${id}": needs core ${manifest.coreVersion}, running ${CORE_VERSION} - skipped`);
+        continue;
+      }
+      let mod = null;
+      const serverPath = join(dir, 'server.mjs');
+      if (existsSync(serverPath)) {
+        try {
+          // ?v=mtime busts Node's URL-keyed ESM cache, so a reinstalled/updated
+          // plugin's new server.mjs loads without a process restart.
+          const v = statSync(serverPath).mtimeMs;
+          mod = await import(pathToFileURL(serverPath).href + '?v=' + v);
+        } catch (err) {
+          console.error(`plugin "${id}": server.mjs failed to load (${err.message})`);
+        }
+      }
+      byId.set(manifest.id || id, {
+        manifest,
+        routes: (mod && mod.routes) || [],
+        commands: (mod && mod.commands) || [],
+        mcpTools: (mod && mod.mcpTools) || [],
+        skills: (mod && mod.skills) || [],
+        uiResources: (mod && mod.uiResources) || [],
+      });
+    } catch (err) {
+      console.error(`plugin "${id}": ignored (${err.message})`); // unreadable entry, dangling symlink, etc.
     }
-    byId.set(manifest.id || id, {
-      manifest,
-      routes: (mod && mod.routes) || [],
-      commands: (mod && mod.commands) || [],
-      mcpTools: (mod && mod.mcpTools) || [],
-      skills: (mod && mod.skills) || [],
-      uiResources: (mod && mod.uiResources) || [],
-    });
   }
 }
 
