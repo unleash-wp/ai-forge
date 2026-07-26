@@ -556,7 +556,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="connectors" mt="0">
                     <TabTitle>{t('Connectors')}</TabTitle>
-                    <TabIntro>{t('Tools get their data from these providers. GitHub and WordPress.org are needed for every tool. Claude Code, Claude Desktop and Codex register AI Forge as an MCP server to query it live.')}</TabIntro>
+                    <TabIntro>{t('Your tools get their data from here. GitHub and WordPress.org power every tool. Connect Claude Code, Claude Desktop or Codex so you can query AI Forge straight from your AI.')}</TabIntro>
                     <Stack gap="3">
                       {((status && status.connectors) || []).map((c) => {
                         const p = PRESENT[c.id];
