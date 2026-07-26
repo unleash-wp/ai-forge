@@ -1,4 +1,4 @@
-// Tool plugin registry. A plugin is a folder under tools/ with a plugin.json
+// Plugin registry. A plugin is a folder under plugins/ with a plugin.json
 // manifest and (optionally) a server.mjs that exports `routes`. The manifest is
 // the contract: id, name, description, icon drive the UI; price + updateSource
 // are the hooks a later premium/marketplace layer reads (nothing paid ships now
@@ -10,21 +10,21 @@ import { dirname, join } from 'node:path';
 import { VERSION } from './version.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
-const TOOLS = join(DIR, '..', 'tools'); // bundled tools, shipped inside the package
+const PLUGINS = join(DIR, '..', 'plugins'); // bundled plugins, shipped inside the package
 const CORE_VERSION = VERSION;
 
-// Community/extension plugins live OUTSIDE the package, in the user's config dir,
-// so a package update that replaces the install directory (npm i -g / npx) never
-// deletes them. loadPlugins() scans this alongside the bundled tools.
+// Community plugins live OUTSIDE the package, in the user's config dir, so a
+// package update that replaces the install directory (npm i -g / npx) never
+// deletes them. loadPlugins() scans this alongside the bundled plugins.
 export function userPluginsDir() {
   const base = process.env.XDG_CONFIG_HOME || join(homedir(), '.config');
-  return join(base, 'uwp-ai-forge', 'tools');
+  return join(base, 'uwp-ai-forge', 'plugins');
 }
 
-// Is `id` a bundled tool (ships with the package)? Bundled tools can't be
+// Is `id` a bundled plugin (ships with the package)? Bundled plugins can't be
 // uninstalled — they come back on the next update.
 export function isBundledPlugin(id) {
-  return existsSync(join(TOOLS, String(id), 'plugin.json'));
+  return existsSync(join(PLUGINS, String(id), 'plugin.json'));
 }
 
 // Compare two "x.y.z" strings: -1 if a < b, 0 if equal, 1 if a > b.
@@ -49,9 +49,9 @@ export function satisfiesCore(range, core = CORE_VERSION) {
   return c >= 0;
 }
 
-// Scan one tools/ root into `byId` (keyed by manifest id). Called for the bundled
-// dir first, then the user dir — so a user plugin with the same id overrides the
-// bundled one (a community fork), and community ids are simply added.
+// Scan one plugins/ root into `byId` (keyed by manifest id). Called for the
+// bundled dir first, then the user dir — so a user plugin with the same id
+// overrides the bundled one (a community fork), and community ids are added.
 async function scanDir(root, byId) {
   if (!existsSync(root)) return;
   for (const id of readdirSync(root).sort()) {
@@ -93,7 +93,7 @@ async function scanDir(root, byId) {
 
 export async function loadPlugins() {
   const byId = new Map();
-  await scanDir(TOOLS, byId);            // bundled (shipped with the package)
+  await scanDir(PLUGINS, byId);          // bundled (shipped with the package)
   await scanDir(userPluginsDir(), byId); // community installs (survive updates)
   return [...byId.values()];
 }

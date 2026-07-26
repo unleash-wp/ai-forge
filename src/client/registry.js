@@ -1,9 +1,9 @@
-// Build-time tool registry: maps every tools/<id>/client.jsx to its default-
+// Build-time plugin registry: maps every plugins/<id>/client.jsx to its default-
 // exported React component. A contributor adds a folder + `npm run build`; the
 // rail (fed by /api/plugins) then mounts the matching component here.
 // Uses webpack 5's ESM-native context API (require.context is not resolved
 // inside ES modules).
-const ctx = import.meta.webpackContext('../../tools', {
+const ctx = import.meta.webpackContext('../../plugins', {
   recursive: true,
   regExp: /^\.\/(?!_)[^/]+\/client\.jsx$/, // skip _template etc.
 });

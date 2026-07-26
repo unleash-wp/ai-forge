@@ -1,5 +1,5 @@
-// Frontend plugin installer (self-hosted). Installs a Forge tool from a GitHub
-// repo URL or an uploaded .zip into tools/<id>, then the caller rebuilds the
+// Frontend plugin installer (self-hosted). Installs a Forge plugin from a GitHub
+// repo URL or an uploaded .zip into plugins/<id>, then the caller rebuilds the
 // bundle. SECURITY: this runs third-party code (the tool's server.mjs + client)
 // in the user's own environment - only ever call it for a source the user
 // explicitly chose (a URL they typed, a file they picked). Never from a source

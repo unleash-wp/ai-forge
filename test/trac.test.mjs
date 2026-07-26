@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCsv } from '../tools/changelog/lib/trac-tickets.mjs';
+import { parseCsv } from '../plugins/changelog/lib/trac-tickets.mjs';
 
 test('parseCsv handles quoted fields with embedded commas and newlines', () => {
   const rows = parseCsv('id,summary\n1,"Fix, the thing"\n2,"multi\nline"\n');
