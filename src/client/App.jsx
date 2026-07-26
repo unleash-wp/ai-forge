@@ -14,8 +14,10 @@ import UpdateNote from './components/UpdateNote.jsx';
 import Installer from './components/Installer.jsx';
 import SetupWizard from './components/SetupWizard.jsx';
 import PluginsManager from './components/PluginsManager.jsx';
+import HomeView from './components/HomeView.jsx';
 
 const PLUGINS_VIEW = '__plugins__';
+const HOME_VIEW = '__home__';
 
 export default function App() {
   const toast = useToast();
@@ -40,7 +42,7 @@ export default function App() {
       const list = applyFilters('forge.plugins', d.plugins || []);
       setPlugins(list);
       setActiveId((cur) => {
-        if (cur === PLUGINS_VIEW) return cur;
+        if (cur === PLUGINS_VIEW || cur === HOME_VIEW) return cur;
         const enabled = list.filter((p) => p.enabled !== false);
         if (cur && enabled.some((p) => p.id === cur)) return cur;
         return enabled.length ? enabled[0].id : PLUGINS_VIEW;
@@ -48,7 +50,15 @@ export default function App() {
     }).catch(() => {});
   }, []);
 
-  useEffect(() => { loadPluginList(); refreshStatus(); }, [loadPluginList, refreshStatus]);
+  useEffect(() => {
+    // First ever launch lands on the branded Home; after that, straight into the
+    // default tool (Home stays one click away in the rail). Flag is per-browser.
+    let firstRun = false;
+    try { firstRun = !localStorage.getItem('forge:home-seen'); if (firstRun) localStorage.setItem('forge:home-seen', '1'); } catch { /* storage blocked */ }
+    if (firstRun) setActiveId(HOME_VIEW);
+    loadPluginList();
+    refreshStatus();
+  }, [loadPluginList, refreshStatus]);
 
   const installing = status && !status.installed;
   useEffect(() => { document.body.classList.toggle('is-installing', !!installing); }, [installing]);
@@ -66,16 +76,16 @@ export default function App() {
   const openSettings = useCallback((tab = 'general') => { setSettingsTab(tab); setWizardOpen(true); }, []);
   const openSetup = useCallback(() => openSettings('connectors'), [openSettings]);
 
-  // "Home": back to the default tool (first enabled plugin) at the top.
+  // "Home": the branded landing (logo + tool cards).
   const goHome = useCallback(() => {
-    const enabled = plugins.filter((p) => p.enabled !== false);
-    setActiveId(enabled.length ? enabled[0].id : PLUGINS_VIEW);
+    setActiveId(HOME_VIEW);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [plugins]);
+  }, []);
 
   // Let tools react when they become the active tool.
-  useEffect(() => { if (activeId && activeId !== PLUGINS_VIEW) doAction('forge.tool.open', activeId); }, [activeId]);
+  useEffect(() => { if (activeId && activeId !== PLUGINS_VIEW && activeId !== HOME_VIEW) doAction('forge.tool.open', activeId); }, [activeId]);
 
+  const inHome = activeId === HOME_VIEW;
   const inPlugins = activeId === PLUGINS_VIEW;
   const active = plugins.find((p) => p.id === activeId);
   const ActiveTool = activeId && !inPlugins ? REGISTRY[activeId] : null;
@@ -89,19 +99,23 @@ export default function App() {
 
       <Grid maxW="72.5rem" mx="auto" px={{ base: '4', lg: '6' }} gap={{ base: '4', lg: '8' }} alignItems="start"
         templateColumns={{ base: '1fr', lg: '7.75rem minmax(0, 1fr)' }}>
-        <Rail railRef={railRef} plugins={plugins} activeId={activeId} inPlugins={inPlugins} onSelect={setActiveId} onPlugins={() => setActiveId(PLUGINS_VIEW)} />
+        <Rail railRef={railRef} plugins={plugins} activeId={activeId} inHome={inHome} inPlugins={inPlugins} onHome={goHome} onSelect={setActiveId} onPlugins={() => setActiveId(PLUGINS_VIEW)} />
         <Box as="main" minW="0" pt={{ base: '4', lg: '8' }} pb="16">
           <UpdateNote />
-          <Box mb="6">
-            <Heading as="h1" fontWeight="700" color="ui.heading" letterSpacing="-.02em" mb="1.5"
-              fontSize={{ base: '1.375rem', lg: 'clamp(1.5rem, 1.28rem + 1.1vw, 1.75rem)' }}>
-              {inPlugins ? t('Plugins') : (active ? t(active.name) : 'Changelog')}
-            </Heading>
-            <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
-              {inPlugins ? t('Tools installed on UnleashWP AI Forge. Every tool is a plugin. Add your own.') : (active ? t(active.description) : '')}
-            </Text>
-          </Box>
-          {inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} /> : (ActiveTool && <ActiveTool />)}
+          {!inHome && (
+            <Box mb="6">
+              <Heading as="h1" fontWeight="700" color="ui.heading" letterSpacing="-.02em" mb="1.5"
+                fontSize={{ base: '1.375rem', lg: 'clamp(1.5rem, 1.28rem + 1.1vw, 1.75rem)' }}>
+                {inPlugins ? t('Plugins') : (active ? t(active.name) : 'Changelog')}
+              </Heading>
+              <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
+                {inPlugins ? t('Tools installed on UnleashWP AI Forge. Every tool is a plugin. Add your own.') : (active ? t(active.description) : '')}
+              </Text>
+            </Box>
+          )}
+          {inHome ? <HomeView plugins={plugins} openTool={setActiveId} />
+            : inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} />
+            : (ActiveTool && <ActiveTool />)}
         </Box>
       </Grid>
 
