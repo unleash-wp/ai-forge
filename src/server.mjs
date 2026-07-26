@@ -3,6 +3,7 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync, mkdtempSync } from 
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from './connectors/github-token.mjs';
+import { startDeviceFlow, pollDeviceFlow } from './connectors/github-device.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
 import { listConnectors } from './connectors/registry.mjs';
 import { VERSION } from './version.mjs';
@@ -252,6 +253,19 @@ export function startServer({ port = 4321, quiet = false } = {}) {
       if (process.env.GITHUB_TOKEN) { json(res, 400, { error: 'GITHUB_TOKEN env already provides the token.' }); return; }
       setDisabled(false);
       json(res, 200, { ok: true });
+      return;
+    }
+
+    // One-click sign-in (OAuth Device Flow): start returns the user code to show;
+    // poll exchanges + stores the token server-side and returns only a status.
+    if (url.pathname === '/api/github-token/device/start' && req.method === 'POST') {
+      if (process.env.GITHUB_TOKEN) { json(res, 400, { error: 'GITHUB_TOKEN env is set and overrides sign-in. Unset it to sign in here.' }); return; }
+      json(res, 200, await startDeviceFlow());
+      return;
+    }
+
+    if (url.pathname === '/api/github-token/device/poll' && req.method === 'POST') {
+      json(res, 200, await pollDeviceFlow());
       return;
     }
 

@@ -6,11 +6,13 @@
 // read at runtime via loadPlugins(), never a static tools/* import (cycle guard).
 import { loadPlugins } from '../plugins.mjs';
 import { tokenStatus } from './github-token.mjs';
+import { deviceFlowConfigured } from './github-device.mjs';
 import { resolveCookie, cookiePath } from './wporg-cookie.mjs';
 
 // The kinds a connector can be. `credential` has a store + status; `command` is a
-// copy-paste line (register Forge as an MCP server); `oauth-device` is reserved
-// for the GitHub Device-Flow that lands with the native app (no connector yet).
+// copy-paste line (register Forge as an MCP server); `oauth-device` marks a
+// credential that can be filled via an OAuth device flow (GitHub sign-in) — the
+// same store, just a one-click acquisition path (see github-device.mjs).
 export const CONNECTOR_KINDS = ['credential', 'command', 'oauth-device'];
 
 // The line Claude Code / Codex run to register Forge as an MCP server. One source
@@ -20,9 +22,13 @@ const mcpAddCmd = (agent) => `${agent} mcp add forge -- npx -y @unleashwp/ai-for
 // Core connectors, in setup order. `status()` returns the per-connector status
 // the UI renders (never the secret itself); `command` is the line for command-kind.
 const coreConnectors = [
-  { id: 'github-token', kind: 'credential', required: true, status: () => tokenStatus() },
+  // `device` tells the UI whether one-click sign-in (OAuth Device Flow) is
+  // available; when it isn't, the gh-CLI / token-paste fallbacks still show.
+  { id: 'github-token', kind: 'credential', required: true, status: () => ({ ...tokenStatus(), device: deviceFlowConfigured() }) },
   {
-    id: 'wporg-cookie', kind: 'credential', required: true,
+    // Optional: only needed for deep Trac ticket text. The base changelog runs
+    // cookie-free, so this is never part of the required first-run.
+    id: 'wporg-cookie', kind: 'credential', required: false,
     status: () => {
       const c = resolveCookie();
       return { set: !!c, source: process.env.WPORG_TRAC_COOKIE ? 'env' : 'file', path: cookiePath(), envLocked: !!process.env.WPORG_TRAC_COOKIE };
