@@ -51,9 +51,13 @@ const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 // tool's read/data routes stay open so the app window still works.
 const ADMIN_ROUTES = new Set([
   '/api/github-token', '/api/github-token/enable', '/api/github-token/device/start', '/api/github-token/device/poll',
+  '/api/github-token/test', '/api/cookie/test', // credential-validity oracles — setup-only, not needed in the window
   '/api/cookie', '/api/cookie/import',
   '/api/connectors/register', '/api/connectors/unregister',
   '/api/self-update',
+  // Proxies arbitrary tool calls to the wporg MCP with the user's live cookie/token —
+  // the app never calls it, so keep it off the forge_api-reachable internal server.
+  '/api/mcp/execute',
   '/api/plugins/install', '/api/plugins/upload', '/api/plugins/bulk', '/api/plugins/uninstall', '/api/plugins/toggle',
   '/api/installed',
 ]);
