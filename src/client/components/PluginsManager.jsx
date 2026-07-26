@@ -14,12 +14,6 @@ import { Badge, Box, Flex, HStack, Link, Text, chakra } from '@chakra-ui/react';
 const NOTICE = { bg: 'rgba(252,190,0,.12)', border: '1px solid', borderColor: 'rgba(252,190,0,.45)', color: 'ui.text', borderRadius: 'forge', px: '3.5', py: '2.5', fontSize: '0.875rem', mb: '6' };
 
 const VERB = { activate: 'Activating', deactivate: 'Deactivating', update: 'Updating', remove: 'Removing' };
-const BULK_OPTIONS = [
-  { value: 'activate', label: 'Activate' },
-  { value: 'deactivate', label: 'Deactivate' },
-  { value: 'update', label: 'Update' },
-  { value: 'remove', label: 'Remove' },
-];
 
 export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [updates, setUpdates] = useState([]);
@@ -33,6 +27,12 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   const [err, setErr] = useState('');
   const fileRef = useRef(null);
   const t = useT();
+  const BULK_OPTIONS = [
+    { value: 'activate', label: t('Activate') },
+    { value: 'deactivate', label: t('Deactivate') },
+    { value: 'update', label: t('Update') },
+    { value: 'remove', label: t('Remove') },
+  ];
 
   useEffect(() => {
     apiFetch('/api/updates').then((r) => r.json()).then((d) => setUpdates(d.updates || [])).catch(() => {});
@@ -44,43 +44,43 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
     setErr(''); setBusy(label);
     promise
       .then((r) => r.json())
-      .then((d) => { if (d.ok) { setBusy('Done. Reloading…'); window.location.reload(); } else { setBusy(''); setErr(d.error || 'failed'); } })
-      .catch(() => { setBusy(''); setErr('request failed'); });
+      .then((d) => { if (d.ok) { setBusy(t('Done. Reloading…')); window.location.reload(); } else { setBusy(''); setErr(d.error || t('failed')); } })
+      .catch(() => { setBusy(''); setErr(t('request failed')); });
   }
   function installUrl() {
     const s = source.trim();
-    if (!s) { setErr('Paste a GitHub repo URL first.'); return; }
-    afterInstall('Installing from ' + s + '… building the bundle, then the page reloads.',
+    if (!s) { setErr(t('Paste a GitHub repo URL first.')); return; }
+    afterInstall(t('Installing from %s… building the bundle, then the page reloads.', s),
       apiFetch('/api/plugins/install', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: s }) }));
   }
   function uploadZip(file) {
     if (!file) return;
-    afterInstall('Installing ' + file.name + '… building the bundle, then the page reloads.',
+    afterInstall(t('Installing %s… building the bundle, then the page reloads.', file.name),
       apiFetch('/api/plugins/upload', { method: 'POST', body: file }));
   }
   function remove(id, name) {
-    if (!window.confirm('Remove "' + name + '"? This deletes it from tools/ and rebuilds.')) return;
-    afterInstall('Removing ' + name + '… rebuilding.',
+    if (!window.confirm(t('Remove "%s"? This deletes it from tools/ and rebuilds.', name))) return;
+    afterInstall(t('Removing %s… rebuilding.', name),
       apiFetch('/api/plugins/uninstall', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }));
   }
   function toggle(id, enabled) {
     setErr('');
     apiFetch('/api/plugins/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, enabled }) })
       .then((r) => r.json())
-      .then((d) => { if (d.ok) { if (onChanged) onChanged(); } else setErr(d.error || 'failed'); })
-      .catch(() => setErr('request failed'));
+      .then((d) => { if (d.ok) { if (onChanged) onChanged(); } else setErr(d.error || t('failed')); })
+      .catch(() => setErr(t('request failed')));
   }
   function updateOne(id, name) {
-    afterInstall('Updating ' + name + '… downloading + rebuilding.',
+    afterInstall(t('Updating %s… downloading + rebuilding.', name),
       apiFetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', ids: [id] }) }));
   }
   function checkUpdates() {
-    setUpdMsg('Checking…');
+    setUpdMsg(t('Checking…'));
     apiFetch('/api/updates').then((r) => r.json()).then((d) => {
       const list = d.updates || [];
       setUpdates(list);
-      setUpdMsg(list.length ? list.length + ' update' + (list.length > 1 ? 's' : '') + ' available' : 'All tools are up to date.');
-    }).catch(() => setUpdMsg('Update check failed.'));
+      setUpdMsg(list.length ? t('%s update(s) available', list.length) : t('All tools are up to date.'));
+    }).catch(() => setUpdMsg(t('Update check failed.')));
   }
 
   const shown = plugins
@@ -96,17 +96,17 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
   function applyBulk() {
     const ids = [...selected];
     if (!bulk || !ids.length) return;
-    if (bulk === 'remove' && !window.confirm('Remove ' + ids.length + ' tool(s)? This deletes them and rebuilds.')) return;
-    setErr(''); setBusy(VERB[bulk] + ' ' + ids.length + ' tool(s)…');
+    if (bulk === 'remove' && !window.confirm(t('Remove %s tool(s)? This deletes them and rebuilds.', ids.length))) return;
+    setErr(''); setBusy(t(VERB[bulk]) + ' ' + t('%s tool(s)…', ids.length));
     apiFetch('/api/plugins/bulk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: bulk, ids }) })
       .then((r) => r.json())
       .then((d) => {
-        if (!d.ok) { setBusy(''); setErr(d.error || 'failed'); return; }
+        if (!d.ok) { setBusy(''); setErr(d.error || t('failed')); return; }
         if (d.errors && d.errors.length) setErr(d.errors.join(' · '));
-        if (d.rebuilt) { setBusy('Done. Reloading…'); window.location.reload(); }
+        if (d.rebuilt) { setBusy(t('Done. Reloading…')); window.location.reload(); }
         else { setBusy(''); setSelected(new Set()); setBulk(''); if (onChanged) onChanged(); }
       })
-      .catch(() => { setBusy(''); setErr('request failed'); });
+      .catch(() => { setBusy(''); setErr(t('request failed')); });
   }
 
   return (

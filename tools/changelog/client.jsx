@@ -398,7 +398,19 @@ function Results({ data, since, until }) {
 
   const withAt = (n) => (propsAt ? '@' : '') + n;
   const propsLine = all.map(withAt).join(', ');
-  const copy = (text, label) => { navigator.clipboard.writeText(text); core.toast(label); };
+  const copy = (text, label) => {
+    const legacy = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        core.toast(label);
+      } catch { /* clipboard unavailable */ }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => core.toast(label)).catch(legacy);
+    else legacy();
+  };
   function downloadMd() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([data.markdown], { type: 'text/markdown' }));

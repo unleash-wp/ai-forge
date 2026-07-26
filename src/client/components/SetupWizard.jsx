@@ -2,7 +2,7 @@
 // Connectors, Updates, Credits). Connectors are the user's own keys (GitHub
 // token + wordpress.org cookie), stored locally (owner-only), sent only to
 // GitHub / WordPress.org. Chakra handles backdrop, focus trap and Escape.
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useTheme } from 'next-themes';
 import { fetchJSON, apiFetch, useCore, connectorStatus } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
@@ -188,9 +188,10 @@ function StatusCircle({ ok }) {
 // A connector is an accordion: the whole header row toggles the panel, so you
 // never have to hit a small icon.
 function ConnectorCard({ icon, name, desc, status, required, open, onToggle, children }) {
+  const panelId = useId();
   return (
     <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" overflow="hidden">
-      <Flex as="button" type="button" onClick={onToggle} align="center" gap="3" w="full" textAlign="left" bg="transparent" border="0" px="4" py="3.5" cursor="pointer" transition="background .12s" _hover={{ bg: 'ui.sunk' }}>
+      <Flex as="button" type="button" onClick={onToggle} aria-expanded={open} aria-controls={panelId} align="center" gap="3" w="full" textAlign="left" bg="transparent" border="0" px="4" py="3.5" cursor="pointer" transition="background .12s" _hover={{ bg: 'ui.sunk' }}>
         <ConnectorIcon svg={icon} />
         <Box flex="1" minW="0">
           <HStack gap="2" flexWrap="wrap">
@@ -202,7 +203,7 @@ function ConnectorCard({ icon, name, desc, status, required, open, onToggle, chi
         </Box>
         <Glyph svg={ICON_CHEVRON} color="ui.muted" transform={open ? 'rotate(180deg)' : undefined} transition="transform .15s" />
       </Flex>
-      {open ? <Box px="4" pb="4" pt="4" borderTopWidth="1px" borderColor="ui.border">{children}</Box> : null}
+      {open ? <Box id={panelId} px="4" pb="4" pt="4" borderTopWidth="1px" borderColor="ui.border">{children}</Box> : null}
     </Box>
   );
 }
@@ -282,7 +283,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   const gh = connectorStatus(status, 'github-token');
   const trac = connectorStatus(status, 'wporg-cookie');
   const version = (status && status.version) || '';
-  const install = (status && status.install) || 'git'; // git | global | npx
+  const install = (status && status.install) || 'git'; // git | global | npx | local
   // The self-updater has its own branded command (wp-cli style) — same for every
   // install method, no raw git/npm chain to show.
   const manualCmd = 'uwp-ai-forge update';
@@ -303,7 +304,14 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .then((r) => r.json())
       .then((d) => {
         if (!d.ok) { core.toast(d.error || t('Update failed.')); setSelfUpdating(false); return; }
-        if (d.method === 'npx') { core.toast(t('npx already runs the latest version.'), 'success'); setSelfUpdating(false); return; }
+        // npx / project-dependency installs don't self-update in place (nothing to
+        // reload) — just tell the user, keyed off the honest restart flag.
+        if (!d.restart) {
+          core.toast(d.method === 'local'
+            ? t('AI Forge is installed as a project dependency. Update it with npm update @unleashwp/ai-forge in that project.')
+            : t('npx already runs the latest version.'), 'success');
+          setSelfUpdating(false); return;
+        }
         core.toast(t('Updated — reloading…'), 'success');
         setTimeout(() => window.location.reload(), 1200);
       })
@@ -326,8 +334,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
   function copyStr(text, id) {
     copyText(text)
-      .then(() => { setCopiedId(id); core.toast('Copied', 'success'); setTimeout(() => setCopiedId(null), 1600); })
-      .catch(() => core.toast('Copy failed'));
+      .then(() => { setCopiedId(id); core.toast(t('Copied'), 'success'); setTimeout(() => setCopiedId(null), 1600); })
+      .catch(() => core.toast(t('Copy failed')));
   }
   function copyCmd(id, cmd) { copyStr(cmd, id); }
 
@@ -340,8 +348,10 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
         if (data && data.ok) {
           setRegistered((r) => ({ ...r, [agent]: true }));
           core.toast(agent === 'claude-desktop' ? t('Registered — restart Claude Desktop to finish.') : t('Registered in %s', name), 'success');
+          refreshStatus();
         } else core.toast((data && data.error) || t('Could not register automatically — copy the command.'));
       })
+      .catch(() => core.toast(t('Could not register automatically — copy the command.')))
       .finally(() => setRegistering(''));
   }
   function unregisterAgent(agent) {
@@ -349,20 +359,21 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .then(({ data }) => {
         if (data && data.ok) { setRegistered((r) => ({ ...r, [agent]: false })); refreshStatus(); }
         else core.toast((data && data.error) || t('Could not remove.'));
-      });
+      })
+      .catch(() => core.toast(t('Could not remove.')));
   }
 
   function testGh() {
-    setGhMsg({ text: 'Checking…', kind: '' });
+    setGhMsg({ text: t('Checking…'), kind: '' });
     return fetchJSON('/api/github-token/test', { method: 'POST' }).then(({ data }) => {
       setGhMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' });
-      if (data.ok) core.toast('GitHub connected', 'success');
+      if (data.ok) core.toast(t('GitHub connected'), 'success');
       return refreshStatus();
     });
   }
-  function saveGh() {
-    const token = ghToken.trim();
-    if (!token) { setGhMsg({ text: 'Paste a token first.', kind: 'bad' }); return; }
+  function saveGh(pasted) {
+    const token = (typeof pasted === 'string' ? pasted : ghToken).trim();
+    if (!token) { setGhMsg({ text: t('Paste a token first.'), kind: 'bad' }); return; }
     setBusy('gh-token'); setGhMsg({ text: '', kind: '' });
     fetchJSON('/api/github-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) })
       .then(({ ok, data }) => { if (ok) { setGhToken(''); return testGh(); } setGhMsg({ text: data.error, kind: 'bad' }); })
@@ -371,7 +382,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   function connectGh() {
     setBusy('gh-cli');
     fetchJSON('/api/github-token/enable', { method: 'POST' })
-      .then(({ data }) => { if (data && data.error) core.toast(data.error); else core.toast('GitHub connected', 'success'); return refreshStatus(); })
+      .then(({ data }) => { if (data && data.error) core.toast(data.error); else core.toast(t('GitHub connected'), 'success'); return refreshStatus(); })
       .finally(() => setBusy(''));
   }
   function disconnectGh() {
@@ -380,16 +391,16 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
     });
   }
   function testCookie() {
-    setCkMsg({ text: 'Checking…', kind: '' });
+    setCkMsg({ text: t('Checking…'), kind: '' });
     return fetchJSON('/api/cookie/test', { method: 'POST' }).then(({ data }) => {
       setCkMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' });
-      if (data.ok) core.toast('WordPress.org connected', 'success');
+      if (data.ok) core.toast(t('WordPress.org connected'), 'success');
       return refreshStatus();
     });
   }
-  function saveCookie() {
-    const c = cookieVal.trim();
-    if (!c) { setCkMsg({ text: 'Paste the cookie first.', kind: 'bad' }); return; }
+  function saveCookie(pasted) {
+    const c = (typeof pasted === 'string' ? pasted : cookieVal).trim();
+    if (!c) { setCkMsg({ text: t('Paste the cookie first.'), kind: 'bad' }); return; }
     setBusy('wp-cookie'); setCkMsg({ text: '', kind: '' });
     fetchJSON('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie: c }) })
       .then(({ ok, data }) => { if (ok) { setCookieVal(''); return testCookie(); } setCkMsg({ text: data.error, kind: 'bad' }); })
@@ -403,8 +414,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   function importCookie() {
     setBusy('wp-import'); setCkMsg({ text: '', kind: '' });
     fetchJSON('/api/cookie/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ browser }) })
-      .then(({ data }) => { setCkMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' }); if (data.ok) core.toast('WordPress.org connected', 'success'); return refreshStatus(); })
-      .catch(() => setCkMsg({ text: 'Import failed.', kind: 'bad' }))
+      .then(({ data }) => { setCkMsg({ text: data.message, kind: data.ok ? 'good' : 'bad' }); if (data.ok) core.toast(t('WordPress.org connected'), 'success'); return refreshStatus(); })
+      .catch(() => setCkMsg({ text: t('Import failed.'), kind: 'bad' }))
       .finally(() => setBusy(''));
   }
 
@@ -434,7 +445,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
           {gh.ghAvailable && <BusyBtn busy={busy === 'gh-cli'} variant="ghost" onClick={connectGh} alignSelf="flex-start">{t('Connect with GitHub CLI')}</BusyBtn>}
           <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0">
             <HStack gap="2" align="center">
-              <Box flex="1"><TextInput type="password" size="sm" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder={gh.ghAvailable ? t('Or paste a token') : t('Paste a GitHub token')} autoComplete="off" spellCheck="false" /></Box>
+              <Box flex="1"><TextInput type="password" size="sm" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={(e) => saveGh(e.clipboardData.getData('text'))} placeholder={gh.ghAvailable ? t('Or paste a token') : t('Paste a GitHub token')} autoComplete="off" spellCheck="false" /></Box>
               <BusyBtn busy={busy === 'gh-token'} variant="ghost" onClick={saveGh} flex="none">{t('Connect')}</BusyBtn>
             </HStack>
           </chakra.form>
@@ -467,7 +478,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
           {browser && <BusyBtn busy={busy === 'wp-import'} onClick={importCookie} alignSelf="flex-start">{t('Import from %s', BROWSER_NAMES[browser])}</BusyBtn>}
           <chakra.form onSubmit={(e) => e.preventDefault()} m="0">
             <HStack gap="2" align="center">
-              <Box flex="1"><TextInput size="sm" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={() => setTimeout(saveCookie, 30)} placeholder="Or paste wporg_logged_in=…; wporg_sec=…" spellCheck="false" /></Box>
+              <Box flex="1"><TextInput size="sm" value={cookieVal} onChange={(e) => setCookieVal(e.target.value)} onPaste={(e) => saveCookie(e.clipboardData.getData('text'))} placeholder="Or paste wporg_logged_in=…; wporg_sec=…" spellCheck="false" /></Box>
               <BusyBtn busy={busy === 'wp-cookie'} variant="ghost" onClick={saveCookie} flex="none">{t('Connect')}</BusyBtn>
             </HStack>
           </chakra.form>
@@ -626,6 +637,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                     </Box>
                     {install === 'npx' ? (
                       <Text fontSize="0.8125rem" color="ui.muted" mt="4">{t('You started AI Forge with npx — it already runs the latest version each time.')}</Text>
+                    ) : install === 'local' ? (
+                      <Text fontSize="0.8125rem" color="ui.muted" mt="4">{t('AI Forge is installed as a project dependency. Update it with npm update @unleashwp/ai-forge in that project.')}</Text>
                     ) : (
                       <Stack gap="2.5" mt="5" align="flex-start">
                         <BusyBtn busy={selfUpdating} variant="primary" onClick={selfUpdate}>{selfUpdating ? t('Updating…') : t('Update AI Forge')}</BusyBtn>

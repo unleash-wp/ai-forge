@@ -9,7 +9,7 @@ import { __ } from '../i18n.jsx';
 const OPT_CAP = 100;
 const CButton = chakra('button');
 
-export function Select({ value, onChange, options, placeholder = 'Select', disabled, block, searchable, ariaLabel }) {
+export function Select({ value, onChange, options, placeholder = __('Select'), disabled, block, searchable, ariaLabel }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(-1);
@@ -92,7 +92,7 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
               fontWeight={o.value === value ? '600' : '400'} _hover={{ bg: 'rgba(59,130,246,.14)' }}>{o.label}</CButton>
           ))}
           {shown.length === 0 && <Box flex="none" px="2.5" py="2" fontSize="0.75rem" color="ui.muted">{__('No matches')}</Box>}
-          {filtered.length > OPT_CAP && <Box flex="none" px="2.5" py="2" fontSize="0.75rem" color="ui.muted">+{filtered.length - OPT_CAP} more, refine search</Box>}
+          {filtered.length > OPT_CAP && <Box flex="none" px="2.5" py="2" fontSize="0.75rem" color="ui.muted">{__('+%s more, refine search', filtered.length - OPT_CAP)}</Box>}
         </Box>
       )}
     </Box>
