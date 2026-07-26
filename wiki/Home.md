@@ -1,5 +1,7 @@
 # UnleashWP AI Forge
 
+> 📖 **The complete guide lives in the [Handbook](https://unleash-wp.github.io/ai-forge/)** — the single source of truth (what it is, install, example prompts, connectors, building a plugin). These wiki pages are quick references.
+
 **UnleashWP's AI tool for WordPress** — a self-hosted **plugin platform** that also **bridges to your AI** (Claude Code, Claude Desktop, Codex), by [UnleashWP](https://unleash-wp.com).
 
 AI Forge is the platform: a shell that hosts **plugins** and connects them to your AI assistant over MCP. Every plugin is a folder under `plugins/`, so the community can add more without touching the core. The CLI has **zero runtime dependencies** (plain Node ≥ 18).

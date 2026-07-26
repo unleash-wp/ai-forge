@@ -74,9 +74,13 @@ No account. No password. Nothing to sign up for. It just works.
 
 Pick whatever feels comfortable:
 
+- **Add it to Claude Code as a plugin** — run `/plugin marketplace add unleash-wp/ai-forge`, then `/plugin install uwp-ai-forge@unleashwp-ai-forge`, and restart. AI Forge connects automatically; now just ask.
 - **Type a command** — like the example above. Run `uwp-ai-forge -h` to see everything it can do.
 - **Click instead of type** — run `uwp-ai-forge serve`, then open **http://localhost:4321** in your browser. Pick your dates, press a button, copy the result.
-- **Just ask your AI** — once it's connected (the magic box above), say: *"Give me the WordPress 7.1 changelog for July 15 to 22, as a post."* Claude or Codex does the rest.
+- **Just ask your AI** — once it's connected, talk to it in plain language:
+  - *"Give me the WordPress 7.1 changelog for July 15 to 22, as a post."*
+  - *"How many changes landed in Gutenberg and Core between 2026-07-19 and today?"*
+  - *"Draft the WordPress 7.1 release post and link every highlight to its source."*
 
 ---
 
@@ -93,8 +97,9 @@ You can add both later, inside the app, on the **Settings → Connectors** scree
 
 ## Want more?
 
+- 📖 **[Handbook](https://unleash-wp.github.io/ai-forge/)** — the complete guide, and the single source of truth: what it is, all three install paths, example prompts, connectors, the changelog generator, and how to build a plugin.
 - **[Quick Start](QUICKSTART.md)** — the short version of this page.
-- **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)** — every detail: install options, connectors, using AI Forge from Claude & Codex, and building your own plugin.
+- **[Wiki](https://github.com/unleash-wp/ai-forge/wiki)** — reference pages on GitHub.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — add your own plugin. Every plugin is just a folder.
 
 ---
