@@ -86,10 +86,10 @@ export function Select({ value, onChange, options, placeholder = 'Select', disab
           )}
           {shown.map((o, i) => (
             <CButton key={o.value} id={base + '-opt-' + i} data-idx={i} type="button" role="option" aria-selected={o.value === value}
-              title={o.label} onMouseEnter={() => setActive(i)} onClick={() => pick(o)} flex="none" textAlign="left"
+              title={o.label} onMouseEnter={() => setActive(i)} onClick={() => pick(o)} flex="none" textAlign="left" cursor="pointer"
               px="2.5" py="2" borderRadius="0.375rem" fontSize="0.875rem" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis"
-              bg={i === active ? 'ui.sunk' : 'transparent'} color={o.value === value ? 'ui.primary' : 'ui.text'}
-              fontWeight={o.value === value ? '600' : '400'} _hover={{ bg: 'ui.sunk' }}>{o.label}</CButton>
+              bg={i === active ? 'rgba(59,130,246,.14)' : 'transparent'} color={o.value === value ? 'ui.primary' : 'ui.text'}
+              fontWeight={o.value === value ? '600' : '400'} _hover={{ bg: 'rgba(59,130,246,.14)' }}>{o.label}</CButton>
           ))}
           {shown.length === 0 && <Box flex="none" px="2.5" py="2" fontSize="0.75rem" color="ui.muted">{__('No matches')}</Box>}
           {filtered.length > OPT_CAP && <Box flex="none" px="2.5" py="2" fontSize="0.75rem" color="ui.muted">+{filtered.length - OPT_CAP} more, refine search</Box>}

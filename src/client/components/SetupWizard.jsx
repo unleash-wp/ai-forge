@@ -203,12 +203,28 @@ function ConnectorCard({ icon, name, desc, status, required, open, onToggle, chi
   );
 }
 
+const COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+
+// An inline copy control: a small icon button that sits at the end of a code line
+// (never a separate button on its own row). Turns into a green check once copied.
+function CopyIconBtn({ copied, onCopy, label }) {
+  const l = copied ? __('Copied') : label;
+  return (
+    <chakra.button type="button" onClick={onCopy} aria-label={l} title={l} flex="none" alignSelf="stretch"
+      display="inline-flex" alignItems="center" justifyContent="center" w="2.5rem" borderLeftWidth="1px" borderColor="ui.border"
+      bg="transparent" cursor="pointer" color={copied ? 'ui.good' : 'ui.muted'} transition="color .14s ease, background .14s ease"
+      _hover={{ color: copied ? 'ui.good' : 'ui.heading', bg: 'ui.ghostHover' }}
+      css={{ '& svg': { width: '1rem', height: '1rem' } }} dangerouslySetInnerHTML={{ __html: copied ? CHECK_SVG : COPY_SVG }} />
+  );
+}
+
 function CmdPanel({ id, cmd, copiedId, onCopy }) {
   return (
-    <Stack gap="3">
-      <chakra.code display="block" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{cmd}</chakra.code>
-      <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" onClick={onCopy} alignSelf="flex-start">{copiedId === id ? __('Copied') : __('Copy command')}</Button>
-    </Stack>
+    <Flex align="stretch" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" overflow="hidden">
+      <chakra.code flex="1" minW="0" alignSelf="center" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{cmd}</chakra.code>
+      <CopyIconBtn copied={copiedId === id} onCopy={onCopy} label={__('Copy command')} />
+    </Flex>
   );
 }
 
@@ -260,8 +276,9 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   }
   useEffect(() => { if (open) checkUpdatesNow(); }, [open]);
 
-  function pickLang(v) { setLocale(v); }
-  function pickTz(v) { setTz(v); writePref('forge:tz', v); }
+  function pickLang(v) { setLocale(v); core.toast(t('Saved'), 'success'); }
+  function pickTz(v) { setTz(v); writePref('forge:tz', v); core.toast(t('Saved'), 'success'); }
+  function pickTheme(mode) { if ((mode === 'dark') === dark) return; setTheme(mode); core.toast(t('Saved'), 'success'); }
   function resetSettings() {
     try {
       for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -433,8 +450,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                       <Box>
                         <chakra.label display="block" fontSize="0.8125rem" fontWeight="600" color="ui.text" mb="1.5">{t('Appearance')}</chakra.label>
                         <HStack gap="2">
-                          <Button variant={dark ? 'ghost' : 'primary'} size="sm" onClick={() => setTheme('light')}>{t('Light')}</Button>
-                          <Button variant={dark ? 'primary' : 'ghost'} size="sm" onClick={() => setTheme('dark')}>{t('Dark')}</Button>
+                          <Button variant={dark ? 'ghost' : 'primary'} size="sm" onClick={() => pickTheme('light')}>{t('Light')}</Button>
+                          <Button variant={dark ? 'primary' : 'ghost'} size="sm" onClick={() => pickTheme('dark')}>{t('Dark')}</Button>
                         </HStack>
                       </Box>
                       <Box borderTopWidth="1px" borderColor="ui.border" pt="5">
@@ -499,9 +516,9 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                       )}
                     </Box>
                     <Text fontSize="0.75rem" color="ui.muted" mt="4" mb="1.5">{t('Get the latest version:')}</Text>
-                    <Flex align="center" gap="2">
-                      <chakra.pre flex="1" minW="0" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto">git pull &amp;&amp; npm install</chakra.pre>
-                      <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" flex="none" onClick={() => copyStr('git pull && npm install', 'git')}>{copiedId === 'git' ? t('Copied') : t('Copy')}</Button>
+                    <Flex align="stretch" bg="ui.sunk" borderWidth="1px" borderColor="ui.border" borderRadius="sm" overflow="hidden">
+                      <chakra.pre flex="1" minW="0" alignSelf="center" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto">git pull &amp;&amp; npm install</chakra.pre>
+                      <CopyIconBtn copied={copiedId === 'git'} onCopy={() => copyStr('git pull && npm install', 'git')} label={t('Copy')} />
                     </Flex>
                     <Link href={REPO_URL + '/releases'} target="_blank" rel="noopener" display="inline-block" mt="3" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('All releases ↗')}</Link>
                   </Tabs.Content>
@@ -562,7 +579,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                             <Box>
                               <Box _dark={{ display: 'none' }} css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block' } }} dangerouslySetInnerHTML={{ __html: LOGO_FULL }} />
                               <Box display="none" _dark={{ display: 'block' }} css={{ '& svg': { height: '1.75rem', width: 'auto', display: 'block' } }} dangerouslySetInnerHTML={{ __html: LOGO_WHITE }} />
-                              <Text mt="2.5" fontSize="0.8125rem" color="ui.muted">{t('Release changelogs for WordPress Core and Gutenberg.')}</Text>
+                              <Text mt="2.5" fontSize="0.8125rem" color="ui.muted">{t('Feeds Claude and Codex live WordPress data and knowledge.')}</Text>
                             </Box>
                             <chakra.span flex="none" bg="navy" color="white" fontSize="0.75rem" fontWeight="700" px="2.5" py="1" borderRadius="full">v{version || '0.0.0'}</chakra.span>
                           </Flex>
@@ -633,9 +650,6 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                 </Box>
               </Tabs.Root>
             </Dialog.Body>
-            <Dialog.Footer borderTopWidth="1px" borderColor="ui.border" px="6" py="4" flex="none" justifyContent="flex-end">
-              <Button variant="primary" size="sm" px="5" onClick={() => { core.toast(t('Saved'), 'success'); onClose(); }}>{t('Save')}</Button>
-            </Dialog.Footer>
           </Dialog.Content>
         </Dialog.Positioner>
       </Portal>

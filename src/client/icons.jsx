@@ -8,6 +8,7 @@ import {
   RiSparklingLine, RiMagicLine, RiToolsLine, RiRocketLine,
   RiTerminalBoxLine, RiPaletteLine, RiPlugLine, RiFlashlightLine, RiApps2Line,
   RiArrowLeftSLine, RiArrowRightSLine, RiCalendar2Line, RiHome5Line,
+  RiMenuLine, RiSettings3Line,
 } from '@remixicon/react';
 
 const MAP = {
@@ -35,6 +36,8 @@ export function ToolIcon({ name, size = 20 }) {
 
 export const PluginsIcon = RiApps2Line;
 export const HomeIcon = RiHome5Line;
+export const BurgerIcon = RiMenuLine;
+export const SettingsIcon = RiSettings3Line;
 export const ArrowLeft = RiArrowLeftSLine;
 export const ArrowRight = RiArrowRightSLine;
 export const CalendarIcon = RiCalendar2Line;
