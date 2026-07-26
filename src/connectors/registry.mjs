@@ -3,7 +3,7 @@
 // The setup UI, the first-run installer and /api/config/status all derive from
 // this instead of hardcoding four cards + a hand-maintained status shape. A
 // second tool can add connectors by exporting `connectors` from its server.mjs —
-// read at runtime via loadPlugins(), never a static tools/* import (cycle guard).
+// read at runtime via loadPlugins(), never a static plugins/* import (cycle guard).
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';

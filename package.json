@@ -14,7 +14,7 @@
   "files": [
     "bin",
     "src",
-    "tools",
+    "plugins",
     "languages",
     "dist",
     "README.md",

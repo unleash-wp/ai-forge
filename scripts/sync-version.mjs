@@ -22,14 +22,14 @@ function sync(path) {
 
 sync('manifest.json');
 
-for (const id of existsSync('tools') ? readdirSync('tools') : []) {
+for (const id of existsSync('plugins') ? readdirSync('plugins') : []) {
   if (id.startsWith('_')) continue; // `_`-prefixed = template/disabled, not a shipped plugin
-  const p = join('tools', id, 'plugin.json');
+  const p = join('plugins', id, 'plugin.json');
   if (existsSync(p)) sync(p);
 }
 
 // Stage every file we changed so the `npm version` commit + tag include them all.
-// Previously the `version` script staged only manifest.json, so tools/*/plugin.json
+// Previously the `version` script staged only manifest.json, so plugins/*/plugin.json
 // drifted out of the release and lit a false "update available" for npm users.
 // No-op outside a git repo (e.g. mcpb:pack in CI) or when nothing changed.
 if (written.length) {
