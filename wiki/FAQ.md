@@ -33,11 +33,11 @@ AI Forge lists branches with `git ls-remote`, which is **not** subject to the Gi
 
 ### The counts look off / a ticket is Uncategorized — why?
 
-Tickets are grouped by joining against the docs-team dev-notes tracker. A ticket newer than the tracker's snapshot, in an excluded component, or a version bump lands under **Uncategorized**. The counts themselves come from the Core git mirror's commit messages (`Fixes #NNNNN`), not from Trac. See [The Changelog Tool](The-Changelog-Tool).
+Tickets are grouped by joining against the docs-team dev-notes tracker. A ticket newer than the tracker's snapshot, in an excluded component, or a version bump lands under **Uncategorized**. The counts themselves come from the Core git mirror's commit messages (`Fixes #NNNNN`), not from Trac. See [The Changelog Plugin](The-Changelog-Tool).
 
-### Can I add my own tool?
+### Can I add my own plugin?
 
-Yes — every tool is a folder under `tools/`. See [Building a Tool](Building-a-Tool).
+Yes — every plugin is a folder under `plugins/`. See [Building a Plugin](Building-a-Tool).
 
 ### Is this affiliated with WordPress or Automattic?
 

@@ -5,8 +5,8 @@
 - [Installation](Installation)
 - [Connectors](Connectors)
 - [Using from Claude & Codex](Using-AI Forge-from-Claude-and-Codex)
-- [The Changelog Tool](The-Changelog-Tool)
-- [Building a Tool](Building-a-Tool)
+- [The Changelog Plugin](The-Changelog-Tool)
+- [Building a Plugin](Building-a-Tool)
 - [FAQ](FAQ)
 
 ---

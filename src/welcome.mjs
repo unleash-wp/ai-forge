@@ -31,7 +31,7 @@ export function renderWelcome() {
     '  ' + dot(true) + ' ' + white('Node ' + process.version) + '   ' + dot(true) + ' ' + white('uwp-ai-forge ready'),
     '  ' + dot(ghSet) + ' GitHub ' + state(ghSet) + '   ' + dot(wpSet) + ' WordPress.org ' + state(wpSet),
     '',
-    '  ' + bold('Open the app') + dim('  — visual setup + tools, no flags to remember'),
+    '  ' + bold('Open the app') + dim('  — visual setup + plugins, no flags to remember'),
     '    ' + cyan('uwp-ai-forge serve') + dim('   → http://localhost:4321'),
     '',
     '  ' + bold('Use it from your AI') + dim('  — Claude Code / Codex'),
