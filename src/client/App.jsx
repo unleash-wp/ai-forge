@@ -1,8 +1,8 @@
 // Core shell: composes the header, tool rail, active tool plugin, shared setup
 // wizard and first-run installer. Brand = UnleashWP, platform = Forge; tools live
 // under it. Every piece is its own component in ./components/.
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Box, Grid, Heading, Text } from '@chakra-ui/react';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Flex, Heading, Text } from '@chakra-ui/react';
 import { CoreContext, useToast, apiFetch } from './core.jsx';
 import { useT } from './i18n.jsx';
 import { applyFilters, doAction, hooks } from './hooks.js';
@@ -10,7 +10,6 @@ import REGISTRY from './registry.js';
 import Header from './components/Header.jsx';
 import Rail from './components/Rail.jsx';
 import Footer from './components/Footer.jsx';
-import UpdateNote from './components/UpdateNote.jsx';
 import Installer from './components/Installer.jsx';
 import SetupWizard from './components/SetupWizard.jsx';
 import PluginsManager from './components/PluginsManager.jsx';
@@ -27,9 +26,7 @@ export default function App() {
   const [activeId, setActiveId] = useState(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('general');
-  const [scrolled, setScrolled] = useState(false);
-  const railRef = useRef(null);
-  const headerRef = useRef(null);
+  const [railCollapsed, setRailCollapsed] = useState(() => { try { return localStorage.getItem('forge:rail-collapsed') === '1'; } catch { return false; } });
 
   const refreshStatus = useCallback(() => {
     return apiFetch('/api/config/status').then((r) => r.json()).then(setStatus).catch(() => {});
@@ -63,24 +60,12 @@ export default function App() {
   const installing = status && !status.installed;
   useEffect(() => { document.body.classList.toggle('is-installing', !!installing); }, [installing]);
 
-  // pin the rail under the sticky header + shadow the header on scroll
-  useEffect(() => {
-    function onScroll() { setScrolled(window.scrollY > 4); }
-    function place() { if (railRef.current && headerRef.current) railRef.current.style.top = (headerRef.current.offsetHeight + 12) + 'px'; }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', place);
-    place(); onScroll();
-    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', place); };
-  }, []);
-
+  const toggleRail = useCallback(() => setRailCollapsed((c) => { const n = !c; try { localStorage.setItem('forge:rail-collapsed', n ? '1' : '0'); } catch { /* blocked */ } return n; }), []);
   const openSettings = useCallback((tab = 'general') => { setSettingsTab(tab); setWizardOpen(true); }, []);
   const openSetup = useCallback(() => openSettings('connectors'), [openSettings]);
 
-  // "Home": the branded landing (logo + tool cards).
-  const goHome = useCallback(() => {
-    setActiveId(HOME_VIEW);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  // "Start": the branded landing (welcome + tool tiles).
+  const goHome = useCallback(() => setActiveId(HOME_VIEW), []);
 
   // Let tools react when they become the active tool.
   useEffect(() => { if (activeId && activeId !== PLUGINS_VIEW && activeId !== HOME_VIEW) doAction('forge.tool.open', activeId); }, [activeId]);
@@ -95,33 +80,50 @@ export default function App() {
     <CoreContext.Provider value={coreApi}>
       {installing && <Installer status={status} onDone={refreshStatus} />}
 
-      <Header headerRef={headerRef} scrolled={scrolled} onHome={goHome} onOpenSettings={() => openSettings('general')} />
+      {/* Full-bleed: the app fills the window, header across the top, full-height
+          sidebar flush left, content filling the rest. No max-width column. */}
+      <Flex direction="column" h="100dvh" overflow="hidden" bg="ui.bg">
+        <Header railCollapsed={railCollapsed} onToggleRail={toggleRail} onHome={goHome} />
 
-      <Grid maxW="72.5rem" mx="auto" px={{ base: '4', lg: '6' }} gap={{ base: '4', lg: '8' }} alignItems="start"
-        templateColumns={{ base: '1fr', lg: '7.75rem minmax(0, 1fr)' }}>
-        <Rail railRef={railRef} plugins={plugins} activeId={activeId} inHome={inHome} inPlugins={inPlugins} onHome={goHome} onSelect={setActiveId} onPlugins={() => setActiveId(PLUGINS_VIEW)} />
-        <Box as="main" minW="0" pt={{ base: '4', lg: '8' }} pb="16">
-          <UpdateNote />
-          {!inHome && (
-            <Box mb="6">
-              <Heading as="h1" fontWeight="700" color="ui.heading" letterSpacing="-.02em" mb="1.5"
-                fontSize={{ base: '1.375rem', lg: 'clamp(1.5rem, 1.28rem + 1.1vw, 1.75rem)' }}>
-                {inPlugins ? t('Plugins') : (active ? t(active.name) : 'Changelog')}
-              </Heading>
-              <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
-                {inPlugins ? t('Tools installed on UnleashWP AI Forge. Every tool is a plugin. Add your own.') : (active ? t(active.description) : '')}
-              </Text>
+        <Flex flex="1" minH="0" direction={{ base: 'column', lg: 'row' }} align="stretch">
+          {/* Sidebar: a flush, full-height column (own surface + right divider) that
+              frames the workspace. Collapse is driven from the header burger. */}
+          <Box as="nav" aria-label={t('Navigation')} flex="none" bg="ui.surface" borderColor="ui.border"
+            borderBottomWidth={{ base: '1px', lg: '0' }}
+            position="relative" zIndex="1"
+            boxShadow={{ base: 'none', lg: '5px 0 28px -22px rgba(15,19,31,.10)' }}
+            w={{ base: 'full', lg: railCollapsed ? '4.25rem' : '13.5rem' }}
+            transition="width .34s cubic-bezier(.34,1.5,.5,1)"
+            overflowY="auto" overflowX="hidden" px={{ base: '3', lg: '3' }} py={{ base: '2', lg: '3' }}>
+            <Rail plugins={plugins} activeId={activeId} inHome={inHome} inPlugins={inPlugins}
+              collapsed={railCollapsed} onHome={goHome} onSelect={setActiveId}
+              onPlugins={() => setActiveId(PLUGINS_VIEW)} onOpenSettings={() => openSettings('general')} />
+          </Box>
+
+          {/* Content: the gray canvas inside the column; scrolls on its own, footer pinned to the base. */}
+          <Box as="main" flex="1" minW="0" overflowY="auto" display="flex" flexDirection="column" bg="ui.bg">
+            <Box flex="1" w="full" px={{ base: '5', lg: '12' }} py={{ base: '6', lg: '12' }}>
+              {!inHome && (
+                <Box mb="6">
+                  <Heading as="h1" fontWeight="700" color="ui.heading" letterSpacing="-.02em" mb="1.5"
+                    fontSize={{ base: '1.375rem', lg: 'clamp(1.5rem, 1.28rem + 1.1vw, 1.75rem)' }}>
+                    {inPlugins ? t('Plugins') : (active ? t(active.name) : 'Changelog')}
+                  </Heading>
+                  <Text color="ui.muted" fontSize="0.9688rem" maxW="68ch" lineHeight="1.55">
+                    {inPlugins ? t('Tools installed on UnleashWP AI Forge. Every tool is a plugin. Add your own.') : (active ? t(active.description) : '')}
+                  </Text>
+                </Box>
+              )}
+              {inHome ? <HomeView plugins={plugins} openTool={setActiveId} />
+                : inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} />
+                : (ActiveTool && <ActiveTool />)}
             </Box>
-          )}
-          {inHome ? <HomeView plugins={plugins} openTool={setActiveId} />
-            : inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} />
-            : (ActiveTool && <ActiveTool />)}
-        </Box>
-      </Grid>
+            <Footer version={status && status.version} onCredits={() => openSettings('credits')} />
+          </Box>
+        </Flex>
+      </Flex>
 
       <SetupWizard status={status} refreshStatus={refreshStatus} open={wizardOpen} initialTab={settingsTab} onClose={() => setWizardOpen(false)} />
-
-      <Footer version={status && status.version} onCredits={() => openSettings('credits')} />
     </CoreContext.Provider>
   );
 }

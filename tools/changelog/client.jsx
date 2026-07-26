@@ -4,7 +4,7 @@
 // the changelog body stays an HTML string (React can't mount components inside
 // dangerouslySetInnerHTML) styled by the `changelogCss` block below.
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Badge, Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, SimpleGrid, Skeleton, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
+import { Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, Popover, Portal, SimpleGrid, Skeleton, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 import { useCore } from '../../src/client/core.jsx';
 import { useT, useI18n, __, currentLocale } from '../../src/client/i18n.jsx';
 import { Button as UButton, Select, Checkbox, TextInput } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
@@ -47,6 +47,11 @@ const IC = {
 };
 function Ic({ html }) { return <chakra.span display="contents" dangerouslySetInnerHTML={{ __html: html }} />; }
 
+// A tab's count, in a small boxed chip (rather than a faint inline badge).
+function TabCount({ n }) {
+  return <chakra.span ml="2" px="1.5" py="0.5" borderRadius="sm" bg="rgba(32,49,89,.12)" color="navy" _dark={{ bg: 'rgba(255,255,255,.14)', color: 'white' }} fontSize="0.6875rem" fontWeight="700" lineHeight="1.4" fontVariantNumeric="tabular-nums">{n}</chakra.span>;
+}
+
 function pad(n) { return (n < 10 ? '0' : '') + n; }
 function isoD(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 const parseISO = (iso) => new Date(iso + 'T00:00:00');
@@ -60,6 +65,14 @@ function fmtDate(iso) {
 function fmtRange(a, b) {
   try { return new Intl.DateTimeFormat(currentLocale(), { day: 'numeric', month: 'short', year: 'numeric' }).formatRange(parseISO(a), parseISO(b)); }
   catch { return fmtDate(a) + ' – ' + fmtDate(b); }
+}
+
+// Render a formatted sentence with its date portion bold — language-agnostic,
+// since we split on the exact formatted date string wherever it lands.
+function withBoldDate(sentence, dateStr) {
+  const parts = sentence.split(dateStr);
+  if (parts.length < 2) return sentence;
+  return <>{parts[0]}<chakra.b color="ui.heading" fontWeight="700">{dateStr}</chakra.b>{parts.slice(1).join(dateStr)}</>;
 }
 
 function uniq(arr) { const seen = {}, out = []; arr.forEach((x) => { if (!seen[x]) { seen[x] = 1; out.push(x); } }); return out; }
@@ -141,9 +154,9 @@ const changelogCss = {
 // ---- Hover hint (CSS-only popover, via data-tip) ----
 // No icon: the wrapped text is itself the trigger. A dotted underline signals
 // it's hoverable; the popover card appears on hover / keyboard focus.
-function Hint({ tip, underline = true, children }) {
+function Hint({ tip, underline = true, cursor = 'help', children }) {
   return (
-    <chakra.span tabIndex={0} aria-label={tip} data-tip={tip} position="relative" cursor="help"
+    <chakra.span tabIndex={0} aria-label={tip} data-tip={tip} position="relative" cursor={cursor}
       textDecoration={underline ? 'underline' : undefined} textDecorationStyle="dotted" textDecorationColor="ui.border" textUnderlineOffset="3px"
       css={{
         '&::after': { content: 'attr(data-tip)', position: 'absolute', top: 'calc(100% + 0.4375rem)', left: 0, bg: 'ui.surface', color: 'ui.text', borderWidth: '1px', borderColor: 'ui.border', p: '2', borderRadius: 'sm', font: '400 0.75rem/1.4 var(--chakra-fonts-body)', width: '13rem', textAlign: 'left', whiteSpace: 'normal', opacity: 0, visibility: 'hidden', pointerEvents: 'none', transition: 'opacity .12s, visibility .12s', zIndex: 40, boxShadow: 'md' },
@@ -271,10 +284,85 @@ function StatCard({ n, label, counted }) {
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" px="5" py="4" boxShadow="sm"
       transition="transform .12s, box-shadow .12s" _hover={{ transform: 'translateY(-2px)', boxShadow: 'md' }}
       css={counted ? { boxShadow: 'inset 0 2.5px 0 var(--chakra-colors-yellow), var(--chakra-shadows-sm)' } : undefined}>
-      <chakra.b display="block" fontSize="clamp(1.6rem, 1.4rem + 0.9vw, 2.1875rem)" fontWeight="700" color="ui.heading" lineHeight="1.05" fontVariantNumeric="tabular-nums">{n}</chakra.b>
-      <Text display="block" color="ui.muted" fontSize="0.7813rem">{label}</Text>
-      {counted && <Badge mt="1.5" colorPalette="brand" variant="subtle" textTransform="uppercase" fontSize="0.625rem" letterSpacing=".05em">{__('in total')}</Badge>}
+      <chakra.b display="block" fontSize="clamp(1.75rem, 1.5rem + 1vw, 2.375rem)" fontWeight="800" color="ui.heading" lineHeight="1.05" letterSpacing="-.02em" fontVariantNumeric="tabular-nums">{n}</chakra.b>
+      <Text display="block" color="ui.muted" fontSize="0.8125rem" mt="0.5">{label}</Text>
     </Box>
+  );
+}
+
+// Props export: one button that opens a small configurator (format + @ toggle),
+// then copy or download. Replaces the old row of one-off format buttons.
+function Segmented({ options, value, onChange }) {
+  return (
+    <HStack gap="0" bg="ui.sunk" borderRadius="md" p="0.25rem" w="full">
+      {options.map((o) => (
+        <chakra.button key={o.id} type="button" onClick={() => onChange(o.id)} flex="1" py="1.5" px="2" borderRadius="sm"
+          fontSize="0.8125rem" fontWeight={value === o.id ? '600' : '500'} cursor="pointer" whiteSpace="nowrap"
+          bg={value === o.id ? 'ui.surface' : 'transparent'} color={value === o.id ? 'ui.heading' : 'ui.muted'}
+          boxShadow={value === o.id ? 'sm' : 'none'} transition="background .12s ease, color .12s ease">{o.label}</chakra.button>
+      ))}
+    </HStack>
+  );
+}
+
+// Download only: pick a file format (CSV + separator, or PHP array) and save it.
+// The @ toggle is NOT here — it's a shared control in the Props toolbar, so copy
+// and download stay in sync. No "copy" button here (copy has its own button).
+function DownloadPopover({ all, at }) {
+  const core = useCore();
+  const [target, setTarget] = useState('csv'); // 'csv' | 'php'
+  const [sep, setSep] = useState('comma');      // csv only: comma | tab
+  const withAt = (n) => (at ? '@' : '') + n;
+  const SEP = { comma: ', ', tab: '\t' };
+  const out = target === 'php'
+    ? 'array(\n' + all.map((n) => "\t'" + withAt(n).replace(/'/g, "\\'") + "',").join('\n') + '\n)'
+    : all.map(withAt).join(SEP[sep]);
+  const ext = target === 'php' ? 'php' : sep === 'tab' ? 'tsv' : 'csv';
+  const doDownload = () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([out], { type: 'text/plain' }));
+    a.download = 'props.' + ext; a.click(); core.toast(__('Downloaded'));
+  };
+  const lbl = { fontSize: '0.6875rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '.06em', color: 'ui.muted', mb: '1.5', display: 'block' };
+  return (
+    <Popover.Root positioning={{ placement: 'bottom-end', gutter: 6 }}>
+      <Popover.Trigger asChild>
+        <UButton variant="primary" size="sm"><Ic html={IC.down} />{__('Download')}</UButton>
+      </Popover.Trigger>
+      <Portal>
+        <Popover.Positioner>
+          <Popover.Content bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="lg" w="20rem" maxW="calc(100vw - 2rem)" zIndex="1600">
+            <Popover.Body px="4" pt="4" pb="4">
+              <Stack gap="4">
+                <Box>
+                  <Text {...lbl}>{__('Download as')}</Text>
+                  <Segmented value={target} onChange={setTarget}
+                    options={[{ id: 'csv', label: 'CSV' }, { id: 'php', label: __('PHP array') }]} />
+                </Box>
+                {target === 'csv' && (
+                  <Box>
+                    <Text {...lbl}>{__('Separator')}</Text>
+                    <HStack gap="6" role="radiogroup" aria-label={__('Separator')}>
+                      {[{ id: 'comma', label: __('Comma') }, { id: 'tab', label: __('Tab') }].map((o) => (
+                        <chakra.button key={o.id} type="button" role="radio" aria-checked={sep === o.id} onClick={() => setSep(o.id)}
+                          display="inline-flex" alignItems="center" gap="2" py="1" cursor="pointer" bg="transparent" border="0">
+                          <Box flex="none" boxSize="1.125rem" borderRadius="full" borderWidth="2px" display="flex" alignItems="center" justifyContent="center"
+                            borderColor={sep === o.id ? 'navy' : 'ui.border'} bg={sep === o.id ? 'navy' : 'transparent'} transition="background .12s ease, border-color .12s ease">
+                            {sep === o.id && <Box boxSize="0.375rem" borderRadius="full" bg="white" />}
+                          </Box>
+                          <Text fontSize="0.8125rem" color="ui.text" fontWeight={sep === o.id ? '600' : '400'}>{o.label}</Text>
+                        </chakra.button>
+                      ))}
+                    </HStack>
+                  </Box>
+                )}
+                <UButton variant="primary" size="sm" w="full" onClick={doDownload}><Ic html={IC.down} />{__('Download')}</UButton>
+              </Stack>
+            </Popover.Body>
+          </Popover.Content>
+        </Popover.Positioner>
+      </Portal>
+    </Popover.Root>
   );
 }
 
@@ -316,23 +404,18 @@ function Results({ data, since, until }) {
     a.href = URL.createObjectURL(new Blob([data.markdown], { type: 'text/markdown' }));
     a.download = 'changelog.md'; a.click(); core.toast(__('Downloaded changelog.md'));
   }
-  function copyCsv() { copy(all.map(withAt).join('\n'), __('CSV copied')); }
-  function copyPhp() {
-    const arr = all.map((n) => "\t'" + withAt(n).replace(/'/g, "\\'") + "',");
-    copy('array(\n' + arr.join('\n') + '\n)', __('PHP array copied'));
-  }
   const bigNum = { position: 'relative', fontWeight: '700', color: 'ui.heading', lineHeight: '1', letterSpacing: '-.03em', pb: '1.5', fontVariantNumeric: 'tabular-nums' };
   const underline = { content: '""', position: 'absolute', left: 0, bottom: 0, width: '100%', height: '0.375rem', bg: 'yellow', borderRadius: 'full' };
 
   return (
     <Box mt="8">
-      <Flex align="baseline" gap="4" mb="8" flexWrap="wrap">
+      <Flex align="baseline" gap="4" mb="10" flexWrap="wrap">
         <chakra.b {...bigNum} fontSize="clamp(2.5rem, 1.9rem + 2.6vw, 3.5rem)" css={{ '&::after': underline }}>{dn ? issues : changes}</chakra.b>
         <Text color="ui.muted" fontSize="0.9375rem">{dn
-          ? __('dev notes / field guide tickets, %s', fmtRange(since, until))
-          : <Hint tip={__('%s Gutenberg changes + %s Core changesets', t.gutenbergCommits, t.coreChangesets)} underline={false}>{__('changes landed across Core and Gutenberg, %s', fmtRange(since, until))}</Hint>}</Text>
+          ? withBoldDate(__('dev notes / field guide tickets, %s', fmtRange(since, until)), fmtRange(since, until))
+          : <Hint tip={__('%s Gutenberg changes + %s Core changesets', t.gutenbergCommits, t.coreChangesets)} underline={false}>{withBoldDate(__('changes landed across Core and Gutenberg, %s', fmtRange(since, until)), fmtRange(since, until))}</Hint>}</Text>
       </Flex>
-      <SimpleGrid columns={{ base: 2, md: 4 }} gap="3" mb="8">
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap="5" mb="12">
         {!dn && <StatCard n={t.gutenbergCommits} label={__('Gutenberg changes')} counted />}
         <StatCard n={t.coreChangesets} label={dn ? __('Dev-note changesets') : __('Core changesets')} counted={!dn} />
         <StatCard n={coreTicketsShown} label={dn ? __('Dev-note tickets') : __('Core tickets')} counted={dn} />
@@ -345,10 +428,10 @@ function Results({ data, since, until }) {
 
       <Tabs.Root value={tab} onValueChange={(e) => setTab(e.value)} variant="line" colorPalette="brand"
         css={{ '& [data-part="trigger"][data-selected]': { color: 'ui.heading' } }}>
-        <Tabs.List borderBottom="1px solid" borderColor="ui.border">
-          <Tabs.Trigger value="changelog" fontWeight="600">{__('Changelog')}<Badge ml="2" variant="subtle" colorPalette="brand">{changes}</Badge></Tabs.Trigger>
-          <Tabs.Trigger value="props" fontWeight="600">{__('Props')}<Badge ml="2" variant="subtle" colorPalette="brand">{all.length}</Badge></Tabs.Trigger>
-          <Tabs.Trigger value="devnotes" fontWeight="600">{__('Dev Notes')}{devNotes ? <Badge ml="2" variant="subtle" colorPalette="brand">{devNotes.length}</Badge> : null}</Tabs.Trigger>
+        <Tabs.List borderBottom="none" mb="7">
+          <Tabs.Trigger value="changelog" fontWeight="600" justifyContent="flex-start">{__('Changelog')}<TabCount n={changes} /></Tabs.Trigger>
+          <Tabs.Trigger value="props" fontWeight="600" justifyContent="flex-start">{__('Props')}<TabCount n={all.length} /></Tabs.Trigger>
+          <Tabs.Trigger value="devnotes" fontWeight="600" justifyContent="flex-start">{__('Dev Notes')}{devNotes ? <TabCount n={devNotes.length} /> : null}</Tabs.Trigger>
           <HStack ml="auto" gap="2" pb="2">
             <UButton variant="ghost" size="sm" onClick={() => copy(data.markdown, __('Markdown copied'))}><Ic html={IC.md} />{__('Copy Markdown')}</UButton>
             <UButton variant="ghost" size="sm" onClick={downloadMd}><Ic html={IC.down} />{__('Download')}</UButton>
@@ -376,14 +459,17 @@ function Results({ data, since, until }) {
               <chakra.b {...bigNum} fontSize="clamp(1.9rem, 1.55rem + 1.4vw, 2.5rem)" css={{ '&::after': underline }}>{all.length}</chakra.b>
               <Text fontSize="0.875rem" color="ui.muted">{__('contributors with props this window')}</Text>
             </Flex>
-            <Flex align="center" gap="3" flexWrap="wrap">
-              <CChk.Root checked={propsAt} colorPalette="brand" onCheckedChange={(d) => setPropsAt(d.checked === true)}>
-                <CChk.HiddenInput /><CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem">{__('Add @ before names')}</CChk.Label>
+            {/* One shared @ toggle (drives the shown line, Copy and Download),
+                then a plain Copy, then Download (format → file). */}
+            <HStack gap="3" flex="none" align="center" flexWrap="wrap">
+              <CChk.Root checked={propsAt} colorPalette="brand" cursor="pointer" onCheckedChange={(d) => setPropsAt(d.checked === true)}>
+                <CChk.HiddenInput /><CChk.Control cursor="pointer" _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.8125rem" cursor="pointer" whiteSpace="nowrap">{__('Add @ before names')}</CChk.Label>
               </CChk.Root>
-              <UButton variant="ghost" size="sm" onClick={() => copy(propsLine, __('Props copied'))}><Ic html={IC.clip} />{__('Copy props line')}</UButton>
-              <UButton variant="ghost" size="sm" onClick={copyCsv}><Ic html={IC.table} />{__('CSV')}</UButton>
-              <UButton variant="ghost" size="sm" onClick={copyPhp}><Ic html={IC.md} />{__('PHP array')}</UButton>
-            </Flex>
+              <UButton variant="ghost" size="sm" borderWidth="1px" borderColor="ui.border" onClick={() => copy(propsLine, __('Copied'))}>
+                <chakra.span display="inline-flex" alignItems="center" h="1.5em" css={{ '& svg': { width: '1.05rem', height: '1.05rem' } }}><Ic html={IC.clip} /></chakra.span>{__('Copy')}
+              </UButton>
+              <DownloadPopover all={all} at={propsAt} />
+            </HStack>
           </Flex>
           <Text m="0" fontSize="0.9688rem" lineHeight="1.85" color="ui.text">{propsLine}</Text>
           {propsAt && <Text mt="3" color="ui.muted" fontSize="0.8125rem">{__('Slack handles usually match the wp.org username, but not always. Double-check before pinging.')}</Text>}
@@ -396,7 +482,7 @@ function Results({ data, since, until }) {
             : <Stack as="ul" listStyleType="none" gap="0" mt="3">{devNotes.map((n, i) => (
                 <chakra.li key={i} py="4" borderTop={i ? '1px solid' : '0'} borderColor="ui.border">
                   <Link href={n.url} target="_blank" rel="noopener" fontWeight="600" fontSize="0.9375rem" color="ui.heading" _hover={{ color: 'ui.accent' }}>{n.title}</Link>
-                  <chakra.span ml="3" fontSize="0.75rem" color="ui.muted">{n.date}</chakra.span>
+                  <chakra.span ml="3" fontSize="0.75rem" fontWeight="700" color="ui.text" whiteSpace="nowrap">{fmtDate(n.date)}</chakra.span>
                   {n.excerpt && <Text mt="1.5" fontSize="0.8125rem" color="ui.muted" lineHeight="1.5">{n.excerpt}…</Text>}
                 </chakra.li>
               ))}</Stack>}
@@ -436,7 +522,7 @@ function ResultsSkeleton() {
   return (
     <Box mt="8">
       <Flex align="baseline" gap="4" mb="8" flexWrap="wrap"><Skeleton h="3rem" w="7rem" /><Skeleton h="1rem" w="18rem" /></Flex>
-      <SimpleGrid columns={{ base: 2, md: 4 }} gap="3" mb="8">
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap="5" mb="8">
         {[0, 1, 2, 3].map((i) => <Skeleton key={i} h="4.75rem" borderRadius="forge" />)}
       </SimpleGrid>
       <Skeleton h="2.5rem" w="22rem" maxW="100%" mb="5" />
@@ -546,8 +632,8 @@ export default function ChangelogTool() {
             <Flex align={{ base: 'stretch', lg: 'center' }} justify="space-between" gap="4" mt="6" pt="4" borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
               <Flex align="center" gap={{ base: '4', lg: '6' }} flexWrap="wrap">
                 {CHECKS.map(([val, set, label, tip]) => (
-                  <CChk.Root key={label} checked={val} colorPalette="brand" onCheckedChange={(d) => set(d.checked === true)}>
-                    <CChk.HiddenInput /><CChk.Control _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem" fontWeight="500" whiteSpace="nowrap"><Hint tip={tip}>{label}</Hint></CChk.Label>
+                  <CChk.Root key={label} checked={val} colorPalette="brand" cursor="pointer" onCheckedChange={(d) => set(d.checked === true)}>
+                    <CChk.HiddenInput /><CChk.Control cursor="pointer" _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} /><CChk.Label fontSize="0.875rem" fontWeight="500" whiteSpace="nowrap" cursor="pointer"><Hint tip={tip} cursor="pointer">{label}</Hint></CChk.Label>
                   </CChk.Root>
                 ))}
               </Flex>
