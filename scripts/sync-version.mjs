@@ -1,16 +1,26 @@
-// package.json is the single source of truth for the version. manifest.json (MCPB)
-// is static JSON that can't read it, so this copies the number in. Wired as the npm
-// `version` lifecycle script (runs on `npm version …`) and prepended to mcpb:pack —
-// so the version is never typed anywhere but package.json (via `npm version`).
-import { readFileSync, writeFileSync } from 'node:fs';
+// package.json is the single source of truth for the version. Other manifests are
+// static JSON that can't read it, so this copies the number in: manifest.json (MCPB)
+// and every bundled tool plugin.json (they ship with the app, so their version
+// tracks it — otherwise the update-check flags a bundled plugin against the app
+// release). Wired as the npm `version` lifecycle script (runs on `npm version …`)
+// and prepended to mcpb:pack — so the version is never typed anywhere but package.json.
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 const version = JSON.parse(readFileSync('package.json', 'utf8')).version;
-const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
 
-if (manifest.version !== version) {
-  manifest.version = version;
-  writeFileSync('manifest.json', JSON.stringify(manifest, null, 2) + '\n');
-  console.log(`sync-version: manifest.json -> ${version}`);
-} else {
-  console.log(`sync-version: already ${version}`);
+function sync(path) {
+  const obj = JSON.parse(readFileSync(path, 'utf8'));
+  if (obj.version === version) return;
+  obj.version = version;
+  writeFileSync(path, JSON.stringify(obj, null, 2) + '\n');
+  console.log(`sync-version: ${path} -> ${version}`);
+}
+
+sync('manifest.json');
+
+for (const id of existsSync('tools') ? readdirSync('tools') : []) {
+  if (id.startsWith('_')) continue; // `_`-prefixed = template/disabled, not a shipped plugin
+  const p = join('tools', id, 'plugin.json');
+  if (existsSync(p)) sync(p);
 }

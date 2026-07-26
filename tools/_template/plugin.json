@@ -2,7 +2,7 @@
   "id": "my-tool",
   "name": "My Tool",
   "description": "One-line description shown under the tool title in the workspace.",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "coreVersion": ">=0.1.0",
   "icon": "code",
   "author": "Your name",
