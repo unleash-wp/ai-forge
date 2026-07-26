@@ -1,7 +1,9 @@
-# wp-release-helper - instructions for Claude Code
+# UnleashWP AI Forge — instructions for Claude Code
 
-This repo helps a **WordPress release coordinator** turn a date window into a
-release-post changelog for Core + Gutenberg. Zero dependencies, plain Node ≥18.
+AI Forge is a **plugin platform for WordPress tooling** that bridges to your AI
+over MCP. Zero runtime dependencies, plain Node ≥18. Every capability is a plugin
+under `plugins/<id>`; the bundled one is the **Changelog Generator** — it turns a
+date window into a release-post changelog for Core + Gutenberg.
 
 ## When the user asks for a changelog / release post
 
@@ -31,4 +33,5 @@ For a click-driven UI instead of flags: `node bin/ai-forge.mjs serve`
   `WordPress/wordpress-develop` mirror; Core component grouping = the cookie-free
   `WordPress/Documentation-Issue-Tracker` dev-notes tracker.
 - `gh auth login` is optional but raises the GitHub API limit to 5000/h.
-- Full detail, architecture and the MCP fallback live in the skill and README.
+- Full detail for humans: the [Handbook](https://unleash-wp.github.io/ai-forge/)
+  and `CONTRIBUTING.md`. Architecture + the MCP fallback live in the skill.
