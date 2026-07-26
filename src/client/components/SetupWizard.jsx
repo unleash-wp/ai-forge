@@ -9,6 +9,7 @@ import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
 import { useI18n, __, availableLocales, LOCALE_NAMES, LOCALE_FLAGS } from '../i18n.jsx';
 import { Button, TextInput, Select } from '../ui';
+import GithubDeviceConnect from './GithubDeviceConnect.jsx';
 import { Box, CloseButton, Dialog, Flex, Heading, HStack, Link, Portal, SimpleGrid, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
 
 const msgColor = (k) => (k === 'good' ? 'ui.goodInk' : k === 'bad' ? 'ui.bad' : 'ui.muted');
@@ -364,24 +365,38 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
   function renderBody(c) {
     if (c.id === 'github-token') {
-      return gh.set ? (
-        <HStack justify="space-between" gap="3" flexWrap="wrap">
-          <Text fontSize="0.8125rem" color="ui.muted">{t('Connected with %s.', t(ghSourceLabel(gh.source)))}</Text>
-          {gh.source !== 'env' && <DisconnectBtn onClick={disconnectGh} />}
-        </HStack>
-      ) : (
+      if (gh.set) {
+        return (
+          <HStack justify="space-between" gap="3" flexWrap="wrap">
+            <Text fontSize="0.8125rem" color="ui.muted">{t('Connected with %s.', t(ghSourceLabel(gh.source)))}</Text>
+            {gh.source !== 'env' && <DisconnectBtn onClick={disconnectGh} />}
+          </HStack>
+        );
+      }
+      const fallback = (
         <Stack gap="3">
-          {gh.ghAvailable && <BusyBtn busy={busy === 'gh-cli'} onClick={connectGh} alignSelf="flex-start">{t('Connect with GitHub CLI')}</BusyBtn>}
+          {gh.ghAvailable && <BusyBtn busy={busy === 'gh-cli'} variant="ghost" onClick={connectGh} alignSelf="flex-start">{t('Connect with GitHub CLI')}</BusyBtn>}
           <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0">
             <HStack gap="2" align="center">
               <Box flex="1"><TextInput type="password" size="sm" value={ghToken} onChange={(e) => setGhToken(e.target.value)} onPaste={() => setTimeout(saveGh, 30)} placeholder={gh.ghAvailable ? t('Or paste a token') : t('Paste a GitHub token')} autoComplete="off" spellCheck="false" /></Box>
               <BusyBtn busy={busy === 'gh-token'} variant="ghost" onClick={saveGh} flex="none">{t('Connect')}</BusyBtn>
             </HStack>
           </chakra.form>
-          <HStack justify="space-between" gap="3">
-            <Link href="https://github.com/settings/tokens/new?description=ai-forge&scopes=" target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Create a token ↗')}</Link>
-            {ghMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>}
-          </HStack>
+          <Link href="https://github.com/settings/tokens/new?description=ai-forge&scopes=" target="_blank" rel="noopener" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('Create a token ↗')}</Link>
+        </Stack>
+      );
+      return (
+        <Stack gap="3">
+          {gh.device ? (
+            <>
+              <GithubDeviceConnect onConnected={testGh} />
+              <chakra.details>
+                <chakra.summary cursor="pointer" fontSize="0.75rem" color="ui.muted" _hover={{ color: 'ui.heading' }}>{t('Other ways to connect')}</chakra.summary>
+                <Box mt="3">{fallback}</Box>
+              </chakra.details>
+            </>
+          ) : fallback}
+          {ghMsg.text && <Text as="span" fontSize="0.75rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>}
         </Stack>
       );
     }

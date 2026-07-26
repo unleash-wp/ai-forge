@@ -5,6 +5,7 @@ import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL } from '../brand.js';
 import { useT } from '../i18n.jsx';
 import { Button, TextInput, TextArea } from '../ui';
+import GithubDeviceConnect from './GithubDeviceConnect.jsx';
 import { Box, Code, Flex, Heading, HStack, Link, Text, chakra } from '@chakra-ui/react';
 
 const msgColor = (k) => (k === 'good' ? 'ui.goodInk' : k === 'bad' ? 'ui.bad' : 'ui.muted');
@@ -41,7 +42,7 @@ export default function Installer({ status, onDone }) {
       return;
     }
     const c = cookie.trim();
-    if (!c) { setCkMsg({ text: t('Paste your cookie to finish, or continue anyway below.'), kind: 'bad' }); setEscape(true); return; }
+    if (!c) { finish(); return; } // optional — the tool runs cookie-free
     setCkMsg({ text: t('saving and testing…'), kind: '' });
     fetchJSON('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie: c }) })
       .then(({ ok, data }) => {
@@ -82,8 +83,12 @@ export default function Installer({ status, onDone }) {
                 <HStack gap="2" color="ui.goodInk" fontWeight="500" fontSize="0.875rem" mb="3"><chakra.span>✓</chakra.span> {t('GitHub ready')} · {ghStatus.source === 'gh' ? t('detected from the gh CLI') : t('saved token')} · 5000/h</HStack>
               ) : (
                 <Box>
-                  <chakra.ol mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">{t('Detected automatically if the')} <Code>gh</Code> {t('CLI is logged in, or')} <Link href="https://github.com/settings/tokens/new?description=ai-forge&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('create a token')}</Link> {t('(leave every scope unchecked) and paste it:')}</chakra.li></chakra.ol>
-                  <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0"><TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder={t('ghp_… or github_pat_…  (optional, skip for 60/h)')} autoComplete="off" spellCheck="false" /></chakra.form>
+                  {ghStatus.device && <Box mb="4"><GithubDeviceConnect onConnected={() => setStep(2)} /></Box>}
+                  <chakra.details>
+                    <chakra.summary cursor="pointer" fontSize="0.7813rem" color="ui.muted" _hover={{ color: 'ui.heading' }}>{ghStatus.device ? t('Other ways to connect') : t('Connect with a token or the gh CLI')}</chakra.summary>
+                    <chakra.ol mt="2" mb="3" ml="4.5" p="0" fontSize="0.8125rem" color="ui.muted"><chakra.li my="1">{t('Detected automatically if the')} <Code>gh</Code> {t('CLI is logged in, or')} <Link href="https://github.com/settings/tokens/new?description=ai-forge&scopes=" target="_blank" rel="noopener" color="ui.primary" fontWeight="600">{t('create a token')}</Link> {t('(leave every scope unchecked) and paste it:')}</chakra.li></chakra.ol>
+                    <chakra.form onSubmit={(e) => e.preventDefault()} autoComplete="off" m="0"><TextInput type="password" value={gh} onChange={(e) => setGh(e.target.value)} placeholder={t('ghp_… or github_pat_…  (optional, skip for 60/h)')} autoComplete="off" spellCheck="false" /></chakra.form>
+                  </chakra.details>
                   <Text as="span" fontSize="0.7813rem" color={msgColor(ghMsg.kind)}>{ghMsg.text}</Text>
                 </Box>
               )}
@@ -92,8 +97,8 @@ export default function Installer({ status, onDone }) {
           {step === 2 && (
             <Box>
               <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">{t('Step 2 of 2')}</Text>
-              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Connect WordPress.org')}</Heading>
-              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">{t('Needed for')} <b>{t('deep')}</b>{t(': full Trac ticket descriptions. Paste your session cookie once; it is stored locally (owner-only) and sent only to WordPress.org.')}</Text>
+              <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Connect WordPress.org')} <chakra.span fontWeight="500" color="ui.muted" fontSize="0.875rem">({t('optional')})</chakra.span></Heading>
+              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">{t('Only for')} <b>{t('deep')}</b> {t('mode: full Trac ticket descriptions. The changelog runs cookie-free — click Finish to skip, or add it here / later in Settings.')}</Text>
               {browser && (
                 <Box mb="3">
                   <chakra.span display="block" fontSize="0.7813rem" fontWeight="600" color="ui.text" mb="2">{t('Quick import from your browser')} <chakra.span fontWeight="400" color="ui.muted">{t('(you must be logged in there)')}</chakra.span></chakra.span>
