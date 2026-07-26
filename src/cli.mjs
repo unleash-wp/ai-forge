@@ -71,6 +71,12 @@ export async function run(argv) {
     }
   }
 
+  // Bare `ai-forge` shows the branded welcome; `-h`/`--help` shows full usage.
+  if (!args._[0] && !args.help) {
+    const { renderWelcome } = await import('./welcome.mjs');
+    console.log(renderWelcome());
+    return;
+  }
   if (args.help || !args._[0]) {
     console.log(HELP);
     const { loadPlugins } = await import('./plugins.mjs');
