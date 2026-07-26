@@ -3,9 +3,9 @@
 // tools that tool plugins declare via `mcpTools` in their server.mjs. This is
 // the "Funkstelle": agents pull Forge's data live and keep working with it.
 //
-// Register it (the server id is "uwp-ai-forge"; the command it runs is `uwp mcp`):
-//   Claude Code:  claude mcp add uwp-ai-forge -- uwp mcp
-//   Codex:        add an MCP server { command = "uwp", args = ["mcp"] }
+// Register it (server id "uwp-ai-forge"), the same command the app's one-click
+// buttons run — see NPX_MCP in connectors/registry.mjs:
+//   claude mcp add --scope user uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp
 import { loadPlugins } from './plugins.mjs';
 import { startInternalServer, forgeAppHtml, appAvailable } from './mcp-app.mjs';
 import { VERSION } from './version.mjs';
@@ -50,17 +50,20 @@ export async function startMcpServer() {
       visibility: ['app'],
       inputSchema: { type: 'object', properties: { method: { type: 'string' }, path: { type: 'string' }, body: {} } },
       run: async (a) => {
-        // Must be an absolute local /api path. Reject anything that could form a
-        // URL authority — a leading `//` or a `@`/userinfo — so raw concatenation
-        // can't be turned into `http://127.0.0.1:port@evil.com` (SSRF).
-        const path = typeof a.path === 'string' ? a.path : '';
-        if (!path.startsWith('/') || path.startsWith('//') || path.includes('@')) throw new Error('forge_api: path must be an absolute /api path');
-        const r = await fetch('http://127.0.0.1:' + internalPort + path, {
+        // Resolve the path against the loopback origin and assert it can't escape —
+        // `new URL` + an origin check is robust against every authority-injection
+        // form (`//evil`, `@evil`, `http://evil`, encoded/backslash) that a
+        // hand-rolled string check would have to enumerate. No SSRF off-host.
+        const base = 'http://127.0.0.1:' + internalPort;
+        let target;
+        try { target = new URL(String(a.path || ''), base + '/'); } catch { throw new Error('forge_api: invalid path'); }
+        if (target.origin !== base) throw new Error('forge_api: path must stay on the loopback server');
+        const r = await fetch(target, {
           method: a.method || 'GET',
           headers: a.body != null ? { 'Content-Type': 'application/json' } : {},
           body: a.body != null ? a.body : undefined,
         });
-        return { text: `${r.status} ${a.method || 'GET'} ${path}`, structured: { status: r.status, contentType: r.headers.get('content-type') || 'application/json', body: await r.text() } };
+        return { text: `${r.status} ${a.method || 'GET'} ${target.pathname}`, structured: { status: r.status, contentType: r.headers.get('content-type') || 'application/json', body: await r.text() } };
       },
     });
     tools.set('open_forge', {
@@ -68,7 +71,9 @@ export async function startMcpServer() {
       description: 'Open the full UnleashWP AI Forge app as a window in the conversation.',
       ui: 'ui://forge/app',
       inputSchema: { type: 'object', properties: {} },
-      run: async () => ({ text: 'Opening UnleashWP AI Forge…', structured: {} }),
+      // The ui:// window renders on MCP-Apps hosts (Claude Desktop). On a terminal
+      // host (Claude Code) that can't render it, the text degrades to the browser URL.
+      run: async () => ({ text: 'Opening UnleashWP AI Forge… (no window here? run `uwp-ai-forge serve` for the browser app at http://localhost:4321).', structured: {} }),
     });
     uiResources.set('ui://forge/app', {
       uri: 'ui://forge/app', name: 'uwp-ai-forge', description: 'UnleashWP AI Forge — the full app.',

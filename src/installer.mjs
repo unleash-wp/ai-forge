@@ -67,7 +67,14 @@ function readManifest(pluginDir) {
   catch (err) { throw new Error('invalid plugin.json: ' + err.message); }
   if (!manifest.id || !ID_RE.test(manifest.id)) throw new Error('manifest id missing or invalid (lowercase letters, digits, hyphens)');
   if (!manifest.name) throw new Error('manifest is missing "name"');
-  if (!existsSync(join(pluginDir, 'client.jsx'))) throw new Error('tool is missing client.jsx');
+  // A plugin needs at least one of: a server.mjs (MCP tools / routes / skills —
+  // works on every install method) or a client.jsx (browser UI). client.jsx alone
+  // is NOT required: community plugins install into the user config dir, whose UIs
+  // aren't bundled at build time, so a UI-only plugin can't render there anyway —
+  // requiring it would reject the very MCP-only plugins that do work.
+  if (!existsSync(join(pluginDir, 'server.mjs')) && !existsSync(join(pluginDir, 'client.jsx'))) {
+    throw new Error('a plugin needs a server.mjs (MCP tools/routes/skills) or a client.jsx (browser UI)');
+  }
   return manifest;
 }
 

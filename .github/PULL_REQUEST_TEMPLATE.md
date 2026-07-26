@@ -6,7 +6,7 @@
 
 ## Type
 
-- [ ] New tool (plugin under `tools/`)
+- [ ] New plugin (folder under `plugins/`)
 - [ ] Fix / improvement to an existing tool
 - [ ] Core shell / build / docs
 

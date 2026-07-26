@@ -11,6 +11,7 @@
 // bundle (dist/main.js) is served no-store, so a page reload picks up UI and
 // tool changes immediately; only server-side code needs an AI Forge restart.
 import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -31,13 +32,9 @@ export function detectInstall() {
   return 'global';
 }
 
-function run(cmd, args, opts = {}) {
-  return new Promise((resolve, reject) => {
-    execFile(cmd, args, { cwd: ROOT, timeout: 180000, maxBuffer: 8 * 1024 * 1024, ...opts }, (err, stdout, stderr) => {
-      if (err) { err.stderr = stderr; reject(err); } else resolve(stdout);
-    });
-  });
-}
+// execFile as a promise; rejects with an Error carrying .stdout/.stderr.
+const execFileP = promisify(execFile);
+const run = (cmd, args, opts = {}) => execFileP(cmd, args, { cwd: ROOT, timeout: 180000, maxBuffer: 8 * 1024 * 1024, ...opts });
 
 // Update in place. Returns { ok, method, restart, message } — restart flags that
 // server-side changes only apply after AI Forge is restarted (the client reloads
