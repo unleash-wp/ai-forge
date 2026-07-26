@@ -50,12 +50,17 @@ export async function startMcpServer() {
       visibility: ['app'],
       inputSchema: { type: 'object', properties: { method: { type: 'string' }, path: { type: 'string' }, body: {} } },
       run: async (a) => {
-        const r = await fetch('http://127.0.0.1:' + internalPort + a.path, {
+        // Must be an absolute local /api path. Reject anything that could form a
+        // URL authority — a leading `//` or a `@`/userinfo — so raw concatenation
+        // can't be turned into `http://127.0.0.1:port@evil.com` (SSRF).
+        const path = typeof a.path === 'string' ? a.path : '';
+        if (!path.startsWith('/') || path.startsWith('//') || path.includes('@')) throw new Error('forge_api: path must be an absolute /api path');
+        const r = await fetch('http://127.0.0.1:' + internalPort + path, {
           method: a.method || 'GET',
           headers: a.body != null ? { 'Content-Type': 'application/json' } : {},
           body: a.body != null ? a.body : undefined,
         });
-        return { text: `${r.status} ${a.method || 'GET'} ${a.path}`, structured: { status: r.status, contentType: r.headers.get('content-type') || 'application/json', body: await r.text() } };
+        return { text: `${r.status} ${a.method || 'GET'} ${path}`, structured: { status: r.status, contentType: r.headers.get('content-type') || 'application/json', body: await r.text() } };
       },
     });
     tools.set('open_forge', {
