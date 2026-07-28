@@ -8,6 +8,7 @@ import { Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, Popov
 import { useCore } from '../../src/client/core.jsx';
 import { useT, useI18n, __, currentLocale } from '../../src/client/i18n.jsx';
 import { Button as UButton, Select, Checkbox, TextInput, DateRangePicker } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
+import { coreSvgHtml, gutenbergSvgHtml } from '../../src/client/wp-icons.jsx';
 
 const GB = 'https://github.com/WordPress/gutenberg';
 const TRAC = 'https://core.trac.wordpress.org';
@@ -69,8 +70,9 @@ function sortGroups(obj, uncatLast) {
   });
 }
 function groupHeadHtml(label, url, who) {
+  const icon = label === 'Gutenberg' ? gutenbergSvgHtml(17) : label === 'Core' ? coreSvgHtml(17) : '';
   const inner = url ? '<a class="cl-link" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + IC.ext + '</a>' : label;
-  return '<h2 class="cl-title">' + inner + ' <span class="cl-byline">(' + esc(who) + ')</span></h2>';
+  return '<h2 class="cl-title">' + (icon ? icon + ' ' : '') + inner + ' <span class="cl-byline">(' + esc(who) + ')</span></h2>';
 }
 function gbItem(c) {
   const ref = c.pr
