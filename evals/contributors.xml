@@ -29,4 +29,20 @@
     <question>For June 2026 (2026-06-01 to 2026-06-30), which Core component had the most changes, excluding "Uncategorized"?</question>
     <answer>Editor</answer>
   </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30, trunk on both repos), how many Gutenberg changes (merged commits) were there?</question>
+    <answer>485</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), who was the second-most-credited contributor to WordPress Core + Gutenberg, after the top one?</question>
+    <answer>ciampo</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), how many Core changesets did the single top Core committer land (the commit count for the #1 person in the Core committers table)?</question>
+    <answer>29</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), which Core component had the second-most changes, excluding "Uncategorized"?</question>
+    <answer>General</answer>
+  </qa_pair>
 </evaluation>

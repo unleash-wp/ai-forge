@@ -94,23 +94,23 @@ export const mcpTools = [
     inputSchema: {
       type: 'object',
       properties: {
-        quarter: { type: 'string', description: 'Quarter, e.g. 2025-Q4' },
-        month: { type: 'string', description: 'Month, e.g. 2025-10' },
-        since: { type: 'string', description: 'Start date YYYY-MM-DD (use with until)' },
-        until: { type: 'string', description: 'End date YYYY-MM-DD (use with since)' },
+        quarter: { type: 'string', pattern: '^\\d{4}-Q[1-4]$', description: 'Quarter, e.g. 2025-Q4' },
+        month: { type: 'string', pattern: '^\\d{4}-\\d{2}$', description: 'Month, e.g. 2025-10' },
+        since: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'Start date YYYY-MM-DD (use with until)' },
+        until: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'End date YYYY-MM-DD (use with since)' },
         gbBranch: { type: 'string', description: 'Gutenberg branch (default: trunk; e.g. wp/7.1)' },
         coreBranch: { type: 'string', description: 'Core branch (default: trunk)' },
         companies: { type: 'boolean', description: 'Add the employer + "which company invested most" breakdown (fetches wp.org profiles; slower, cached).' },
         committers: { type: 'boolean', description: 'Add the Core committers table (who landed the changesets, with employer + wp.org join year).' },
         components: { type: 'boolean', description: 'Add the Core-changes-by-component breakdown (cookie-free, from the active dev-notes tracker).' },
         tickets: { type: 'boolean', description: 'Add Trac opened/closed ticket counts for the window (needs a WordPress.org session).' },
-        top: { type: 'number', description: 'Max rows per table (default 25). Raise it for more; totals stay exact. Keep it modest to protect your context budget.' },
+        top: { type: 'number', minimum: 1, maximum: 500, description: 'Max rows per table (default 25). Raise it for more; totals stay exact. Keep it modest to protect your context budget.' },
         format: { type: 'string', enum: ['markdown', 'json'], description: 'Output format (default: markdown). Use json for the structured report (also capped to `top`).' },
       },
     },
     run: async (a) => {
       const report = await build(a, { warn: mcpWarn });
-      const top = Math.max(1, Number(a.top) || 25);
+      const top = Math.min(500, Math.max(1, Number(a.top) || 25)); // clamp: schema max is advisory
       return a.format === 'json' ? JSON.stringify(capReport(report, top), null, 2) : toMarkdown(report, { top });
     },
   },
@@ -121,18 +121,18 @@ export const mcpTools = [
     inputSchema: {
       type: 'object',
       properties: {
-        quarter: { type: 'string', description: 'Quarter, e.g. 2025-Q4' },
-        month: { type: 'string', description: 'Month, e.g. 2025-10 (a Month-in-Core post is usually monthly)' },
-        since: { type: 'string', description: 'Start date YYYY-MM-DD (use with until)' },
-        until: { type: 'string', description: 'End date YYYY-MM-DD (use with since)' },
+        quarter: { type: 'string', pattern: '^\\d{4}-Q[1-4]$', description: 'Quarter, e.g. 2025-Q4' },
+        month: { type: 'string', pattern: '^\\d{4}-\\d{2}$', description: 'Month, e.g. 2025-10 (a Month-in-Core post is usually monthly)' },
+        since: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'Start date YYYY-MM-DD (use with until)' },
+        until: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}$', description: 'End date YYYY-MM-DD (use with since)' },
         gbBranch: { type: 'string', description: 'Gutenberg branch (default: trunk; e.g. wp/7.1)' },
         coreBranch: { type: 'string', description: 'Core branch (default: trunk)' },
-        top: { type: 'number', description: 'Max rows per table in the post (default 100).' },
+        top: { type: 'number', minimum: 1, maximum: 500, description: 'Max rows per table in the post (default 100).' },
       },
     },
     run: async (a) => {
       const report = await build({ ...a, companies: true, committers: true, components: true, tickets: true }, { warn: mcpWarn });
-      return monthInCorePost(report, { top: Math.max(1, Number(a.top) || 100) });
+      return monthInCorePost(report, { top: Math.min(500, Math.max(1, Number(a.top) || 100)) });
     },
   },
 ];
