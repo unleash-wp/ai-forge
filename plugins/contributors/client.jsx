@@ -431,12 +431,13 @@ export default function Contributors() {
 
       {loading ? <LoadingState /> : !report ? <EmptyState /> : (
         <>
-          <SimpleGrid minChildWidth="10.5rem" gap="4" mb="6">
+          <SimpleGrid minChildWidth="10.5rem" gap="4" mb="2">
             <StatCard n={report.totals.contributors} label="Contributors" counted />
             <StatCard n={report.totals.coreCommits} label="Core changes" />
             <StatCard n={report.totals.gutenbergCommits} label="Gutenberg changes" />
             <StatCard n={co ? co.byCompany.length : report.totals.coreCommits + report.totals.gutenbergCommits} label={co ? 'Companies' : 'Total changes'} />
           </SimpleGrid>
+          <Text color="ui.muted" fontSize="0.75rem" mb="6" lineHeight="1.5">Counts only merged changes that landed on the branch (Core changesets and Gutenberg merges). Release plumbing, open pull requests and reverted work are not counted.</Text>
 
           {report.timeline && report.timeline.length > 1 && (
             <>
