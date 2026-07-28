@@ -398,16 +398,21 @@ function Activity({ timeline, metric }) {
   );
 }
 
-// The people who work at the selected company.
+// The people who work at the selected company (paginated, 20 per page).
 function CompanyMembers({ company, members }) {
+  const [page, setPage] = useState(0);
+  useEffect(() => { setPage(0); }, [company]);
+  const PAGE = 20;
   if (!company) return null;
+  const totalPages = Math.max(1, Math.ceil(members.length / PAGE));
+  const pageItems = members.slice(page * PAGE, page * PAGE + PAGE);
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full" h="full" display="flex" flexDirection="column">
       <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{company}</Text>
       <Text color="ui.muted" fontSize="0.8125rem" mb="3">{members.length} {members.length === 1 ? 'contributor' : 'contributors'}</Text>
       <Stack gap="0" flex="1" minH="0" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
-        {members.map((p, i) => (
+        {pageItems.map((p, i) => (
           <Flex key={p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
             <Avatar src={p.avatar} />
             <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(p.slug || p.name)}/`} target="_blank" rel="noopener noreferrer"
@@ -418,6 +423,16 @@ function CompanyMembers({ company, members }) {
         ))}
         {!members.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No contributors resolved to this company.</Text>}
       </Stack>
+      {totalPages > 1 && (
+        <Flex align="center" justify="center" gap="1.5" mt="4" pt="3" borderTopWidth="1px" borderColor="ui.border" wrap="wrap" flex="none">
+          {Array.from({ length: totalPages }, (_, n) => (
+            <chakra.button key={n} type="button" onClick={() => setPage(n)}
+              minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
+              fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
+              borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
+          ))}
+        </Flex>
+      )}
     </Box>
   );
 }
@@ -824,9 +839,6 @@ export default function Contributors() {
                 </Box>
                 <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
-              <Text color="ui.muted" fontSize="0.8125rem" mb="4">
-                Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
-              </Text>
               <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
                 <Box flex="1 1 0" minW="0" w="full">
                   <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
