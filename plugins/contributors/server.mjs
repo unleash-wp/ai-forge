@@ -89,7 +89,7 @@ export const routes = [
 export const mcpTools = [
   {
     name: 'get_contributors',
-    description: 'Who contributed to WordPress Core + Gutenberg in a period, ranked by credited contributions (Core props + Gutenberg authored commits). Optionally, which company invested most.',
+    description: 'Who contributed to WordPress Core + Gutenberg in a period, ranked by credited contributions (Core props + Gutenberg authored commits). Toggle the flags to also get the company breakdown, the Core committers table, the component breakdown and Trac ticket activity. Use format=json to get every field for further analysis.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -99,8 +99,11 @@ export const mcpTools = [
         until: { type: 'string', description: 'End date YYYY-MM-DD (use with since)' },
         gbBranch: { type: 'string', description: 'Gutenberg branch (default: trunk; e.g. wp/7.1)' },
         coreBranch: { type: 'string', description: 'Core branch (default: trunk)' },
-        companies: { type: 'boolean', description: 'Also resolve each contributor\'s employer and rank which company invested most (slower; fetches wp.org profiles).' },
-        format: { type: 'string', enum: ['markdown', 'json'], description: 'Output format (default: markdown)' },
+        companies: { type: 'boolean', description: 'Add the employer + "which company invested most" breakdown (fetches wp.org profiles; slower, cached).' },
+        committers: { type: 'boolean', description: 'Add the Core committers table (who landed the changesets, with employer + wp.org join year).' },
+        components: { type: 'boolean', description: 'Add the Core-changes-by-component breakdown (cookie-free, from the active dev-notes tracker).' },
+        tickets: { type: 'boolean', description: 'Add Trac opened/closed ticket counts for the window (needs a WordPress.org session).' },
+        format: { type: 'string', enum: ['markdown', 'json'], description: 'Output format (default: markdown). Use json for the full structured report.' },
       },
     },
     run: async (a) => {
