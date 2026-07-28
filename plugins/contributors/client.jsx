@@ -7,6 +7,7 @@ import { Box, Flex, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text,
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { Button, TextInput, Select, DateRangePicker } from '../../src/client/ui';
+import { CoreIcon, GutenbergIcon } from '../../src/client/wp-icons.jsx';
 
 // UnleashWP brand: navy ramp + yellow accent. The selected slice turns yellow.
 const NAVY = '#203159';
@@ -103,10 +104,8 @@ function RankRow({ i, color, name, value, max, active, onClick }) {
 }
 
 const RepoTag = ({ repo }) => (
-  <Box as="span" flex="none" px="1.5" py="0.5" borderRadius="sm" fontSize="0.625rem" fontWeight="700" letterSpacing=".02em"
-    textTransform="uppercase" bg={repo === 'core' ? 'rgba(32,49,89,.10)' : 'rgba(114,127,159,.16)'}
-    color={repo === 'core' ? 'ui.primary' : 'ui.muted'} _dark={{ bg: repo === 'core' ? 'rgba(124,147,255,.16)' : 'rgba(148,161,189,.16)' }}>
-    {repo === 'core' ? 'Core' : 'GB'}
+  <Box as="span" flex="none" display="inline-flex" alignItems="center" color="ui.text" title={repo === 'core' ? 'WordPress Core' : 'Gutenberg'}>
+    {repo === 'core' ? <CoreIcon size={15} /> : <GutenbergIcon size={15} />}
   </Box>
 );
 
