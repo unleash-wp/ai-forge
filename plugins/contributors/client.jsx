@@ -368,6 +368,33 @@ function EmptyState() {
   );
 }
 
+// Core changes grouped by Trac component (from the active-cycle dev-notes
+// tracker). Uncategorized changes are summarised in the note, not the bars.
+function Components({ data }) {
+  const rows = data.byComponent.filter((c) => c.component !== 'Uncategorized').slice(0, 12);
+  if (!rows.length) return null;
+  const max = rows[0].count || 1;
+  return (
+    <Box mt="10">
+      <Heading as="h3" fontSize="1rem" fontWeight="700" color="ui.heading" mb="1">Core changes by component</Heading>
+      <Text color="ui.muted" fontSize="0.8125rem" mb="4">
+        Categorized {data.coverage.known} of {data.coverage.total} Core changes ({data.coverage.pct}%) via the {data.slug} tracker. Changes on tickets not triaged there yet aren't shown.
+      </Text>
+      <Stack gap="2.5">
+        {rows.map((c) => (
+          <Flex key={c.component} align="center" gap="3">
+            <Text w={{ base: '7.5rem', md: '10rem' }} flex="none" fontSize="0.8125rem" color="ui.text" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.component}</Text>
+            <Box flex="1" h="8px" bg="ui.sunk" borderRadius="full" overflow="hidden">
+              <Box h="full" borderRadius="full" bg="navy" w={`${Math.max(4, Math.round((c.count / max) * 100))}%`} />
+            </Box>
+            <Box w="2.5rem" flex="none" textAlign="right" fontSize="0.8125rem" fontWeight="700" color="ui.heading" fontVariantNumeric="tabular-nums">{c.count}</Box>
+          </Flex>
+        ))}
+      </Stack>
+    </Box>
+  );
+}
+
 export default function Contributors() {
   const core = useCore() || {};
   const periods = useMemo(() => buildPeriods(new Date()), []);
@@ -584,6 +611,8 @@ export default function Contributors() {
               </Flex>
             </>
           ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No company data for this window.</Text>}
+
+          {report.components && <Components data={report.components} />}
         </>
       )}
     </>
