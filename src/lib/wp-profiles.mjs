@@ -11,34 +11,15 @@
 //     resolved here. Don't fabricate it — a geography feature needs another source.
 //   - Employer is the person's job, a good but imperfect proxy for the Five for
 //     the Future *sponsor* (which is not exposed in the static profile HTML).
-import { readFileSync, writeFileSync, renameSync, rmSync, mkdirSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
+import { CACHE_DIR, OFFLINE, loadJson, saveJson } from './cache-store.mjs';
 
 const UA = 'uwp-ai-forge contributors (+https://unleash-wp.com)';
 
-// Cache location is configurable so a hosted deploy can point it at a shared,
-// persistent volume (UWP_CACHE_DIR). OFFLINE mode makes the app read the cache
-// only and never fetch profiles.wordpress.org - so a user-facing app server can't
-// get the host rate-limited/blocked; a separate `ingest-profiles` job fills it.
-const CACHE_DIR = process.env.UWP_CACHE_DIR || join(homedir(), '.config', 'uwp-ai-forge');
-export const OFFLINE = /^(1|true)$/i.test(process.env.UWP_OFFLINE || '');
+export { OFFLINE }; // re-exported for callers that import it from here
 const CACHE = join(CACHE_DIR, 'profile-cache-v3.json');
 const SLUG_CACHE = join(CACHE_DIR, 'ghslug-cache-v1.json');
-
-function loadJson(file) {
-  try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return {}; }
-}
-// Atomic write (temp + rename) so a concurrent reader never sees a half-written
-// file - important when the ingestion job writes while the app reads a shared cache.
-function saveJson(file, obj) {
-  try {
-    mkdirSync(dirname(file), { recursive: true });
-    const tmp = `${file}.${process.pid}.tmp`;
-    writeFileSync(tmp, JSON.stringify(obj));
-    renameSync(tmp, file);
-  } catch { /* best effort */ }
-}
 const loadCache = () => loadJson(CACHE);
 const saveCache = (c) => saveJson(CACHE, c);
 const loadSlugCache = () => loadJson(SLUG_CACHE);
@@ -91,6 +72,7 @@ async function getText(url) {
 // Map a GitHub login to a wp.org username via the official lookup endpoint, or
 // null. This is how Gutenberg contributors (GitHub handles) join to profiles.
 export async function githubToWporg(login) {
+  if (OFFLINE) return null; // read-only host: never fetch profiles.wordpress.org
   const res = await politeFetch(`https://profiles.wordpress.org/wp-json/wporg-github/v1/lookup/${encodeURIComponent(login)}`);
   if (res.status === 404) return null;            // definitive: no such GitHub user / no mapping
   if (!res.ok) throw new Error(`lookup ${res.status}`); // transient: let the caller skip caching

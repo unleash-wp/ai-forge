@@ -11,6 +11,7 @@
 //     is Trac's changetime, a close proxy - a ticket edited long after being
 //     closed drifts out of the count - so it is reported as an approximation.
 import { TRAC, UA, tracBlocked, resolveCookie } from '../connectors/wporg-cookie.mjs';
+import { OFFLINE } from './cache-store.mjs';
 
 // A strict YYYY-MM-DD day, so an unvalidated ?since/&until can't inject extra
 // parameters into the Trac query URL (e.g. "1&status=x").
@@ -30,8 +31,6 @@ async function countQuery(filter, cookie) {
   const lines = body.split('\n').map((l) => l.trim()).filter(Boolean);
   return Math.max(0, lines.length - 1); // drop the "id" header row
 }
-
-const OFFLINE = /^(1|true)$/i.test(process.env.UWP_OFFLINE || '');
 
 // { opened, closed, closedApprox: true } for the window, or null with no cookie /
 // in offline mode (a read-only host must not hit Trac on wordpress.org either).

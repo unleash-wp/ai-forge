@@ -2,7 +2,7 @@
 // Connectors, Updates, Credits). Connectors are the user's own keys (GitHub
 // token + wordpress.org cookie), stored locally (owner-only), sent only to
 // GitHub / WordPress.org. Chakra handles backdrop, focus trap and Escape.
-import { useState, useEffect, useId } from 'react';
+import { useState, useEffect, useId, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { fetchJSON, apiFetch, useCore, connectorStatus } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
@@ -332,10 +332,14 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
     setLocale('en'); setTz(browserTz()); core.toast(t('Settings cleared'), 'success');
   }
   // Drop the cached wp.org profile/slug data on this machine (re-fetched next run).
+  const clearingCache = useRef(false);
   function clearCache() {
+    if (clearingCache.current) return;
+    clearingCache.current = true;
     fetchJSON('/api/cache/clear', { method: 'POST' })
       .then(({ ok, data }) => core.toast(ok && data.ok ? t('Cleared %s cached profiles', data.profiles ?? 0) : t('Could not clear the cache'), ok && data.ok ? 'success' : undefined))
-      .catch(() => core.toast(t('Could not clear the cache')));
+      .catch(() => core.toast(t('Could not clear the cache')))
+      .finally(() => { clearingCache.current = false; });
   }
 
   function copyStr(text, id) {

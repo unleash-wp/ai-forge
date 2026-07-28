@@ -159,6 +159,7 @@ const RepoMark = ({ repo }) => (repo === 'core' ? <CoreIcon size={18} /> : <Gute
 // Small round avatar with a coloured-dot fallback.
 function Avatar({ src, color, size = 22 }) {
   const [ok, setOk] = useState(true);
+  useEffect(() => { setOk(true); }, [src]); // reset the fallback when the image changes (stable-position avatars in Detail)
   if (src && ok) return <chakra.img src={src} alt="" onError={() => setOk(false)} w={`${size}px`} h={`${size}px`} borderRadius="full" flex="none" objectFit="cover" bg="ui.sunk" />;
   return <Box w={`${size}px`} h={`${size}px`} borderRadius="full" bg={color || NAVY} flex="none" />;
 }
@@ -751,6 +752,17 @@ export default function Contributors() {
     return s;
   }, [report, co]);
 
+  // Which tabs the current report actually has, and the effective active tab: if the
+  // selected tab isn't available for this report (e.g. still on Components after a
+  // report with none), fall back to Contributors instead of rendering a dead tab.
+  const tabDefs = useMemo(() => (!report ? [] : [
+    { value: 'contributors', label: 'Contributors' },
+    { value: 'companies', label: 'Companies' },
+    ...(report.committers?.length ? [{ value: 'committers', label: 'Core committers' }] : []),
+    ...(report.components?.byComponent?.some((c) => c.component !== 'Uncategorized') ? [{ value: 'components', label: 'Components' }] : []),
+  ]), [report]);
+  const activeTab = tabDefs.some((x) => x.value === tab) ? tab : 'contributors';
+
   return (
     <>
       <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
@@ -803,16 +815,11 @@ export default function Contributors() {
             </>
           )}
 
-          <TabBar value={tab} onChange={setTab}
+          <TabBar value={activeTab} onChange={setTab}
             right={<ExportData report={report} sections={exportSections} />}
-            tabs={[
-              { value: 'contributors', label: 'Contributors' },
-              { value: 'companies', label: 'Companies' },
-              ...(report.committers?.length ? [{ value: 'committers', label: 'Core committers' }] : []),
-              ...(report.components?.byComponent?.some((c) => c.component !== 'Uncategorized') ? [{ value: 'components', label: 'Components' }] : []),
-            ]} />
+            tabs={tabDefs} />
 
-          {tab === 'contributors' ? (
+          {activeTab === 'contributors' ? (
             <>
               <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
                 <Box mr={{ md: 'auto' }}>
@@ -866,9 +873,9 @@ export default function Contributors() {
                 </Flex>
               ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
             </>
-          ) : tab === 'committers' ? (
+          ) : activeTab === 'committers' ? (
             <Committers list={report.committers} meta={report.meta} search={search} setSearch={setSearch} />
-          ) : tab === 'components' ? (
+          ) : activeTab === 'components' ? (
             <Components data={report.components} />
           ) : co && coList.length > 0 ? (
             <>
