@@ -105,7 +105,7 @@ function RankRow({ i, color, name, value, max, active, onClick }) {
 
 const RepoTag = ({ repo }) => (
   <Box as="span" flex="none" display="inline-flex" alignItems="center" color="ui.text" title={repo === 'core' ? 'WordPress Core' : 'Gutenberg'}>
-    {repo === 'core' ? <CoreIcon size={15} /> : <GutenbergIcon size={15} />}
+    {repo === 'core' ? <CoreIcon size={19} /> : <GutenbergIcon size={19} />}
   </Box>
 );
 
@@ -124,7 +124,7 @@ function Detail({ person }) {
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
         {(person.items || []).map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
-            display="flex" alignItems="baseline" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
+            display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
             _hover={{ bg: 'ui.sunk' }} borderRadius="sm" px="1" mx="-1">
             <RepoTag repo={it.repo} />
             <Text flex="1" color="ui.text" fontSize="0.8125rem" lineHeight="1.4">{it.subject}</Text>

@@ -70,7 +70,7 @@ function sortGroups(obj, uncatLast) {
   });
 }
 function groupHeadHtml(label, url, who) {
-  const icon = label === 'Gutenberg' ? gutenbergSvgHtml(17) : label === 'Core' ? coreSvgHtml(17) : '';
+  const icon = label === 'Gutenberg' ? gutenbergSvgHtml(24) : label === 'Core' ? coreSvgHtml(24) : '';
   const inner = url ? '<a class="cl-link" href="' + esc(url) + '" target="_blank" rel="noopener">' + label + IC.ext + '</a>' : label;
   return '<h2 class="cl-title">' + (icon ? icon + ' ' : '') + inner + ' <span class="cl-byline">(' + esc(who) + ')</span></h2>';
 }
