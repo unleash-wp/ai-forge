@@ -58,7 +58,10 @@ export async function generate(opts, onStep = () => {}) {
   // "wildworks") so the props/credits list and count don't double-count a person.
   // Opt-out with identities:false; degrades to the raw union on lookup failure.
   if (opts.identities !== false) {
-    report.contributors = await canonicalNames([...report.gutenberg.contributors, ...report.core.contributors]);
+    report.contributors = await canonicalNames(
+      [...report.gutenberg.contributors, ...report.core.contributors],
+      { lookupOnly: new Set(report.gutenberg.contributors) },
+    );
     report.totals.contributors = report.contributors.length;
   }
 

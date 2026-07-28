@@ -25,8 +25,23 @@ function saveCache(c) {
   try { mkdirSync(dirname(CACHE), { recursive: true }); writeFileSync(CACHE, JSON.stringify(c)); } catch { /* best effort */ }
 }
 
+// fetch that backs off once when profiles.wordpress.org throttles us (429/503),
+// honouring Retry-After, so a burst doesn't hammer Automattic's server.
+async function politeFetch(url) {
+  const opts = { headers: { 'User-Agent': UA } };
+  for (let attempt = 1; ; attempt++) {
+    const res = await fetch(url, opts);
+    if ((res.status === 429 || res.status === 503) && attempt < 3) {
+      const wait = Math.min((Number(res.headers.get('retry-after')) || attempt * 1.5) * 1000, 10000);
+      await new Promise((r) => setTimeout(r, wait));
+      continue;
+    }
+    return res;
+  }
+}
+
 async function getText(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': UA } });
+  const res = await politeFetch(url);
   if (!res.ok) { const e = new Error(`${res.status} ${url}`); e.status = res.status; throw e; }
   return res.text();
 }
@@ -34,10 +49,7 @@ async function getText(url) {
 // Map a GitHub login to a wp.org username via the official lookup endpoint, or
 // null. This is how Gutenberg contributors (GitHub handles) join to profiles.
 export async function githubToWporg(login) {
-  const res = await fetch(
-    `https://profiles.wordpress.org/wp-json/wporg-github/v1/lookup/${encodeURIComponent(login)}`,
-    { headers: { 'User-Agent': UA } },
-  );
+  const res = await politeFetch(`https://profiles.wordpress.org/wp-json/wporg-github/v1/lookup/${encodeURIComponent(login)}`);
   if (res.status === 404) return null;            // definitive: no such GitHub user / no mapping
   if (!res.ok) throw new Error(`lookup ${res.status}`); // transient: let the caller skip caching
   const j = await res.json();
@@ -130,10 +142,13 @@ async function pool(items, concurrency, fn) {
 // credited under a GitHub login (Gutenberg) and a wp.org username (Core) collapses
 // into one entry. Sums props/core/gutenberg, unions their shipped items, sets the
 // wp.org display name + slug. Returns the merged list ranked by props.
-export async function resolveIdentities(byContributor, { concurrency = 10 } = {}) {
+export async function resolveIdentities(byContributor, { concurrency = 6 } = {}) {
   const slugCache = loadSlugCache();
-  const names = [...new Set(byContributor.map((c) => c.name))];
-  await pool(names, concurrency, (name) => canonicalSlug(name, slugCache));
+  // Only resolve names that came (even partly) from a Gutenberg GitHub login; pure
+  // Core-Props names are already wp.org usernames, so skipping them halves the load
+  // on profiles.wordpress.org and avoids a wrong remap of a coincidental handle.
+  const needsLookup = [...new Set(byContributor.filter((c) => c.source !== 'core').map((c) => c.name))];
+  await pool(needsLookup, concurrency, (name) => canonicalSlug(name, slugCache));
   saveSlugCache(slugCache);
   const slugOf = (name) => (slugCache[name] || name).toLowerCase();
 
@@ -160,10 +175,13 @@ export async function resolveIdentities(byContributor, { concurrency = 10 } = {}
 // Dedupe a flat list of contributor handles by canonical wp.org identity (for the
 // changelog's props/credits list). Returns each person once as their wp.org
 // username, sorted. Degrades to the raw handle when there's no mapping.
-export async function canonicalNames(names, { concurrency = 10 } = {}) {
+export async function canonicalNames(names, { concurrency = 6, lookupOnly = null } = {}) {
   const slugCache = loadSlugCache();
   const uniq = [...new Set(names)];
-  await pool(uniq, concurrency, (n) => canonicalSlug(n, slugCache));
+  // Only look up handles that are GitHub logins (lookupOnly); Core-Props names are
+  // already wp.org usernames, so skipping them is gentler on profiles.wordpress.org.
+  const toResolve = lookupOnly ? uniq.filter((n) => lookupOnly.has(n)) : uniq;
+  await pool(toResolve, concurrency, (n) => canonicalSlug(n, slugCache));
   saveSlugCache(slugCache);
   const bySlug = new Map();
   for (const n of uniq) {
@@ -176,7 +194,7 @@ export async function canonicalNames(names, { concurrency = 10 } = {}) {
 // Attach each Core committer's employer, avatar and join year from their wp.org
 // profile, resolving the GitHub login to the wp.org slug first (they often differ).
 // Shares the profile + slug caches, so overlapping runs are fast.
-export async function enrichCommitters(committers, { concurrency = 10 } = {}) {
+export async function enrichCommitters(committers, { concurrency = 6 } = {}) {
   const cache = loadCache();
   const slugCache = loadSlugCache();
   const out = new Array(committers.length);
@@ -199,7 +217,7 @@ export async function enrichCommitters(committers, { concurrency = 10 } = {}) {
 // aggregate credited contributions per company. Returns { byCompany, resolved,
 // coverage }. Bounded concurrency; results cached to disk across runs so a second
 // run of an overlapping window is fast and gentle on profiles.wordpress.org.
-export async function companyBreakdown(byContributor, { concurrency = 10 } = {}) {
+export async function companyBreakdown(byContributor, { concurrency = 6 } = {}) {
   const cache = loadCache();
   const resolved = new Array(byContributor.length);
   let i = 0;
