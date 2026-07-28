@@ -499,7 +499,7 @@ function Components({ data }) {
   if (!rows.length) return null;
   const max = rows[0].count || 1;
   return (
-    <Box mt="10">
+    <Box>
       <Heading as="h3" fontSize="1rem" fontWeight="700" color="ui.heading" mb="1">Core changes by component</Heading>
       <Text color="ui.muted" fontSize="0.8125rem" mb="4">
         Categorized {data.coverage.known} of {data.coverage.total} Core changes ({data.coverage.pct}%) via the {data.slug} tracker. Changes on tickets not triaged there yet aren't shown.
@@ -809,6 +809,7 @@ export default function Contributors() {
               { value: 'contributors', label: 'Contributors' },
               { value: 'companies', label: 'Companies' },
               ...(report.committers?.length ? [{ value: 'committers', label: 'Core committers' }] : []),
+              ...(report.components?.byComponent?.some((c) => c.component !== 'Uncategorized') ? [{ value: 'components', label: 'Components' }] : []),
             ]} />
 
           {tab === 'contributors' ? (
@@ -833,6 +834,10 @@ export default function Contributors() {
                   </chakra.button>
                 )}
                 <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
+                {(search || newOnly || repoFilter !== 'all') && (
+                  <chakra.button type="button" onClick={() => { setSearch(''); setNewOnly(false); setRepoFilter('all'); }}
+                    fontSize="0.8125rem" fontWeight="600" color="ui.primary" bg="transparent" border="0" px="1" cursor="pointer" whiteSpace="nowrap" _hover={{ textDecoration: 'underline' }}>Reset</chakra.button>
+                )}
               </Flex>
               {list.length ? (
                 <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
@@ -860,10 +865,11 @@ export default function Contributors() {
                   </Box>
                 </Flex>
               ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
-              {report.components && <Components data={report.components} />}
             </>
           ) : tab === 'committers' ? (
             <Committers list={report.committers} meta={report.meta} search={search} setSearch={setSearch} />
+          ) : tab === 'components' ? (
+            <Components data={report.components} />
           ) : co && coList.length > 0 ? (
             <>
               <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
