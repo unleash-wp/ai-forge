@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Flex, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
-import { Button, TextInput, Select, DateRangePicker } from '../../src/client/ui';
+import { TextInput, Select, DateRangePicker } from '../../src/client/ui';
 import { CoreIcon, GutenbergIcon } from '../../src/client/wp-icons.jsx';
 
 // UnleashWP brand: navy ramp + yellow accent. Selected slice/row turns yellow.
@@ -82,14 +82,18 @@ function TipBox({ active, payload, label, kind, dated }) {
   if (!active || !payload || !payload.length) return null;
   const p = payload[0];
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="md" boxShadow="md" px="2.5" py="1.5" css={{ pointerEvents: 'none' }}>
+    <Box bg="navy" borderRadius="md" boxShadow="lg" px="2.5" py="1.5" css={{ pointerEvents: 'none' }}>
       {dated ? (
         <>
-          <Text color="ui.muted" fontSize="0.6875rem" lineHeight="1.2">{fmtDay(label)}</Text>
-          <Text color="ui.heading" fontSize="0.8125rem" fontWeight="700" lineHeight="1.3" fontVariantNumeric="tabular-nums">{p.value} {kind}</Text>
+          <Text color="rgba(255,255,255,.7)" fontSize="0.6875rem" lineHeight="1.2">{fmtDay(label)}</Text>
+          <Text color="white" fontSize="0.8125rem" fontWeight="700" lineHeight="1.3" fontVariantNumeric="tabular-nums">
+            <chakra.span color="yellow">{p.value}</chakra.span> {kind}
+          </Text>
         </>
       ) : (
-        <Text color="ui.heading" fontSize="0.75rem" fontWeight="600" lineHeight="1.2">{p.name ?? p.payload?.name}: {p.value} {kind}</Text>
+        <Text color="white" fontSize="0.75rem" fontWeight="600" lineHeight="1.2">
+          {p.name ?? p.payload?.name}: <chakra.span color="yellow" fontWeight="800">{p.value}</chakra.span> {kind}
+        </Text>
       )}
     </Box>
   );
@@ -234,8 +238,8 @@ function Activity({ timeline, metric }) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,.18)" vertical={false} />
-            <XAxis dataKey="date" tickFormatter={fmtDay} minTickGap={26} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: AXIS }} />
-            <YAxis allowDecimals={false} width={40} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: AXIS }} />
+            <XAxis dataKey="date" tickFormatter={fmtDay} minTickGap={26} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: AXIS }} />
+            <YAxis allowDecimals={false} width={34} axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: AXIS }} />
             <Tooltip content={<TipBox dated kind={metric === 'contributors' ? 'contributors' : 'contributions'} />} wrapperStyle={{ zIndex: 1000 }} />
             <Area type="monotone" dataKey={metric} stroke={NAVY} strokeWidth={2} fill="url(#uwpAct)" isAnimationActive={false} />
           </AreaChart>
@@ -291,6 +295,7 @@ export default function Contributors() {
   const [repoFilter, setRepoFilter] = useState('all');
   const [chartMetric, setChartMetric] = useState('contributions');
   const [tab, setTab] = useState('contributors');
+  const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -329,6 +334,8 @@ export default function Contributors() {
     setLoading(false);
   }, [since, until, gbBranch, coreBranch]);
 
+  useEffect(() => { setPage(0); }, [repoFilter, search, data]);
+
   const report = data && data.report;
   const q = search.trim().toLowerCase();
   const valueOf = (p) => (repoFilter === 'core' ? p.core : repoFilter === 'gutenberg' ? p.gutenberg : p.props);
@@ -339,6 +346,10 @@ export default function Contributors() {
   const listMax = people.length ? valueOf(people[0]) : 1;
   const list = useMemo(() => people.slice(0, 20).map((p) => ({ name: p.name, value: valueOf(p) })), [people, repoFilter]);
   const slices = useMemo(() => toSlices(list, 8), [list]);
+  const PAGE = 20;
+  const pool = useMemo(() => people.slice(0, 100), [people]); // rank up to 100
+  const totalPages = Math.max(1, Math.ceil(pool.length / PAGE));
+  const pageItems = pool.slice(page * PAGE, page * PAGE + PAGE);
   const selPerson = useMemo(() => people.find((c) => c.name === selected) || people[0] || null, [people, selected]);
 
   const co = report && report.companies;
@@ -402,11 +413,22 @@ export default function Contributors() {
                   <Box flex="1 1 0" minW="0" w="full">
                     <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
                     <Stack gap="0">
-                      {people.slice(0, 20).map((p, i) => (
-                        <RankRow key={p.name} i={i + 1} person={p} value={valueOf(p)} max={listMax}
+                      {pageItems.map((p, i) => (
+                        <RankRow key={p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
                           active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} />
                       ))}
                     </Stack>
+                    {totalPages > 1 && (
+                      <Flex align="center" justify="center" gap="3" mt="5">
+                        <chakra.button type="button" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
+                          px="3.5" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight="600" cursor="pointer" bg="ui.sunk" color="ui.text"
+                          borderWidth="1px" borderColor="ui.border" _hover={{ borderColor: 'ui.primary' }} _disabled={{ opacity: 0.4, cursor: 'default' }}>Previous</chakra.button>
+                        <Text color="ui.muted" fontSize="0.8125rem" fontVariantNumeric="tabular-nums">Page {page + 1} of {totalPages} · top {pool.length}</Text>
+                        <chakra.button type="button" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+                          px="3.5" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight="600" cursor="pointer" bg="ui.sunk" color="ui.text"
+                          borderWidth="1px" borderColor="ui.border" _hover={{ borderColor: 'ui.primary' }} _disabled={{ opacity: 0.4, cursor: 'default' }}>Next</chakra.button>
+                      </Flex>
+                    )}
                   </Box>
                   <Box flex="1 1 0" minW="0" w="full"><Detail person={selPerson} repoFilter={repoFilter} /></Box>
                 </Flex>
@@ -427,10 +449,6 @@ export default function Contributors() {
               </Flex>
             </>
           ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No company data for this window.</Text>}
-
-          {data.markdown && (
-            <Button mt="8" onClick={() => { try { navigator.clipboard.writeText(data.markdown); core.toast && core.toast('Markdown copied', 'success'); } catch { /* ignore */ } }}>Copy Markdown</Button>
-          )}
         </>
       )}
     </>
