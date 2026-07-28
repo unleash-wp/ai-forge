@@ -14,6 +14,7 @@
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { CACHE_DIR, OFFLINE, loadJson, saveJson } from './cache-store.mjs';
+import { timeoutSignal, pool } from './net.mjs';
 
 const UA = 'uwp-ai-forge contributors (+https://unleash-wp.com)';
 
@@ -34,9 +35,11 @@ export function clearCaches() {
   return { profiles, slugs, dir: CACHE_DIR };
 }
 
-// Optional global request pacing: UWP_FETCH_RPS caps outbound requests to N/sec
-// across all workers, so a hosted ingestion job stays a good citizen. 0/unset =
-// no pacing (fine for interactive local use, which is already cached + bounded).
+// Optional request pacing: UWP_FETCH_RPS caps outbound requests to N/sec within
+// this process, so a hosted ingestion job stays a good citizen. Pacing is
+// per-process (single-writer ingest is the intended deployment); running several
+// ingest workers would multiply the effective rate. 0/unset = no pacing (fine for
+// interactive local use, which is already cached + bounded).
 const RPS = Number(process.env.UWP_FETCH_RPS) || 0;
 let nextSlot = 0;
 async function paceGate() {
@@ -50,10 +53,9 @@ async function paceGate() {
 // fetch that paces + backs off once when profiles.wordpress.org throttles us
 // (429/503), honouring Retry-After, so a burst doesn't hammer Automattic's server.
 async function politeFetch(url) {
-  const opts = { headers: { 'User-Agent': UA } };
   for (let attempt = 1; ; attempt++) {
     await paceGate();
-    const res = await fetch(url, opts);
+    const res = await fetch(url, { headers: { 'User-Agent': UA }, signal: timeoutSignal() });
     if ((res.status === 429 || res.status === 503) && attempt < 3) {
       const wait = Math.min((Number(res.headers.get('retry-after')) || attempt * 1.5) * 1000, 10000);
       await new Promise((r) => setTimeout(r, wait));
@@ -155,12 +157,6 @@ async function canonicalSlug(name, slugCache) {
     catch { return name; }
   }
   return slugCache[name] || name;
-}
-
-async function pool(items, concurrency, fn) {
-  let i = 0;
-  const worker = async () => { while (i < items.length) await fn(items[i++]); };
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length || 1) }, worker));
 }
 
 // Merge a byContributor list by canonical wp.org identity, so the same person

@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
+import { timeoutSignal } from '../lib/net.mjs';
 
 // Local config file for a saved GitHub token - same owner-only dir as the Trac
 // cookie, outside any repo so it is never committed by accident.
@@ -98,7 +99,7 @@ export function authenticated() {
 export async function checkToken() {
   const { token, source } = resolveToken();
   if (!token) return { ok: false, message: 'No token - GitHub API limited to 60 req/h.' };
-  const res = await fetch('https://api.github.com/rate_limit', { headers: authedHeaders() });
+  const res = await fetch('https://api.github.com/rate_limit', { headers: authedHeaders(), signal: timeoutSignal() });
   if (res.status === 401) return { ok: false, message: 'GitHub rejected the token (401 - expired or wrong value).' };
   if (!res.ok) return { ok: false, message: `GitHub ${res.status} ${res.statusText}.` };
   const d = await res.json();
@@ -127,7 +128,7 @@ export function nextLink(linkHeader) {
 // Authenticated GET returning { data, link }. Throws on non-2xx with a hint that
 // distinguishes rate limits (403) from missing repos/branches (404).
 export async function githubFetch(url) {
-  const res = await fetch(url, { headers: authedHeaders() });
+  const res = await fetch(url, { headers: authedHeaders(), signal: timeoutSignal() });
   if (!res.ok) {
     let hint = '';
     if (res.status === 403) {

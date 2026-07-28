@@ -13,6 +13,7 @@
 //   const { slug, map } = await fetchComponentMap();
 //   const { byComponent, coverage } = componentBreakdown(coreCommits, map);
 import { apiJson } from '../connectors/github-token.mjs';
+import { timeoutSignal, pool } from './net.mjs';
 
 const REPO = 'WordPress/Documentation-Issue-Tracker';
 
@@ -62,13 +63,8 @@ export function componentBreakdown(core, map) {
 }
 
 async function fetchRaw(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'ai-forge' } });
+  const res = await fetch(url, { headers: { 'User-Agent': 'ai-forge' }, signal: timeoutSignal() });
   if (!res.ok) throw new Error(`raw ${res.status}`);
   return res.json();
 }
 
-async function pool(items, concurrency, fn) {
-  let i = 0;
-  const worker = async () => { while (i < items.length) await fn(items[i++]); };
-  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
-}
