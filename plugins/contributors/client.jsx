@@ -541,7 +541,7 @@ function Committers({ list, meta }) {
   const selCom = list.find((c) => c.login === sel) || list[0];
   return (
     <>
-      <Flex justify="flex-end" mb="4">
+      <Flex mb="4">
         <ExportChart name={`committers-${meta.since.slice(0, 10)}`}
           build={() => donutSvg(slices, { title: `Core committers · ${meta.since.slice(0, 10)} to ${meta.until.slice(0, 10)}`, total: list.length, unit: 'committers' })} />
       </Flex>
@@ -810,12 +810,14 @@ export default function Contributors() {
             <Committers list={report.committers} meta={report.meta} />
           ) : co && coList.length > 0 ? (
             <>
-              <Flex justify="space-between" align="center" gap="3" mb="4" wrap="wrap">
-                <Text color="ui.muted" fontSize="0.8125rem" flex="1 1 16rem" minW="0">
+              <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
+                <Box mr={{ md: 'auto' }}>
+                  <ExportChart name={`companies-${report.meta.since.slice(0, 10)}`}
+                    build={() => donutSvg(coSlices, { title: `Companies by contributions · ${report.meta.since.slice(0, 10)} to ${report.meta.until.slice(0, 10)}`, total: co.byCompany.length, unit: 'companies' })} />
+                </Box>
+                <Text color="ui.muted" fontSize="0.8125rem" flex="1 1 16rem" minW="0" textAlign={{ md: 'right' }}>
                   Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
                 </Text>
-                <ExportChart name={`companies-${report.meta.since.slice(0, 10)}`}
-                  build={() => donutSvg(coSlices, { title: `Companies by contributions · ${report.meta.since.slice(0, 10)} to ${report.meta.until.slice(0, 10)}`, total: co.byCompany.length, unit: 'companies' })} />
               </Flex>
               <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
                 <Box flex="1 1 0" minW="0" w="full">
