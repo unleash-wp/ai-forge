@@ -131,7 +131,9 @@ function coreSection(report, coreBranch) {
 }
 
 function contributorsSection(report, count) {
-  const all = [...new Set([...report.gutenberg.contributors, ...report.core.contributors])].sort((a, b) =>
+  // Prefer the identity-merged list (report.contributors) when the report resolved
+  // it; fall back to the raw union of both repos' handles.
+  const all = report.contributors || [...new Set([...report.gutenberg.contributors, ...report.core.contributors])].sort((a, b) =>
     a.toLowerCase().localeCompare(b.toLowerCase())
   );
   return [`## Contributors (${count})`, '', all.length ? all.join(', ') : '_None found._', ''];

@@ -3,6 +3,7 @@ import { parseCommit } from './parse.mjs';
 import { isPlumbing } from '../../../src/lib/wp-parse.mjs';
 import { normDate } from '../../../src/lib/wp-commits.mjs';
 import { fetchTracker } from './devnotes.mjs';
+import { canonicalNames } from '../../../src/lib/wp-profiles.mjs';
 import { buildReport } from './aggregate.mjs';
 
 export const GB_REPO = 'WordPress/gutenberg';
@@ -52,6 +53,15 @@ export async function generate(opts, onStep = () => {}) {
   }
 
   const report = buildReport(gb, core, gbLabels, tracker);
+
+  // Merge GitHub-vs-wp.org duplicate identities (GitHub "t-hamano" == wp.org
+  // "wildworks") so the props/credits list and count don't double-count a person.
+  // Opt-out with identities:false; degrades to the raw union on lookup failure.
+  if (opts.identities !== false) {
+    report.contributors = await canonicalNames([...report.gutenberg.contributors, ...report.core.contributors]);
+    report.totals.contributors = report.contributors.length;
+  }
+
   const meta = { since, until, milestone, gbBranch, coreBranch, trackerMissing };
   onStep('done');
   return { meta, report };
