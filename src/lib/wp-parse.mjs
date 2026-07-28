@@ -52,6 +52,7 @@ export function parseCommit(c) {
     shortSha: (c.sha || '').slice(0, 9),
     subject: subject.replace(/\s*\(#\d+\)\s*$/, ''),
     author: c.author?.login || c.commit?.author?.name || 'unknown',
+    authorName: c.commit?.author?.name || null,
     date: c.commit?.author?.date || null,
     url: c.html_url,
     pr,

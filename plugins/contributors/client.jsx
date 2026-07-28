@@ -3,7 +3,7 @@
 // over time, a donut of the top people, a selectable ranked list (with photo and
 // employer), what each person shipped, and which company invested most.
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Flex, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
+import { Box, Flex, Grid, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { TextInput, Select, DateRangePicker } from '../../src/client/ui';
@@ -395,6 +395,51 @@ function Components({ data }) {
   );
 }
 
+// Core committers: who actually landed the changesets (distinct from Props
+// credit), with employer + wp.org join year. Country is intentionally absent -
+// wp.org profiles don't publish it. Scrolls horizontally on narrow screens.
+function Committers({ list, total }) {
+  if (!list?.length) return null;
+  const shown = list.slice(0, 25);
+  const cols = '2rem minmax(8rem, 1.7fr) minmax(5.5rem, 1.1fr) 3.5rem 4.5rem 2.75rem';
+  const cell = { px: '2.5', py: '2.5' };
+  const head = { ...cell, fontSize: '0.6875rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'ui.muted' };
+  return (
+    <Box mt="10">
+      <Heading as="h3" fontSize="1rem" fontWeight="700" color="ui.heading" mb="1">Core committers</Heading>
+      <Text color="ui.muted" fontSize="0.8125rem" mb="4">
+        Who landed the {total} Core changes, with their employer and wp.org join year. Country isn't published on wp.org profiles.
+      </Text>
+      <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" overflowX="auto">
+        <Box minW="28rem">
+          <Grid templateColumns={cols} bg="ui.sunk">
+            <Box {...head}>#</Box><Box {...head}>Committer</Box><Box {...head}>Company</Box>
+            <Box {...head} textAlign="right">Since</Box><Box {...head} textAlign="right">Commits</Box><Box {...head} textAlign="right">%</Box>
+          </Grid>
+          {shown.map((c, i) => (
+            <Grid key={c.login} templateColumns={cols} borderTopWidth="1px" borderColor="ui.border" _hover={{ bg: 'ui.sunk' }} fontSize="0.8125rem">
+              <Flex {...cell} align="center" color="ui.muted" fontVariantNumeric="tabular-nums">{i + 1}</Flex>
+              <Flex {...cell} align="center" gap="2.5" minW="0">
+                <Avatar src={c.avatar} color={NAVY} size={26} />
+                <Box minW="0">
+                  <Text fontWeight="600" color="ui.heading" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.login}</Text>
+                  {c.name && c.name.toLowerCase() !== c.login.toLowerCase() && (
+                    <Text color="ui.muted" fontSize="0.75rem" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.name}</Text>
+                  )}
+                </Box>
+              </Flex>
+              <Flex {...cell} align="center" color="ui.text" minW="0"><Text whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.employer || '—'}</Text></Flex>
+              <Flex {...cell} align="center" justify="flex-end" color="ui.text" fontVariantNumeric="tabular-nums">{c.memberSince || '—'}</Flex>
+              <Flex {...cell} align="center" justify="flex-end" fontWeight="700" color="ui.heading" fontVariantNumeric="tabular-nums">{c.commits}</Flex>
+              <Flex {...cell} align="center" justify="flex-end" color="ui.muted" fontVariantNumeric="tabular-nums">{c.pct}%</Flex>
+            </Grid>
+          ))}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
 export default function Contributors() {
   const core = useCore() || {};
   const periods = useMemo(() => buildPeriods(new Date()), []);
@@ -613,6 +658,7 @@ export default function Contributors() {
           ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No company data for this window.</Text>}
 
           {report.components && <Components data={report.components} />}
+          {report.committers?.length > 0 && <Committers list={report.committers} total={report.totals.coreCommits} />}
         </>
       )}
     </>

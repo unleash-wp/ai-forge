@@ -86,6 +86,21 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
   const coreContribs = [...new Set(core.flatMap((c) => c.props))].sort(cmp);
   const gbContribs = [...new Set(gb.map((c) => c.author).filter((a) => a && a !== 'unknown'))].sort(cmp);
 
+  // Core committers: on wordpress-develop the commit author IS the person who
+  // landed the changeset (the SVN committer), distinct from the Props credit. The
+  // GitHub login is their wp.org username; the commit carries their full name.
+  const committerMap = new Map();
+  for (const c of core) {
+    if (!c.author || c.author === 'unknown') continue;
+    const key = c.author.toLowerCase();
+    const cur = committerMap.get(key) || { login: c.author, name: c.authorName || c.author, commits: 0 };
+    cur.commits += 1;
+    committerMap.set(key, cur);
+  }
+  const committers = [...committerMap.values()]
+    .map((c) => ({ ...c, pct: core.length ? Math.round((c.commits / core.length) * 100) : 0 }))
+    .sort((a, b) => b.commits - a.commits || cmp(a.login, b.login));
+
   // Optional: break the Core changes down by Trac component (cookie-free, via the
   // active-cycle dev-notes tracker). Opt-in because it costs extra fetches.
   let componentsData = null;
@@ -99,6 +114,7 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
     core: { contributors: coreContribs, commits: core.length },
     gutenberg: { contributors: gbContribs, commits: gb.length },
     components: componentsData,
+    committers,
     byContributor,
     timeline,
     totals: {
