@@ -8,6 +8,7 @@ import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tool
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { TextInput, Select, DateRangePicker } from '../../src/client/ui';
 import { CoreIcon, GutenbergIcon } from '../../src/client/wp-icons.jsx';
+import { donutSvg } from './lib/charts.mjs';
 
 // UnleashWP brand: navy ramp + yellow accent. Selected slice/row turns yellow.
 const NAVY = '#203159';
@@ -159,6 +160,48 @@ function Avatar({ src, color, size = 22 }) {
   const [ok, setOk] = useState(true);
   if (src && ok) return <chakra.img src={src} alt="" onError={() => setOk(false)} w={`${size}px`} h={`${size}px`} borderRadius="full" flex="none" objectFit="cover" bg="ui.sunk" />;
   return <Box w={`${size}px`} h={`${size}px`} borderRadius="full" bg={color || NAVY} flex="none" />;
+}
+
+// Save a Blob under a filename via a throwaway <a download>.
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function exportSvg(svg, name) { saveBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), name + '.svg'); }
+// Rasterise the SVG to a crisp @2x PNG in the browser — no dependency.
+function exportPng(svg, name, scale = 2) {
+  const img = new Image();
+  img.onload = () => {
+    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    const canvas = document.createElement('canvas');
+    canvas.width = w * scale; canvas.height = h * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.drawImage(img, 0, 0);
+    canvas.toBlob((b) => b && saveBlob(b, name + '.png'), 'image/png');
+  };
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
+
+const DL_ICON = <chakra.svg viewBox="0 0 24 24" boxSize="14px" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></chakra.svg>;
+
+// Download the current donut as an image (PNG for posts, SVG for crisp embeds).
+// `build` returns the SVG lazily so it always reflects the on-screen chart.
+function ExportChart({ build, name }) {
+  const btn = {
+    display: 'inline-flex', alignItems: 'center', gap: '1.5', px: '3', py: '1.5', borderRadius: 'forge',
+    fontSize: '0.8125rem', fontWeight: '600', cursor: 'pointer', borderWidth: '1px', borderColor: 'ui.border',
+    bg: 'ui.surface', color: 'ui.text', whiteSpace: 'nowrap', transition: 'border-color .12s, color .12s',
+    _hover: { borderColor: 'ui.primary', color: 'ui.heading' },
+  };
+  return (
+    <HStack gap="2">
+      <chakra.button type="button" onClick={() => exportPng(build(), name)} {...btn}>{DL_ICON} PNG</chakra.button>
+      <chakra.button type="button" onClick={() => exportSvg(build(), name)} {...btn}>SVG</chakra.button>
+    </HStack>
+  );
 }
 
 function Donut({ data, total, unit, selected, onSelect }) {
@@ -471,7 +514,11 @@ export default function Contributors() {
 
           {tab === 'contributors' ? (
             <>
-              <Flex justify="flex-end" gap="3" mb="4" wrap="wrap">
+              <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
+                <Box mr={{ md: 'auto' }}>
+                  <ExportChart name={`contributors-${report.meta.since}`}
+                    build={() => donutSvg(slices, { title: `Top contributors · ${report.meta.since} to ${report.meta.until}`, total: report.totals.contributors, unit: 'people' })} />
+                </Box>
                 <Segmented value={repoFilter} onChange={setRepoFilter} options={[
                   { value: 'all', label: 'All' },
                   { value: 'core', label: <><CoreIcon size={14} /> Core</> },
@@ -506,9 +553,13 @@ export default function Contributors() {
             </>
           ) : co && coList.length > 0 ? (
             <>
-              <Text color="ui.muted" fontSize="0.8125rem" mb="4">
-                Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
-              </Text>
+              <Flex justify="space-between" align="center" gap="3" mb="4" wrap="wrap">
+                <Text color="ui.muted" fontSize="0.8125rem" flex="1 1 16rem" minW="0">
+                  Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
+                </Text>
+                <ExportChart name={`companies-${report.meta.since}`}
+                  build={() => donutSvg(coSlices, { title: `Companies by contributions · ${report.meta.since} to ${report.meta.until}`, total: co.byCompany.length, unit: 'companies' })} />
+              </Flex>
               <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
                 <Box flex="1 1 0" minW="0" w="full">
                   <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
