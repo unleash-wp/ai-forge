@@ -2,7 +2,7 @@
   "id": "contributors",
   "name": "Contributors",
   "description": "Who contributed to Core and Gutenberg in a period, ranked, with charts.",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "coreVersion": ">=0.1.0",
   "icon": "contributors",
   "author": "UnleashWP",
