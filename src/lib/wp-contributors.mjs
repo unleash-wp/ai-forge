@@ -36,16 +36,25 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
   const core = coreRaw.map(parseCommit).filter((c) => c.changeset && !isPlumbing(c));
 
   // Tally credited contributions per person, tracking whether their credit comes
-  // from Core, Gutenberg, or both.
+  // from Core, Gutenberg, or both, and collecting what they actually shipped
+  // (up to ITEM_CAP entries each) so the UI can show "what this person built".
+  const ITEM_CAP = 100;
   const tally = new Map();
-  const bump = (name, source) => {
-    const cur = tally.get(name) || { name, props: 0, source };
+  const bump = (name, source, item) => {
+    const cur = tally.get(name) || { name, props: 0, source, items: [] };
     cur.props += 1;
     if (cur.source !== source) cur.source = 'both';
+    if (cur.items.length < ITEM_CAP) cur.items.push(item);
     tally.set(name, cur);
   };
-  for (const c of core) for (const p of c.props) bump(p, 'core');
-  for (const c of gb) if (c.author && c.author !== 'unknown') bump(c.author, 'gutenberg');
+  for (const c of core) {
+    const item = { repo: 'core', subject: c.subject, url: c.url, ref: c.changeset ? `r${c.changeset}` : c.shortSha };
+    for (const p of c.props) bump(p, 'core', item);
+  }
+  for (const c of gb) {
+    if (!c.author || c.author === 'unknown') continue;
+    bump(c.author, 'gutenberg', { repo: 'gutenberg', subject: c.subject, url: c.url, ref: c.pr ? `#${c.pr}` : c.shortSha });
+  }
 
   const byContributor = [...tally.values()]
     .sort((a, b) => b.props - a.props || cmp(a.name, b.name));
