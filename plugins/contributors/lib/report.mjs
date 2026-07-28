@@ -13,6 +13,16 @@ export async function contributorsReport(opts = {}) {
   const window = resolveWindow(opts);
   const data = await fetchContributors({ since: window.since, until: window.until, coreBranch: opts.coreBranch, gbBranch: opts.gbBranch });
   const report = { window, ...data };
-  if (opts.companies) report.companies = await companyBreakdown(data.byContributor);
+  if (opts.companies) {
+    const companies = await companyBreakdown(data.byContributor);
+    report.companies = companies;
+    // Fold each contributor's employer + avatar back onto byContributor, so the
+    // UI can show where a person works and their photo without a second lookup.
+    const byName = new Map(companies.resolved.map((r) => [r.name, r]));
+    for (const p of report.byContributor) {
+      const r = byName.get(p.name);
+      if (r) { p.employer = r.employer; p.avatar = r.avatar; p.slug = r.slug; }
+    }
+  }
   return report;
 }
