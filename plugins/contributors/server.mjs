@@ -6,7 +6,7 @@
 import { writeFileSync } from 'node:fs';
 import { authenticated } from '../../src/connectors/github-token.mjs';
 import { branches } from '../../src/lib/wp-branches.mjs';
-import { contributorsReport } from './lib/report.mjs';
+import { contributorsReport, priorContributors } from './lib/report.mjs';
 import { toMarkdown, toText } from './lib/format.mjs';
 import { leaderboardSvg, companySvg } from './lib/charts.mjs';
 
@@ -34,8 +34,29 @@ async function reportHandler(req, res, url, ctx) {
       companies: q.get('companies') !== 'false',
       components: q.get('components') !== 'false',
       committers: q.get('committers') !== 'false',
+      tickets: q.get('tickets') !== 'false',
     });
     ctx.json(res, 200, { report, markdown: toMarkdown(report) });
+  } catch (err) {
+    ctx.json(res, 400, { error: err.message });
+  }
+}
+
+// First-time contributors, on its own route so the main report isn't blocked by
+// the (slow) historical lookback fetch. Returns the prior contributor name set.
+async function priorHandler(req, res, url, ctx) {
+  try {
+    const q = url.searchParams;
+    const prior = await priorContributors({
+      quarter: q.get('quarter') || undefined,
+      month: q.get('month') || undefined,
+      since: q.get('since') || undefined,
+      until: q.get('until') || undefined,
+      gbBranch: q.get('gbBranch') || undefined,
+      coreBranch: q.get('coreBranch') || undefined,
+      months: q.get('months') || undefined,
+    });
+    ctx.json(res, 200, prior);
   } catch (err) {
     ctx.json(res, 400, { error: err.message });
   }
@@ -60,6 +81,7 @@ async function branchesHandler(req, res, url, ctx) {
 export const routes = [
   { method: 'GET', path: '/api/contributors', handler: reportHandler },
   { method: 'GET', path: '/api/contributors/branches', handler: branchesHandler },
+  { method: 'GET', path: '/api/contributors/prior', handler: priorHandler },
 ];
 
 // ---- MCP tool: pull the ranked contributors live from Claude Code / Codex ----
