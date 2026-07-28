@@ -368,13 +368,7 @@ function Detail({ person, repoFilter }) {
         </Box>
       </Flex>
       <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
-        css={{
-          scrollbarWidth: 'thin', scrollbarColor: 'rgba(120,130,150,0.5) transparent',
-          '&::-webkit-scrollbar': { width: '8px' },
-          '&::-webkit-scrollbar-track': { background: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { background: 'rgba(120,130,150,0.5)', borderRadius: '4px' },
-          '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,0.75)' },
-        }}>
+        className="forge-scroll">
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
             display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
@@ -429,13 +423,7 @@ function CompanyMembers({ company, members }) {
       <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{company}</Text>
       <Text color="ui.muted" fontSize="0.8125rem" mb="3">{members.length} {members.length === 1 ? 'contributor' : 'contributors'}</Text>
       <Stack gap="0" overflowY="auto" pr="1"
-        css={{
-          scrollbarWidth: 'thin', scrollbarColor: 'rgba(120,130,150,0.5) transparent',
-          '&::-webkit-scrollbar': { width: '8px' },
-          '&::-webkit-scrollbar-track': { background: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { background: 'rgba(120,130,150,0.5)', borderRadius: '4px' },
-          '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,0.75)' },
-        }}>
+        className="forge-scroll">
         {pageItems.map((p, i) => (
           <Flex key={p.slug || p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
             <Avatar src={p.avatar} />
@@ -548,13 +536,7 @@ function CommitterDetail({ committer }) {
         </Box>
       </Flex>
       <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
-        css={{
-          scrollbarWidth: 'thin', scrollbarColor: 'rgba(120,130,150,0.5) transparent',
-          '&::-webkit-scrollbar': { width: '8px' },
-          '&::-webkit-scrollbar-track': { background: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { background: 'rgba(120,130,150,0.5)', borderRadius: '4px' },
-          '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,0.75)' },
-        }}>
+        className="forge-scroll">
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
             display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"

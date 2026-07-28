@@ -50,6 +50,10 @@ export async function contributorsReport(opts = {}) {
       report.byContributor[i].avatar = r.avatar;
       report.byContributor[i].slug = r.slug;
     });
+    // Drop the index-aligned intermediate now it's folded in: nothing downstream
+    // reads it, and it's the whole per-person profile set (~270 KB) that would
+    // otherwise bloat every HTTP report and MCP JSON response.
+    delete report.companies.resolved;
   }
   return report;
 }

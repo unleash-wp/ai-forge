@@ -15,6 +15,19 @@ const config = defineConfig({
     // user can Tab to (buttons, links, inputs, tabs, icon buttons, …), so the
     // focus is always visible and on-brand instead of the browser's default.
     '*:focus-visible': { outline: '2px solid', outlineColor: 'ui.primary', outlineOffset: '2px' },
+    // One shared thin scrollbar for the plugin scroll panels — a neutral
+    // translucent grey that reads correctly on both the light and dark surface,
+    // so it needs no colour-mode variant. Defined once here (the theme layer,
+    // where colour literals belong) so components carry no colour hex and every
+    // scroll panel looks identical. Apply with className="forge-scroll".
+    '.forge-scroll': {
+      scrollbarWidth: 'thin',
+      scrollbarColor: 'rgba(120,130,150,.5) transparent',
+      '&::-webkit-scrollbar': { width: '8px' },
+      '&::-webkit-scrollbar-track': { background: 'transparent' },
+      '&::-webkit-scrollbar-thumb': { background: 'rgba(120,130,150,.5)', borderRadius: '4px' },
+      '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,.75)' },
+    },
   },
   theme: {
     // Match the old SCSS mq() breakpoints so responsive props line up.

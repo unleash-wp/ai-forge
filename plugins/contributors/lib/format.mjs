@@ -77,18 +77,23 @@ export function monthInCorePost(report, { top = 100 } = {}) {
 }
 
 // A shallow copy of the report with each list capped to `top` entries + a `caps`
-// summary, so a JSON MCP response stays within the agent's context budget.
+// summary, so a JSON MCP response stays within the agent's context budget. The
+// per-entry `items` arrays (up to 100 commit records each - a UI affordance) are
+// dropped: they blow the budget and a model ranking contributors/companies never
+// needs them. The UI reads the full report over HTTP, not this.
 export function capReport(report, top = 50) {
-  const cap = (arr) => (Array.isArray(arr) ? arr.slice(0, top) : arr);
-  const out = { ...report, byContributor: cap(report.byContributor) };
-  if (report.committers) out.committers = cap(report.committers);
-  if (report.companies) out.companies = { ...report.companies, byCompany: cap(report.companies.byCompany) };
+  const strip = (arr) => (Array.isArray(arr) ? arr.slice(0, top).map(({ items, ...rest }) => rest) : arr);
+  const out = { ...report, byContributor: strip(report.byContributor) };
+  if (report.committers) out.committers = strip(report.committers);
+  if (report.companies) out.companies = { ...report.companies, byCompany: report.companies.byCompany.slice(0, top) };
+  if (report.components) out.components = { ...report.components, byComponent: report.components.byComponent.slice(0, top) };
   out.caps = {
     top,
     contributors: report.byContributor?.length ?? 0,
     committers: report.committers?.length ?? 0,
     companies: report.companies?.byCompany?.length ?? 0,
-    note: 'Lists are capped to `top`. Raise `top` for more; totals are exact.',
+    components: report.components?.byComponent?.length ?? 0,
+    note: 'Lists are capped to `top` and per-entry commit `items` are omitted. Raise `top` for more rows; totals are exact. The browser UI has the full detail.',
   };
   return out;
 }

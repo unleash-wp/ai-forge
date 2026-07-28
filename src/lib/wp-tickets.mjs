@@ -12,6 +12,7 @@
 //     closed drifts out of the count - so it is reported as an approximation.
 import { TRAC, UA, tracBlocked, resolveCookie } from '../connectors/wporg-cookie.mjs';
 import { OFFLINE } from './cache-store.mjs';
+import { timeoutSignal } from './net.mjs';
 
 // A strict YYYY-MM-DD day, so an unvalidated ?since/&until can't inject extra
 // parameters into the Trac query URL (e.g. "1&status=x").
@@ -25,7 +26,7 @@ const day = (d) => {
 // its own line (no multi-line description fields), so a line count is exact.
 async function countQuery(filter, cookie) {
   const url = `${TRAC}/query?${filter}&max=0&col=id&format=csv`;
-  const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' } });
+  const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' }, signal: timeoutSignal() });
   const body = await res.text();
   if (tracBlocked(res, body)) throw new Error(`Trac blocked the request (HTTP ${res.status}). Cookie expired, or the bot wall is up.`);
   const lines = body.split('\n').map((l) => l.trim()).filter(Boolean);

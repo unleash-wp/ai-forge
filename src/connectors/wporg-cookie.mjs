@@ -7,6 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
+import { timeoutSignal } from '../lib/net.mjs';
 
 export const TRAC = 'https://core.trac.wordpress.org';
 export const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 ' +
@@ -61,7 +62,7 @@ export function resolveCookie({ cookieFile } = {}) {
 // knows the provider-specific CSV URL + bot wall.
 export async function validateCookie(cookie) {
   const res = await fetch(`${TRAC}/query?status=closed&max=1&col=id&format=csv`, {
-    headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' },
+    headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' }, signal: timeoutSignal(),
   });
   const body = await res.text();
   if (tracBlocked(res, body)) return false;

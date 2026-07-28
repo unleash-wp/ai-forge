@@ -2,7 +2,7 @@
 // github-queries so any plugin can pull Core (wordpress-develop) + Gutenberg
 // commits for a window through the shared authed-fetch primitive, rather than
 // re-implementing GitHub auth/pagination.
-import { rmSync, readdirSync } from 'node:fs';
+import { rmSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { githubFetch, nextLink } from '../connectors/github-token.mjs';
@@ -18,6 +18,7 @@ export const CORE_REPO = 'WordPress/wordpress-develop';
 // purely to cut request volume + latency.
 const COMMITS_DIR = join(CACHE_DIR, 'commits');
 const TTL_MS = 30 * 60 * 1000; // windows not yet closed refresh every 30 min
+const MAX_CACHE_FILES = 500;   // bound disk growth: one file per (repo,branch,window)
 
 // Hash the raw key so distinct branches (e.g. wp/7.1 vs wp-7.1) never collide on a
 // lossy-sanitised filename.
@@ -42,6 +43,21 @@ function readCommitsCache(file, until) {
 }
 function writeCommitsCache(file, commits) {
   saveJson(file, { ts: Date.now(), commits });
+  pruneCommitsCache();
+}
+
+// Keep the cache directory bounded on a long-lived host: once it exceeds
+// MAX_CACHE_FILES, evict the oldest files by mtime (frozen past windows are
+// re-fetchable; this is a cache, not a store). Best-effort.
+function pruneCommitsCache() {
+  try {
+    const files = readdirSync(COMMITS_DIR).filter((f) => f.endsWith('.json'));
+    if (files.length <= MAX_CACHE_FILES) return;
+    const byAge = files
+      .map((f) => { const p = join(COMMITS_DIR, f); return { p, t: statSync(p).mtimeMs }; })
+      .sort((a, b) => a.t - b.t);
+    for (const { p } of byAge.slice(0, files.length - MAX_CACHE_FILES)) rmSync(p, { force: true });
+  } catch { /* best-effort: a full disk or racing sweep is non-fatal */ }
 }
 
 // Remove all cached commit windows. Returns how many were dropped.

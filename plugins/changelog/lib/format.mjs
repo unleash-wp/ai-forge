@@ -19,7 +19,7 @@ export function toMarkdown(report, meta) {
   out.push(`| Gutenberg merged PRs | ${t.gutenbergPRs} |`);
   out.push(`| Core changesets (\`${coreBranch}\`) | ${t.coreChangesets} |`);
   out.push(`| Core tickets closed | ${t.coreTickets} |`);
-  out.push(`| Contributors (union) | ${t.contributors} |`);
+  out.push(`| Contributors (merged) | ${t.contributors} |`);
   out.push('');
 
   out.push('## Sources', '', ...sourcesLines(meta), '');
