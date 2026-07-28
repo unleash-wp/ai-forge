@@ -312,7 +312,7 @@ function RankRow({ i, person, value, max, active, onClick, noAvatar, isNew }) {
   return (
     <Flex as="button" type="button" onClick={onClick} align="center" gap="3" w="full" textAlign="left"
       px="2.5" py="2" borderRadius="forge" cursor="pointer" bg={active ? 'ui.sunk' : 'transparent'}
-      borderWidth="1px" borderColor={active ? 'ui.border' : 'transparent'} _hover={{ bg: 'ui.sunk' }} transition="background .12s">
+      borderWidth="1px" borderColor="ui.border" _hover={{ bg: 'ui.sunk', borderColor: 'ui.primary' }} transition="background .12s, border-color .12s">
       <Box w="1.6rem" h="1.6rem" flex="none" borderRadius="full" display="inline-flex" alignItems="center" justifyContent="center"
         bg={medal || 'transparent'} color={medal ? (i === 1 ? 'navy' : 'white') : 'ui.muted'}
         fontSize="0.8125rem" fontWeight="700" fontVariantNumeric="tabular-nums">{i}</Box>
@@ -337,14 +337,16 @@ function Detail({ person, repoFilter }) {
   const items = (person.items || []).filter((it) => repoFilter === 'all' || it.repo === repoFilter);
   const count = repoFilter === 'core' ? person.core : repoFilter === 'gutenberg' ? person.gutenberg : person.props;
   const srcLabel = person.source === 'both' ? 'Core and Gutenberg' : person.source === 'core' ? 'Core' : 'Gutenberg';
+  const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(person.slug || person.name)}/`;
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full" h="full" display="flex" flexDirection="column">
       <Flex align="flex-start" gap="4" mb="4">
-        <Avatar src={person.avatar} size={56} />
+        <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" flex="none" borderRadius="full" _hover={{ opacity: 0.85 }} transition="opacity .12s"><Avatar src={person.avatar} size={56} /></chakra.a>
         <Box flex="1" minW="0">
           <Flex align="baseline" justify="space-between" gap="3">
-            <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.name}</Text>
-            <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(person.slug || person.name)}/`} target="_blank" rel="noopener noreferrer"
+            <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" fontSize="1.15rem" fontWeight="800" color="ui.heading"
+              overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{person.name}</chakra.a>
+            <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer"
               color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" flex="none" _hover={{ textDecoration: 'underline' }}>Visit profile ↗</chakra.a>
           </Flex>
           <Flex align="baseline" gap="2" mt="1">
@@ -354,7 +356,7 @@ function Detail({ person, repoFilter }) {
           <Text color="ui.muted" fontSize="0.8125rem" mt="1.5">{person.employer ? `Works at ${person.employer}` : 'Employer not listed on wp.org'}</Text>
         </Box>
       </Flex>
-      <Stack gap="0" maxH="22rem" overflowY="auto" pr="1"
+      <Stack gap="0" flex="1" minH="0" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
@@ -403,7 +405,7 @@ function CompanyMembers({ company, members }) {
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
       <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{company}</Text>
       <Text color="ui.muted" fontSize="0.8125rem" mb="3">{members.length} {members.length === 1 ? 'contributor' : 'contributors'}</Text>
-      <Stack gap="0" maxH="26rem" overflowY="auto" pr="1"
+      <Stack gap="0" flex="1" minH="0" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
         {members.map((p, i) => (
           <Flex key={p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
@@ -485,14 +487,16 @@ function CommitterDetail({ committer }) {
   if (!committer) return null;
   const c = committer;
   const items = c.items || [];
+  const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(c.login)}/`;
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full" h="full" display="flex" flexDirection="column">
       <Flex align="flex-start" gap="4" mb="4">
-        <Avatar src={c.avatar} size={56} />
+        <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" flex="none" borderRadius="full" _hover={{ opacity: 0.85 }} transition="opacity .12s"><Avatar src={c.avatar} size={56} /></chakra.a>
         <Box flex="1" minW="0">
           <Flex align="baseline" justify="space-between" gap="3">
-            <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{c.login}</Text>
-            <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(c.login)}/`} target="_blank" rel="noopener noreferrer"
+            <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" fontSize="1.15rem" fontWeight="800" color="ui.heading"
+              overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{c.login}</chakra.a>
+            <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer"
               color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" flex="none" _hover={{ textDecoration: 'underline' }}>Visit profile ↗</chakra.a>
           </Flex>
           <Flex align="baseline" gap="2" mt="1">
@@ -504,7 +508,7 @@ function CommitterDetail({ committer }) {
           </Text>
         </Box>
       </Flex>
-      <Stack gap="0" maxH="22rem" overflowY="auto" pr="1"
+      <Stack gap="0" flex="1" minH="0" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
@@ -541,10 +545,10 @@ function Committers({ list, meta }) {
         <ExportChart name={`committers-${meta.since.slice(0, 10)}`}
           build={() => donutSvg(slices, { title: `Core committers · ${meta.since.slice(0, 10)} to ${meta.until.slice(0, 10)}`, total: list.length, unit: 'committers' })} />
       </Flex>
-      <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
+      <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
         <Box flex="1 1 0" minW="0" w="full">
           <Flex justify="center" mb="6"><Donut data={slices} total={list.length} unit="committers" selected={selCom?.login} onSelect={setSel} /></Flex>
-          <Stack gap="0">
+          <Stack gap="1.5">
             {pageItems.map((c, i) => (
               <RankRow key={c.login} i={page * PAGE + i + 1} person={{ name: c.login, avatar: c.avatar, employer: c.employer }} value={c.commits} max={max}
                 active={selCom?.login === c.login} onClick={() => setSel(c.login)} />
@@ -749,8 +753,8 @@ export default function Contributors() {
             right={<ExportData report={report} sections={exportSections} />}
             tabs={[
               { value: 'contributors', label: 'Contributors' },
-              { value: 'companies', label: co ? `Companies (${co.byCompany.length})` : 'Companies' },
-              ...(report.committers?.length ? [{ value: 'committers', label: `Core committers (${report.committers.length})` }] : []),
+              { value: 'companies', label: 'Companies' },
+              ...(report.committers?.length ? [{ value: 'committers', label: 'Core committers' }] : []),
             ]} />
 
           {tab === 'contributors' ? (
@@ -777,10 +781,10 @@ export default function Contributors() {
                 <Box w="12rem"><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
               {list.length ? (
-                <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
+                <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
                   <Box flex="1 1 0" minW="0" w="full">
                     <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
-                    <Stack gap="0">
+                    <Stack gap="1.5">
                       {pageItems.map((p, i) => (
                         <RankRow key={p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
                           active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} isNew={isNew(p.name)} />
@@ -813,10 +817,10 @@ export default function Contributors() {
                 <ExportChart name={`companies-${report.meta.since.slice(0, 10)}`}
                   build={() => donutSvg(coSlices, { title: `Companies by contributions · ${report.meta.since.slice(0, 10)} to ${report.meta.until.slice(0, 10)}`, total: co.byCompany.length, unit: 'companies' })} />
               </Flex>
-              <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
+              <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
                 <Box flex="1 1 0" minW="0" w="full">
                   <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
-                  <Stack gap="0">
+                  <Stack gap="1.5">
                     {coPageItems.map((r, i) => (
                       <RankRow key={r.name} i={coPage * PAGE + i + 1} person={{ name: r.name }} value={r.value} max={coMax} noAvatar
                         active={selCompany === r.name} onClick={() => setSelCompany(r.name)} />
