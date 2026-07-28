@@ -3,7 +3,7 @@
 // over time, a donut of the top people, a selectable ranked list (with photo and
 // employer), what each person shipped, and which company invested most.
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Flex, Grid, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
+import { Box, Flex, Grid, Heading, HStack, Popover, Portal, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { TextInput, Select, DateRangePicker } from '../../src/client/ui';
@@ -205,9 +205,10 @@ function ExportChart({ build, name }) {
   );
 }
 
-// Turn a report section into { headers, rows } of plain values, capped to `limit`.
+// Turn a report section into { headers, rows } of plain values, capped to `limit` rows.
 function exportTable(report, section, limit) {
-  const cap = (arr) => (limit === 'all' ? arr : arr.slice(0, Number(limit)));
+  const n = Math.max(1, Number(limit) || 1);
+  const cap = (arr) => arr.slice(0, n);
   if (section === 'companies') {
     return { headers: ['rank', 'company', 'contributions', 'people'],
       rows: cap(report.companies?.byCompany || []).map((c, i) => [i + 1, c.company, c.contributions, c.people]) };
@@ -229,50 +230,50 @@ const toCsv = ({ headers, rows }) => [headers, ...rows].map((r) => r.map(csvCell
 const mdRow = (cells) => '| ' + cells.map((c) => String(c ?? '')).join(' | ') + ' |';
 const toMarkdownTable = ({ headers, rows }) => [mdRow(headers), mdRow(headers.map(() => '---')), ...rows.map(mdRow)].join('\n');
 
-// Download all report data as Markdown or CSV: pick a section and a row cap.
+// Download report data as Markdown or CSV: pick a section, how many rows, format.
 function ExportData({ report, sections }) {
   const [open, setOpen] = useState(false);
   const [section, setSection] = useState(sections[0].value);
-  const [limit, setLimit] = useState('50');
+  const [rows, setRows] = useState(50);
   const [format, setFormat] = useState('md');
-  const btn = {
-    display: 'inline-flex', alignItems: 'center', gap: '1.5', px: '3', py: '2', borderRadius: 'forge',
-    fontSize: '0.8125rem', fontWeight: '600', cursor: 'pointer', borderWidth: '1px',
-    whiteSpace: 'nowrap', transition: 'border-color .12s, color .12s',
-  };
+  const lbl = { fontSize: '0.6875rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'ui.muted', mb: '1.5', display: 'block' };
+  const field = { w: 'full', px: '2.5', py: '2', borderWidth: '1px', borderColor: 'ui.border', borderRadius: 'forge', bg: 'ui.bg', color: 'ui.text', fontSize: '0.8125rem' };
   const doExport = () => {
-    const table = exportTable(report, section, limit);
+    const table = exportTable(report, section, rows);
     const name = `contributors-${section}-${report.meta.since.slice(0, 10)}`;
     if (format === 'csv') saveBlob(new Blob([toCsv(table)], { type: 'text/csv;charset=utf-8' }), name + '.csv');
     else saveBlob(new Blob([toMarkdownTable(table)], { type: 'text/markdown;charset=utf-8' }), name + '.md');
     setOpen(false);
   };
   return (
-    <Box position="relative" flex="none">
-      <chakra.button type="button" onClick={() => setOpen((v) => !v)} {...btn}
-        bg={open ? 'navy' : 'ui.surface'} color={open ? 'white' : 'ui.text'} borderColor={open ? 'navy' : 'ui.border'}
-        _hover={open ? {} : { borderColor: 'ui.primary', color: 'ui.heading' }}>{DL_ICON} Export data</chakra.button>
-      {open && (
-        <>
-          <Box position="fixed" inset="0" zIndex="20" onClick={() => setOpen(false)} />
-          <Box position="absolute" right="0" top="calc(100% + 6px)" zIndex="30" w="17rem" bg="ui.surface"
-            borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="lg" p="4">
-            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.04em" color="ui.muted" mb="1.5">Section</Text>
-            <chakra.select value={section} onChange={(e) => setSection(e.target.value)} w="full" mb="3" px="2.5" py="2"
-              borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.bg" color="ui.text" fontSize="0.8125rem" cursor="pointer">
-              {sections.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
-            </chakra.select>
-            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.04em" color="ui.muted" mb="1.5">Rows</Text>
-            <Box mb="3"><Segmented value={limit} onChange={setLimit} options={[{ value: '25', label: '25' }, { value: '50', label: '50' }, { value: '100', label: '100' }, { value: 'all', label: 'All' }]} /></Box>
-            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.04em" color="ui.muted" mb="1.5">Format</Text>
-            <Box mb="4"><Segmented value={format} onChange={setFormat} options={[{ value: 'md', label: 'Markdown' }, { value: 'csv', label: 'CSV' }]} /></Box>
-            <chakra.button type="button" onClick={doExport} w="full" display="inline-flex" alignItems="center" justifyContent="center" gap="1.5"
-              px="4" py="2.5" borderRadius="forge" fontWeight="700" fontSize="0.875rem" color="white" bg="navy" cursor="pointer"
-              _hover={{ bg: 'yellow', color: 'navy' }} transition="background .2s, color .2s">{DL_ICON} Download</chakra.button>
-          </Box>
-        </>
-      )}
-    </Box>
+    <Popover.Root open={open} onOpenChange={(e) => setOpen(e.open)} positioning={{ placement: 'bottom-end', gutter: 6 }}>
+      <Popover.Trigger asChild>
+        <chakra.button type="button" display="inline-flex" alignItems="center" gap="1.5" px="3" py="2" borderRadius="forge"
+          fontSize="0.8125rem" fontWeight="600" cursor="pointer" whiteSpace="nowrap" borderWidth="1px" transition="border-color .12s, color .12s"
+          bg={open ? 'navy' : 'ui.surface'} color={open ? 'white' : 'ui.text'} borderColor={open ? 'navy' : 'ui.border'}
+          _hover={open ? {} : { borderColor: 'ui.primary', color: 'ui.heading' }}>{DL_ICON} Export data</chakra.button>
+      </Popover.Trigger>
+      <Portal>
+        <Popover.Positioner>
+          <Popover.Content bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="lg" w="17rem" maxW="calc(100vw - 2rem)" zIndex="1600">
+            <Popover.Body p="4">
+              <Text {...lbl}>Section</Text>
+              <chakra.select value={section} onChange={(e) => setSection(e.target.value)} {...field} mb="3" cursor="pointer">
+                {sections.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </chakra.select>
+              <Text {...lbl}>Rows</Text>
+              <chakra.input type="number" min="1" step="1" value={rows}
+                onChange={(e) => setRows(e.target.value)} {...field} mb="3" />
+              <Text {...lbl}>Format</Text>
+              <Box mb="4"><Segmented value={format} onChange={setFormat} options={[{ value: 'md', label: 'Markdown' }, { value: 'csv', label: 'CSV' }]} /></Box>
+              <chakra.button type="button" onClick={doExport} w="full" display="inline-flex" alignItems="center" justifyContent="center" gap="1.5"
+                px="4" py="2.5" borderRadius="forge" fontWeight="700" fontSize="0.875rem" color="white" bg="navy" cursor="pointer"
+                _hover={{ bg: 'yellow', color: 'navy' }} transition="background .2s, color .2s">{DL_ICON} Download</chakra.button>
+            </Popover.Body>
+          </Popover.Content>
+        </Popover.Positioner>
+      </Portal>
+    </Popover.Root>
   );
 }
 
@@ -484,9 +485,9 @@ function Components({ data }) {
 function Committers({ list, total }) {
   if (!list?.length) return null;
   const shown = list.slice(0, 100);
-  const cols = '2rem minmax(8rem, 1.7fr) minmax(5.5rem, 1.1fr) 3.5rem 4.5rem 2.75rem';
+  const cols = '2rem minmax(8rem, 1.7fr) minmax(5.5rem, 1.1fr) 3.5rem 5.25rem 2.75rem';
   const cell = { px: '2.5', py: '2.5' };
-  const head = { ...cell, fontSize: '0.6875rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'ui.muted' };
+  const head = { ...cell, fontSize: '0.6875rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'ui.muted', whiteSpace: 'nowrap' };
   return (
     <Box>
       <Text color="ui.muted" fontSize="0.8125rem" mb="4">
@@ -504,7 +505,9 @@ function Committers({ list, total }) {
               <Flex {...cell} align="center" gap="2.5" minW="0">
                 <Avatar src={c.avatar} color={NAVY} size={26} />
                 <Box minW="0">
-                  <Text fontWeight="600" color="ui.heading" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.login}</Text>
+                  <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(c.login)}/`} target="_blank" rel="noopener noreferrer"
+                    display="block" fontWeight="600" color="ui.heading" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis"
+                    _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{c.login}</chakra.a>
                   {c.name && c.name.toLowerCase() !== c.login.toLowerCase() && (
                     <Text color="ui.muted" fontSize="0.75rem" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.name}</Text>
                   )}
