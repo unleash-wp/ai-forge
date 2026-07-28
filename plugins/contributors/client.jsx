@@ -15,7 +15,7 @@ const YELLOW = '#fcbe00';
 const RAMP = ['#203159', '#2a3f6f', '#3c4e7d', '#4a5c8c', '#5d6f9f', '#7385b0', '#8f9dc4', '#aab6d6'];
 const OTHERS = '#c3cadb';
 const MEDAL = ['#fcbe00', '#b9c2d1', '#cd7f4f']; // gold, silver, bronze for the top three
-const AXIS = 'var(--chakra-colors-fg)';          // resolves + adapts to light/dark
+const AXIS = '#94a1bd';                          // muted grey, readable in light + dark
 const pad = (n) => String(n).padStart(2, '0');
 const todayIso = () => { const d = new Date(); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
 
@@ -328,6 +328,7 @@ export default function Contributors() {
   const [tab, setTab] = useState('contributors');
   const [page, setPage] = useState(0);
   const [selCompany, setSelCompany] = useState(null);
+  const [coPage, setCoPage] = useState(0);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -371,7 +372,7 @@ export default function Contributors() {
     setLoading(false);
   }, [since, until, gbBranch, coreBranch]);
 
-  useEffect(() => { setPage(0); }, [repoFilter, search, data]);
+  useEffect(() => { setPage(0); setCoPage(0); }, [repoFilter, search, data]);
 
   const report = data && data.report;
   const q = search.trim().toLowerCase();
@@ -393,6 +394,9 @@ export default function Contributors() {
   const coList = useMemo(() => (!co ? [] : co.byCompany.filter((c) => !q || c.company.toLowerCase().includes(q)).map((c) => ({ name: c.company, value: c.contributions }))), [co, q]);
   const coSlices = useMemo(() => toSlices(coList, 6), [coList]);
   const coMax = coList.length ? coList[0].value : 1;
+  const coPool = useMemo(() => coList.slice(0, 100), [coList]);
+  const coTotalPages = Math.max(1, Math.ceil(coPool.length / PAGE));
+  const coPageItems = coPool.slice(coPage * PAGE, coPage * PAGE + PAGE);
   const companyMembers = useMemo(() => {
     if (!report || !selCompany) return [];
     const isUnknown = selCompany === 'Unknown / not listed';
@@ -487,11 +491,21 @@ export default function Contributors() {
                 <Box flex="1 1 0" minW="0" w="full">
                   <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
                   <Stack gap="0">
-                    {coList.slice(0, 15).map((r, i) => (
-                      <RankRow key={r.name} i={i + 1} person={{ name: r.name }} value={r.value} max={coMax}
+                    {coPageItems.map((r, i) => (
+                      <RankRow key={r.name} i={coPage * PAGE + i + 1} person={{ name: r.name }} value={r.value} max={coMax}
                         active={selCompany === r.name} onClick={() => setSelCompany(r.name)} />
                     ))}
                   </Stack>
+                  {coTotalPages > 1 && (
+                    <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
+                      {Array.from({ length: coTotalPages }, (_, n) => (
+                        <chakra.button key={n} type="button" onClick={() => setCoPage(n)}
+                          minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === coPage ? '700' : '500'} cursor="pointer"
+                          fontVariantNumeric="tabular-nums" bg={n === coPage ? 'navy' : 'ui.sunk'} color={n === coPage ? 'white' : 'ui.text'}
+                          borderWidth="1px" borderColor={n === coPage ? 'navy' : 'ui.border'} _hover={n === coPage ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
+                      ))}
+                    </Flex>
+                  )}
                 </Box>
                 <Box flex="1 1 0" minW="0" w="full"><CompanyMembers company={selCompany} members={companyMembers} /></Box>
               </Flex>
