@@ -302,12 +302,13 @@ function Results({ data, since, until }) {
           ? withBoldDate(__('dev notes / field guide tickets, %s', fmtRange(since, until)), fmtRange(since, until))
           : <Hint tip={__('%s Gutenberg changes + %s Core changesets', t.gutenbergCommits, t.coreChangesets)} underline={false}>{withBoldDate(__('changes landed across Core and Gutenberg, %s', fmtRange(since, until)), fmtRange(since, until))}</Hint>}</Text>
       </Flex>
-      <SimpleGrid columns={{ base: 2, md: 4 }} gap="5" mb="12">
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap="5" mb="3">
         {!dn && <StatCard n={t.gutenbergCommits} label={__('Gutenberg changes')} counted />}
         <StatCard n={t.coreChangesets} label={dn ? __('Dev-note changesets') : __('Core changesets')} counted={!dn} />
         <StatCard n={coreTicketsShown} label={dn ? __('Dev-note tickets') : __('Core tickets')} counted={dn} />
         <StatCard n={all.length} label={__('Contributors')} />
       </SimpleGrid>
+      <Text color="ui.muted" fontSize="0.75rem" mb="12" lineHeight="1.5">{__('Counts only merged changes that landed on the branch (Core changesets and Gutenberg merges). Release plumbing, open pull requests and reverted work are not counted.')}</Text>
 
       {meta.deepError && (
         <Box bg="rgba(252,190,0,.12)" border="1px solid" borderColor="rgba(252,190,0,.45)" color="ui.text" borderRadius="forge" px="3.5" py="2.5" fontSize="0.875rem" mb="6">{__('MCP enrichment skipped (%s). Descriptions still show, sourced from the GitHub commit bodies.', esc(meta.deepError))}</Box>
