@@ -242,7 +242,7 @@ function ExportData({ report, sections }) {
   };
   const doExport = () => {
     const table = exportTable(report, section, limit);
-    const name = `contributors-${section}-${report.meta.since}`;
+    const name = `contributors-${section}-${report.meta.since.slice(0, 10)}`;
     if (format === 'csv') saveBlob(new Blob([toCsv(table)], { type: 'text/csv;charset=utf-8' }), name + '.csv');
     else saveBlob(new Blob([toMarkdownTable(table)], { type: 'text/markdown;charset=utf-8' }), name + '.md');
     setOpen(false);
@@ -712,8 +712,8 @@ export default function Contributors() {
             <>
               <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
                 <Box mr={{ md: 'auto' }}>
-                  <ExportChart name={`contributors-${report.meta.since}`}
-                    build={() => donutSvg(slices, { title: `Top contributors · ${report.meta.since} to ${report.meta.until}`, total: report.totals.contributors, unit: 'people' })} />
+                  <ExportChart name={`contributors-${report.meta.since.slice(0, 10)}`}
+                    build={() => donutSvg(slices, { title: `Top contributors · ${report.meta.since.slice(0, 10)} to ${report.meta.until.slice(0, 10)}`, total: report.totals.contributors, unit: 'people' })} />
                 </Box>
                 <Segmented value={repoFilter} onChange={setRepoFilter} options={[
                   { value: 'all', label: 'All' },
@@ -765,8 +765,8 @@ export default function Contributors() {
                 <Text color="ui.muted" fontSize="0.8125rem" flex="1 1 16rem" minW="0">
                   Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
                 </Text>
-                <ExportChart name={`companies-${report.meta.since}`}
-                  build={() => donutSvg(coSlices, { title: `Companies by contributions · ${report.meta.since} to ${report.meta.until}`, total: co.byCompany.length, unit: 'companies' })} />
+                <ExportChart name={`companies-${report.meta.since.slice(0, 10)}`}
+                  build={() => donutSvg(coSlices, { title: `Companies by contributions · ${report.meta.since.slice(0, 10)} to ${report.meta.until.slice(0, 10)}`, total: co.byCompany.length, unit: 'companies' })} />
               </Flex>
               <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
                 <Box flex="1 1 0" minW="0" w="full">
