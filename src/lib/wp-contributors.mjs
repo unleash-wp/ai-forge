@@ -39,14 +39,19 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
   // from Core, Gutenberg, or both, and collecting what they actually shipped
   // (up to ITEM_CAP entries each) so the UI can show "what this person built".
   const ITEM_CAP = 100;
+  // Key case-insensitively so the same person credited as a GitHub login
+  // ("Mamaduka") and a wp.org username ("mamaduka") is one entry, not two. The
+  // wp.org (Core Props) casing wins for display, since that's the profile handle.
   const tally = new Map();
   const bump = (name, source, item) => {
-    const cur = tally.get(name) || { name, props: 0, core: 0, gutenberg: 0, source, items: [] };
+    const key = name.toLowerCase();
+    let cur = tally.get(key);
+    if (!cur) { cur = { name, props: 0, core: 0, gutenberg: 0, source, items: [] }; tally.set(key, cur); }
     cur.props += 1;
     cur[source] += 1;
+    if (source === 'core') cur.name = name;
     if (cur.source !== source) cur.source = 'both';
     if (cur.items.length < ITEM_CAP) cur.items.push(item);
-    tally.set(name, cur);
   };
   for (const c of core) {
     const item = { repo: 'core', subject: c.subject, url: c.url, ref: c.changeset ? `r${c.changeset}` : c.shortSha, date: (c.date || '').slice(0, 10) };
@@ -68,7 +73,7 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
     const e = byDay.get(d) || { date: d, contributions: 0, core: 0, gutenberg: 0, _set: new Set() };
     e.contributions += 1;
     e[source] += 1;
-    for (const n of names) if (n && n !== 'unknown') e._set.add(n);
+    for (const n of names) if (n && n !== 'unknown') e._set.add(n.toLowerCase());
     byDay.set(d, e);
   };
   for (const c of core) tick(c, 'core', c.props);
@@ -79,7 +84,6 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
 
   const coreContribs = [...new Set(core.flatMap((c) => c.props))].sort(cmp);
   const gbContribs = [...new Set(gb.map((c) => c.author).filter((a) => a && a !== 'unknown'))].sort(cmp);
-  const all = new Set([...coreContribs, ...gbContribs]);
 
   return {
     meta: { since: s, until: u, coreBranch, gbBranch },
@@ -88,7 +92,7 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
     byContributor,
     timeline,
     totals: {
-      contributors: all.size,
+      contributors: tally.size,
       coreCommits: core.length,
       gutenbergCommits: gb.length,
     },
