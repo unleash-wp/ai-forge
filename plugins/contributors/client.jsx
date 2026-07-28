@@ -407,10 +407,10 @@ function CompanyMembers({ company, members }) {
   const totalPages = Math.max(1, Math.ceil(members.length / PAGE));
   const pageItems = members.slice(page * PAGE, page * PAGE + PAGE);
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full" h="full" display="flex" flexDirection="column">
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
       <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{company}</Text>
       <Text color="ui.muted" fontSize="0.8125rem" mb="3">{members.length} {members.length === 1 ? 'contributor' : 'contributors'}</Text>
-      <Stack gap="0" flex="1" minH="0" overflowY="auto" pr="1"
+      <Stack gap="0" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
         {pageItems.map((p, i) => (
           <Flex key={p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
