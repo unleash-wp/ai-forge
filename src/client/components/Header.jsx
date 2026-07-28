@@ -1,6 +1,6 @@
 // The white brand bar: UnleashWP wordmark + "Forge", a dark-mode toggle and a
 // Settings button that opens the settings panel.
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { Box, Flex, HStack, Link, Separator, chakra } from '@chakra-ui/react';
 import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
@@ -37,11 +37,13 @@ export default function Header({ railCollapsed, onToggleRail, onHome }) {
       .catch(() => core.toast(t('Could not clear the cache')))
       .finally(() => setClearing(false));
   }
+  const themeTimer = useRef();
   function toggleTheme() {
     const el = document.documentElement;
     el.classList.add('theme-anim');
     setTheme(dark ? 'light' : 'dark');
-    window.setTimeout(() => el.classList.remove('theme-anim'), 360);
+    clearTimeout(themeTimer.current);
+    themeTimer.current = window.setTimeout(() => el.classList.remove('theme-anim'), 360);
   }
   return (
     <Box as="header" flex="none" bg="ui.surface" borderBottom="1px solid" borderColor="ui.border">
