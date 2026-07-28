@@ -11,7 +11,7 @@ import { resolveWindow } from './quarters.mjs';
 // step fetches wp.org profiles (slower, cached), so it is opt-in.
 export async function contributorsReport(opts = {}) {
   const window = resolveWindow(opts);
-  const data = await fetchContributors({ since: window.since, until: window.until });
+  const data = await fetchContributors({ since: window.since, until: window.until, coreBranch: opts.coreBranch, gbBranch: opts.gbBranch });
   const report = { window, ...data };
   if (opts.companies) report.companies = await companyBreakdown(data.byContributor);
   return report;

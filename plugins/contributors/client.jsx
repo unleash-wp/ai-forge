@@ -1,16 +1,26 @@
 // Contributors — client side of the bundled UnleashWP core plugin. The shell
 // mounts this default-exported component in <main>. It reuses the shell's shared
-// DateRangePicker, renders the leaderboard + company breakdown with Chakra UI
-// Charts (Recharts), and matches the Changelog tool's StatCard / surface tokens.
-import { useState, useCallback, useMemo } from 'react';
+// DateRangePicker + branch pickers, renders the leaderboard + company breakdown
+// with Chakra UI Charts (Recharts), and matches the Changelog tool's tokens.
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Flex, HStack, SimpleGrid, Spinner, Text, chakra } from '@chakra-ui/react';
 import { Chart, useChart } from '@chakra-ui/charts';
 import { Bar, BarChart, XAxis, YAxis, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
-import { Button, TextInput, Checkbox, DateRangePicker } from '../../src/client/ui';
+import { Button, TextInput, Checkbox, Select, DateRangePicker } from '../../src/client/ui';
 
 // Bar colour by where the credit comes from (matches the CLI/SVG charts).
 const SRC_COLOR = { core: '#3858e9', gutenberg: '#1a9d6b', both: '#7c3aed', company: '#7c3aed' };
+
+// A labelled field wrapper, matching the DateRangePicker's uppercase label.
+function Field({ label, children }) {
+  return (
+    <Box display="flex" flexDir="column" gap="1.5" flex="1 1 10rem" minW="9rem">
+      <Text as="span" fontSize="0.7813rem" fontWeight="600" letterSpacing=".04em" textTransform="uppercase" color="ui.muted">{label}</Text>
+      {children}
+    </Box>
+  );
+}
 
 // Same card the Changelog tool uses; `counted` adds the yellow top inset.
 function StatCard({ n, label, counted }) {
@@ -49,22 +59,40 @@ export default function Contributors() {
   const core = useCore() || {};
   const [since, setSince] = useState('2025-10-01');
   const [until, setUntil] = useState('2025-10-31');
+  const [gbBranch, setGbBranch] = useState('trunk');
+  const [coreBranch, setCoreBranch] = useState('trunk');
+  const [gbBranches, setGbBranches] = useState(['trunk']);
+  const [coreBranches, setCoreBranches] = useState(['trunk']);
   const [withCompanies, setWithCompanies] = useState(false);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
 
+  // Load the branch lists once so the pickers are populated (trunk + wp/x.y + …).
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      for (const [repo, set] of [['gutenberg', setGbBranches], ['core', setCoreBranches]]) {
+        try {
+          const { ok, data: b } = await fetchJSON('/api/contributors/branches?repo=' + repo);
+          if (live && ok && b.branches && b.branches.length) set(b.branches);
+        } catch { /* keep the trunk default */ }
+      }
+    })();
+    return () => { live = false; };
+  }, []);
+
   const run = useCallback(async () => {
     if (!since || !until) { setError('Pick a date range first.'); return; }
     setError(''); setLoading(true); setData(null);
-    const qs = new URLSearchParams({ since, until, ...(withCompanies ? { companies: 'true' } : {}) });
+    const qs = new URLSearchParams({ since, until, gbBranch, coreBranch, ...(withCompanies ? { companies: 'true' } : {}) });
     try {
       const { ok, data: body } = await fetchJSON('/api/contributors?' + qs.toString());
       if (!ok) setError(body.error || 'Request failed'); else setData(body);
     } catch (e) { setError(e.message); }
     setLoading(false);
-  }, [since, until, withCompanies]);
+  }, [since, until, gbBranch, coreBranch, withCompanies]);
 
   const report = data && data.report;
   const q = search.trim().toLowerCase();
@@ -81,12 +109,25 @@ export default function Contributors() {
       <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
         <Flex gap={{ base: '4', lg: '6' }} align="flex-end" wrap="wrap">
           <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-          <HStack gap="2" pb="2.5">
+          <Field label="Gutenberg branch">
+            <Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch}
+              options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
+          </Field>
+          <Field label="Core branch">
+            <Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch}
+              options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
+          </Field>
+        </Flex>
+        <Flex align={{ base: 'stretch', lg: 'center' }} justify="space-between" gap="4" mt="6" pt="4"
+          borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
+          <HStack gap="2">
             <Checkbox checked={withCompanies} onChange={(e) => setWithCompanies(e.target.checked)} />
             <Text color="ui.text" fontSize="0.875rem">Company investment (slower)</Text>
           </HStack>
-          <Box pb="0.5" ml={{ lg: 'auto' }}><Button variant="primary" onClick={run} px="7.5" fontWeight="700">Run</Button></Box>
-          {loading && <Spinner size="sm" color="navy" mb="2.5" />}
+          <HStack gap="4">
+            {loading && <Spinner size="sm" color="navy" />}
+            <Button variant="primary" onClick={run} px="7.5" fontWeight="700">Run</Button>
+          </HStack>
         </Flex>
       </Box>
 
