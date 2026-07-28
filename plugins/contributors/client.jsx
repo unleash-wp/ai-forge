@@ -108,9 +108,9 @@ function TipBox({ active, payload, label, kind, dated }) {
 }
 
 // Underlined tab bar for switching Contributors / Companies.
-function TabBar({ tabs, value, onChange }) {
+function TabBar({ tabs, value, onChange, right }) {
   return (
-    <Flex gap="1" borderBottomWidth="1px" borderColor="ui.border" mb="6">
+    <Flex align="flex-end" gap="1" borderBottomWidth="1px" borderColor="ui.border" mb="6">
       {tabs.map((t) => (
         <chakra.button key={t.value} type="button" onClick={() => onChange(t.value)}
           px="4" py="2.5" fontSize="0.9375rem" fontWeight={value === t.value ? '700' : '500'} cursor="pointer"
@@ -119,6 +119,7 @@ function TabBar({ tabs, value, onChange }) {
           {t.label}
         </chakra.button>
       ))}
+      {right && <Box ml="auto" pb="2">{right}</Box>}
     </Flex>
   );
 }
@@ -201,6 +202,77 @@ function ExportChart({ build, name }) {
       <chakra.button type="button" onClick={() => exportPng(build(), name)} {...btn}>{DL_ICON} PNG</chakra.button>
       <chakra.button type="button" onClick={() => exportSvg(build(), name)} {...btn}>SVG</chakra.button>
     </HStack>
+  );
+}
+
+// Turn a report section into { headers, rows } of plain values, capped to `limit`.
+function exportTable(report, section, limit) {
+  const cap = (arr) => (limit === 'all' ? arr : arr.slice(0, Number(limit)));
+  if (section === 'companies') {
+    return { headers: ['rank', 'company', 'contributions', 'people'],
+      rows: cap(report.companies?.byCompany || []).map((c, i) => [i + 1, c.company, c.contributions, c.people]) };
+  }
+  if (section === 'committers') {
+    return { headers: ['rank', 'account', 'name', 'company', 'member_since', 'commits', 'percent'],
+      rows: cap(report.committers || []).map((c, i) => [i + 1, c.login, c.name, c.employer || '', c.memberSince || '', c.commits, c.pct]) };
+  }
+  if (section === 'components') {
+    return { headers: ['component', 'changes'],
+      rows: cap(report.components?.byComponent || []).map((c) => [c.component, c.count]) };
+  }
+  return { headers: ['rank', 'name', 'employer', 'props', 'core', 'gutenberg', 'source'],
+    rows: cap(report.byContributor || []).map((p, i) => [i + 1, p.name, p.employer || '', p.props, p.core, p.gutenberg, p.source]) };
+}
+
+const csvCell = (v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const toCsv = ({ headers, rows }) => [headers, ...rows].map((r) => r.map(csvCell).join(',')).join('\n');
+const mdRow = (cells) => '| ' + cells.map((c) => String(c ?? '')).join(' | ') + ' |';
+const toMarkdownTable = ({ headers, rows }) => [mdRow(headers), mdRow(headers.map(() => '---')), ...rows.map(mdRow)].join('\n');
+
+// Download all report data as Markdown or CSV: pick a section and a row cap.
+function ExportData({ report, sections }) {
+  const [open, setOpen] = useState(false);
+  const [section, setSection] = useState(sections[0].value);
+  const [limit, setLimit] = useState('50');
+  const [format, setFormat] = useState('md');
+  const btn = {
+    display: 'inline-flex', alignItems: 'center', gap: '1.5', px: '3', py: '2', borderRadius: 'forge',
+    fontSize: '0.8125rem', fontWeight: '600', cursor: 'pointer', borderWidth: '1px',
+    whiteSpace: 'nowrap', transition: 'border-color .12s, color .12s',
+  };
+  const doExport = () => {
+    const table = exportTable(report, section, limit);
+    const name = `contributors-${section}-${report.meta.since}`;
+    if (format === 'csv') saveBlob(new Blob([toCsv(table)], { type: 'text/csv;charset=utf-8' }), name + '.csv');
+    else saveBlob(new Blob([toMarkdownTable(table)], { type: 'text/markdown;charset=utf-8' }), name + '.md');
+    setOpen(false);
+  };
+  return (
+    <Box position="relative" flex="none">
+      <chakra.button type="button" onClick={() => setOpen((v) => !v)} {...btn}
+        bg={open ? 'navy' : 'ui.surface'} color={open ? 'white' : 'ui.text'} borderColor={open ? 'navy' : 'ui.border'}
+        _hover={open ? {} : { borderColor: 'ui.primary', color: 'ui.heading' }}>{DL_ICON} Export data</chakra.button>
+      {open && (
+        <>
+          <Box position="fixed" inset="0" zIndex="20" onClick={() => setOpen(false)} />
+          <Box position="absolute" right="0" top="calc(100% + 6px)" zIndex="30" w="17rem" bg="ui.surface"
+            borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="lg" p="4">
+            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.04em" color="ui.muted" mb="1.5">Section</Text>
+            <chakra.select value={section} onChange={(e) => setSection(e.target.value)} w="full" mb="3" px="2.5" py="2"
+              borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.bg" color="ui.text" fontSize="0.8125rem" cursor="pointer">
+              {sections.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </chakra.select>
+            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.04em" color="ui.muted" mb="1.5">Rows</Text>
+            <Box mb="3"><Segmented value={limit} onChange={setLimit} options={[{ value: '25', label: '25' }, { value: '50', label: '50' }, { value: '100', label: '100' }, { value: 'all', label: 'All' }]} /></Box>
+            <Text fontSize="0.6875rem" fontWeight="700" textTransform="uppercase" letterSpacing="0.04em" color="ui.muted" mb="1.5">Format</Text>
+            <Box mb="4"><Segmented value={format} onChange={setFormat} options={[{ value: 'md', label: 'Markdown' }, { value: 'csv', label: 'CSV' }]} /></Box>
+            <chakra.button type="button" onClick={doExport} w="full" display="inline-flex" alignItems="center" justifyContent="center" gap="1.5"
+              px="4" py="2.5" borderRadius="forge" fontWeight="700" fontSize="0.875rem" color="white" bg="navy" cursor="pointer"
+              _hover={{ bg: 'yellow', color: 'navy' }} transition="background .2s, color .2s">{DL_ICON} Download</chakra.button>
+          </Box>
+        </>
+      )}
+    </Box>
   );
 }
 
@@ -302,7 +374,7 @@ function Detail({ person, repoFilter }) {
 function Activity({ timeline, metric }) {
   return (
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="4" py="4" mb="8">
-      <Box h="200px" w="full">
+      <Box h="200px" w="full" css={{ '& .recharts-cartesian-axis-tick-value': { fontSize: '10px', fill: AXIS } }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={timeline} margin={{ left: 2, right: 12, top: 6, bottom: 0 }}>
             <defs>
@@ -411,13 +483,12 @@ function Components({ data }) {
 // wp.org profiles don't publish it. Scrolls horizontally on narrow screens.
 function Committers({ list, total }) {
   if (!list?.length) return null;
-  const shown = list.slice(0, 25);
+  const shown = list.slice(0, 100);
   const cols = '2rem minmax(8rem, 1.7fr) minmax(5.5rem, 1.1fr) 3.5rem 4.5rem 2.75rem';
   const cell = { px: '2.5', py: '2.5' };
   const head = { ...cell, fontSize: '0.6875rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'ui.muted' };
   return (
-    <Box mt="10">
-      <Heading as="h3" fontSize="1rem" fontWeight="700" color="ui.heading" mb="1">Core committers</Heading>
+    <Box>
       <Text color="ui.muted" fontSize="0.8125rem" mb="4">
         Who landed the {total} Core changes, with their employer and wp.org join year. Country isn't published on wp.org profiles.
       </Text>
@@ -569,6 +640,14 @@ export default function Contributors() {
       .sort((a, b) => b.props - a.props);
   }, [report, selCompany]);
 
+  const exportSections = useMemo(() => {
+    const s = [{ value: 'contributors', label: 'Contributors' }];
+    if (co) s.push({ value: 'companies', label: 'Companies' });
+    if (report?.committers?.length) s.push({ value: 'committers', label: 'Core committers' });
+    if (report?.components?.byComponent?.length) s.push({ value: 'components', label: 'Components' });
+    return s;
+  }, [report, co]);
+
   return (
     <>
       <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
@@ -622,7 +701,12 @@ export default function Contributors() {
           )}
 
           <TabBar value={tab} onChange={setTab}
-            tabs={[{ value: 'contributors', label: 'Contributors' }, { value: 'companies', label: co ? `Companies (${co.byCompany.length})` : 'Companies' }]} />
+            right={<ExportData report={report} sections={exportSections} />}
+            tabs={[
+              { value: 'contributors', label: 'Contributors' },
+              { value: 'companies', label: co ? `Companies (${co.byCompany.length})` : 'Companies' },
+              ...(report.committers?.length ? [{ value: 'committers', label: `Core committers (${report.committers.length})` }] : []),
+            ]} />
 
           {tab === 'contributors' ? (
             <>
@@ -671,7 +755,10 @@ export default function Contributors() {
                   <Box flex="1 1 0" minW="0" w="full"><Detail person={selPerson} repoFilter={repoFilter} /></Box>
                 </Flex>
               ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
+              {report.components && <Components data={report.components} />}
             </>
+          ) : tab === 'committers' ? (
+            <Committers list={report.committers} total={report.totals.coreCommits} />
           ) : co && coList.length > 0 ? (
             <>
               <Flex justify="space-between" align="center" gap="3" mb="4" wrap="wrap">
@@ -705,9 +792,6 @@ export default function Contributors() {
               </Flex>
             </>
           ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No company data for this window.</Text>}
-
-          {report.components && <Components data={report.components} />}
-          {report.committers?.length > 0 && <Committers list={report.committers} total={report.totals.coreCommits} />}
         </>
       )}
     </>
