@@ -1,10 +1,11 @@
 // Contributors — a free bundled UnleashWP core plugin. Answers "who contributed
-// to Core + Gutenberg in a period, and how much" for the make.wordpress.org
-// "Month in Core"-style analysis. Built on the shared Core services
-// src/lib/wp-contributors.mjs (counts, matching the changelog plugin) and
-// src/lib/wp-profiles.mjs (employer / "which company invested most").
+// to Core + Gutenberg in a period, and which company invested most" for the
+// make.wordpress.org "Month in Core"-style analysis. Built on the shared Core
+// services src/lib/wp-contributors.mjs (counts, matching the changelog plugin),
+// src/lib/wp-profiles.mjs (employer), and src/lib/wp-branches.mjs (branch picker).
 import { writeFileSync } from 'node:fs';
 import { authenticated } from '../../src/connectors/github-token.mjs';
+import { branches } from '../../src/lib/wp-branches.mjs';
 import { contributorsReport } from './lib/report.mjs';
 import { toMarkdown, toText } from './lib/format.mjs';
 import { leaderboardSvg, companySvg } from './lib/charts.mjs';
@@ -19,7 +20,7 @@ async function build(opts, { warn = () => {} } = {}) {
   return contributorsReport(opts);
 }
 
-// ---- HTTP route (browser UI + the app-window forge_api bridge) ----
+// ---- HTTP routes (browser UI + the app-window forge_api bridge) ----
 async function reportHandler(req, res, url, ctx) {
   try {
     const q = url.searchParams;
@@ -28,6 +29,8 @@ async function reportHandler(req, res, url, ctx) {
       month: q.get('month') || undefined,
       since: q.get('since') || undefined,
       until: q.get('until') || undefined,
+      gbBranch: q.get('gbBranch') || undefined,
+      coreBranch: q.get('coreBranch') || undefined,
       companies: q.get('companies') === 'true',
     });
     ctx.json(res, 200, { report, markdown: toMarkdown(report) });
@@ -36,8 +39,25 @@ async function reportHandler(req, res, url, ctx) {
   }
 }
 
+// Cache the last good branch list per repo so a transient GitHub rate limit
+// doesn't blank the branch pickers.
+const branchCache = new Map();
+async function branchesHandler(req, res, url, ctx) {
+  const repo = url.searchParams.get('repo') === 'core' ? 'WordPress/wordpress-develop' : 'WordPress/gutenberg';
+  try {
+    const list = await branches(repo);
+    branchCache.set(repo, list);
+    ctx.json(res, 200, { branches: list });
+  } catch (err) {
+    const cached = branchCache.get(repo);
+    if (cached) { ctx.json(res, 200, { branches: cached, stale: true }); return; }
+    ctx.json(res, 200, { branches: [], error: err.message });
+  }
+}
+
 export const routes = [
   { method: 'GET', path: '/api/contributors', handler: reportHandler },
+  { method: 'GET', path: '/api/contributors/branches', handler: branchesHandler },
 ];
 
 // ---- MCP tool: pull the ranked contributors live from Claude Code / Codex ----
@@ -52,6 +72,8 @@ export const mcpTools = [
         month: { type: 'string', description: 'Month, e.g. 2025-10' },
         since: { type: 'string', description: 'Start date YYYY-MM-DD (use with until)' },
         until: { type: 'string', description: 'End date YYYY-MM-DD (use with since)' },
+        gbBranch: { type: 'string', description: 'Gutenberg branch (default: trunk; e.g. wp/7.1)' },
+        coreBranch: { type: 'string', description: 'Core branch (default: trunk)' },
         companies: { type: 'boolean', description: 'Also resolve each contributor\'s employer and rank which company invested most (slower; fetches wp.org profiles).' },
         format: { type: 'string', enum: ['markdown', 'json'], description: 'Output format (default: markdown)' },
       },
@@ -65,17 +87,20 @@ export const mcpTools = [
 
 // ---- terminal command ----
 // `uwp contributors --quarter 2025-Q4 | --month 2025-10 | --since <d> --until <d>
-//  [--companies] [--json] [--svg <path>] [--company-svg <path>] [--top N]`
+//  [--gb-branch <ref>] [--core-branch <ref>] [--companies] [--json] [--svg <path>]
+//  [--company-svg <path>] [--top N]`
 export const commands = [
   {
     name: 'contributors',
-    summary: 'Rank who contributed to Core + Gutenberg in a period (--quarter | --month | --since --until) [--companies] [--svg <file>].',
+    summary: 'Rank who contributed to Core + Gutenberg in a period (--quarter | --month | --since --until) [--gb-branch] [--core-branch] [--companies] [--svg <file>].',
     run: async (args, ctx) => {
       const report = await build({
         quarter: args.quarter,
         month: args.month,
         since: args.since ?? args._[1],
         until: args.until ?? args._[2],
+        gbBranch: args['gb-branch'],
+        coreBranch: args['core-branch'],
         companies: Boolean(args.companies) || Boolean(args['company-svg']),
       }, { warn: ctx.error });
 
