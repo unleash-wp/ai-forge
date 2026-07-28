@@ -3,7 +3,7 @@
 // (UnleashWP navy + yellow), a selectable ranked list, and a detail panel of what
 // the selected person actually shipped, plus a company-investment breakdown.
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Flex, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra, Checkbox as CChk } from '@chakra-ui/react';
+import { Box, Flex, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra, Checkbox as CChk } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { Button, TextInput, Select, DateRangePicker } from '../../src/client/ui';
@@ -138,6 +138,19 @@ function Detail({ person }) {
   );
 }
 
+// Before the first run — mirrors the Changelog tool's empty state.
+function EmptyState() {
+  return (
+    <Box mt="4"><Box textAlign="center" py="16" px="5">
+      <chakra.img src="/brand/bulb.svg" alt="" w="3.5rem" h="3.5rem" opacity="0.95" mb="4" mx="auto" />
+      <Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">No contributors yet</Heading>
+      <Text mx="auto" maxW="52ch" color="ui.muted" fontSize="0.9688rem" lineHeight="1.6">
+        Pick a period, then Run. You get the top contributors, what each person shipped, and — with the company toggle — which company invested most.
+      </Text>
+    </Box></Box>
+  );
+}
+
 function ResultsSkeleton() {
   return (
     <>
@@ -247,7 +260,7 @@ export default function Contributors() {
 
       {error && <Box mb="4" color="ui.bad" fontSize="0.875rem">{error}</Box>}
 
-      {loading ? <ResultsSkeleton /> : report && (
+      {loading ? <ResultsSkeleton /> : !report ? <EmptyState /> : (
         <>
           <SimpleGrid minChildWidth="10.5rem" gap="4" mb="6">
             <StatCard n={report.totals.contributors} label="Contributors" counted />
