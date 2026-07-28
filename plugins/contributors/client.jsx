@@ -311,8 +311,8 @@ function RankRow({ i, person, value, max, active, onClick, noAvatar, isNew }) {
   const medal = i <= 3 ? MEDAL[i - 1] : null;
   return (
     <Flex as="button" type="button" onClick={onClick} align="center" gap="3" w="full" textAlign="left"
-      px="2.5" py="2" borderRadius="forge" cursor="pointer" bg={active ? 'ui.sunk' : 'transparent'}
-      borderWidth="1px" borderColor="ui.border" _hover={{ bg: 'ui.sunk', borderColor: 'ui.primary' }} transition="background .12s, border-color .12s">
+      px="2" py="2.5" cursor="pointer" bg={active ? 'ui.sunk' : 'transparent'}
+      borderBottomWidth="1px" borderColor="ui.border" _hover={{ bg: 'ui.sunk' }} transition="background .12s">
       <Box w="1.6rem" h="1.6rem" flex="none" borderRadius="full" display="inline-flex" alignItems="center" justifyContent="center"
         bg={medal || 'transparent'} color={medal ? (i === 1 ? 'navy' : 'white') : 'ui.muted'}
         fontSize="0.8125rem" fontWeight="700" fontVariantNumeric="tabular-nums">{i}</Box>
@@ -527,46 +527,53 @@ function CommitterDetail({ committer }) {
 
 // Core committers: who actually landed the changesets (distinct from Props credit).
 // Same structure as the Contributors tab: donut + selectable ranked list + detail.
-function Committers({ list, meta }) {
+function Committers({ list: rawList, meta, search, setSearch }) {
   const [sel, setSel] = useState(null);
   const [page, setPage] = useState(0);
+  const q = (search || '').trim().toLowerCase();
+  const list = useMemo(() => (rawList || []).filter((c) => !q || c.login.toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q)), [rawList, q]);
   useEffect(() => { setPage(0); setSel(null); }, [list]);
   const PAGE = 20;
-  const pool = useMemo(() => (list || []).slice(0, 100), [list]);
-  const slices = useMemo(() => toSlices((list || []).map((c) => ({ name: c.login, value: c.commits })), 8), [list]);
-  if (!list?.length) return <Text color="ui.muted" fontSize="0.875rem" mb="6">No committer data for this window.</Text>;
-  const max = list[0].commits || 1;
+  const pool = useMemo(() => list.slice(0, 100), [list]);
+  const slices = useMemo(() => toSlices(list.map((c) => ({ name: c.login, value: c.commits })), 8), [list]);
+  if (!rawList?.length) return <Text color="ui.muted" fontSize="0.875rem" mb="6">No committer data for this window.</Text>;
+  const max = list[0]?.commits || 1;
   const totalPages = Math.max(1, Math.ceil(pool.length / PAGE));
   const pageItems = pool.slice(page * PAGE, page * PAGE + PAGE);
   const selCom = list.find((c) => c.login === sel) || list[0];
   return (
     <>
-      <Flex mb="4">
-        <ExportChart name={`committers-${meta.since.slice(0, 10)}`}
-          build={() => donutSvg(slices, { title: `Core committers · ${meta.since.slice(0, 10)} to ${meta.until.slice(0, 10)}`, total: list.length, unit: 'committers' })} />
-      </Flex>
-      <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
-        <Box flex="1 1 0" minW="0" w="full">
-          <Flex justify="center" mb="6"><Donut data={slices} total={list.length} unit="committers" selected={selCom?.login} onSelect={setSel} /></Flex>
-          <Stack gap="1.5">
-            {pageItems.map((c, i) => (
-              <RankRow key={c.login} i={page * PAGE + i + 1} person={{ name: c.login, avatar: c.avatar, employer: c.employer }} value={c.commits} max={max}
-                active={selCom?.login === c.login} onClick={() => setSel(c.login)} />
-            ))}
-          </Stack>
-          {totalPages > 1 && (
-            <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
-              {Array.from({ length: totalPages }, (_, n) => (
-                <chakra.button key={n} type="button" onClick={() => setPage(n)}
-                  minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
-                  fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
-                  borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
-              ))}
-            </Flex>
-          )}
+      <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
+        <Box mr={{ md: 'auto' }}>
+          <ExportChart name={`committers-${meta.since.slice(0, 10)}`}
+            build={() => donutSvg(slices, { title: `Core committers · ${meta.since.slice(0, 10)} to ${meta.until.slice(0, 10)}`, total: list.length, unit: 'committers' })} />
         </Box>
-        <Box flex="1 1 0" minW="0" w="full"><CommitterDetail committer={selCom} /></Box>
+        <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
       </Flex>
+      {list.length ? (
+        <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
+          <Box flex="1 1 0" minW="0" w="full">
+            <Flex justify="center" mb="6"><Donut data={slices} total={list.length} unit="committers" selected={selCom?.login} onSelect={setSel} /></Flex>
+            <Stack gap="0">
+              {pageItems.map((c, i) => (
+                <RankRow key={c.login} i={page * PAGE + i + 1} person={{ name: c.login, avatar: c.avatar, employer: c.employer }} value={c.commits} max={max}
+                  active={selCom?.login === c.login} onClick={() => setSel(c.login)} />
+              ))}
+            </Stack>
+            {totalPages > 1 && (
+              <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
+                {Array.from({ length: totalPages }, (_, n) => (
+                  <chakra.button key={n} type="button" onClick={() => setPage(n)}
+                    minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
+                    fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
+                    borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
+                ))}
+              </Flex>
+            )}
+          </Box>
+          <Box flex="1 1 0" minW="0" w="full"><CommitterDetail committer={selCom} /></Box>
+        </Flex>
+      ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching committers.</Text>}
     </>
   );
 }
@@ -778,13 +785,13 @@ export default function Contributors() {
                     {firstTimers.loading ? <><Spinner size="xs" borderWidth="1.5px" /> Finding new…</> : <>New only ({firstTimers.count})</>}
                   </chakra.button>
                 )}
-                <Box w="12rem"><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
+                <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
               {list.length ? (
                 <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
                   <Box flex="1 1 0" minW="0" w="full">
                     <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
-                    <Stack gap="1.5">
+                    <Stack gap="0">
                       {pageItems.map((p, i) => (
                         <RankRow key={p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
                           active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} isNew={isNew(p.name)} />
@@ -807,7 +814,7 @@ export default function Contributors() {
               {report.components && <Components data={report.components} />}
             </>
           ) : tab === 'committers' ? (
-            <Committers list={report.committers} meta={report.meta} />
+            <Committers list={report.committers} meta={report.meta} search={search} setSearch={setSearch} />
           ) : co && coList.length > 0 ? (
             <>
               <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
@@ -815,14 +822,15 @@ export default function Contributors() {
                   <ExportChart name={`companies-${report.meta.since.slice(0, 10)}`}
                     build={() => donutSvg(coSlices, { title: `Companies by contributions · ${report.meta.since.slice(0, 10)} to ${report.meta.until.slice(0, 10)}`, total: co.byCompany.length, unit: 'companies' })} />
                 </Box>
-                <Text color="ui.muted" fontSize="0.8125rem" flex="1 1 16rem" minW="0" textAlign={{ md: 'right' }}>
-                  Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
-                </Text>
+                <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
+              <Text color="ui.muted" fontSize="0.8125rem" mb="4">
+                Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
+              </Text>
               <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
                 <Box flex="1 1 0" minW="0" w="full">
                   <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
-                  <Stack gap="1.5">
+                  <Stack gap="0">
                     {coPageItems.map((r, i) => (
                       <RankRow key={r.name} i={coPage * PAGE + i + 1} person={{ name: r.name }} value={r.value} max={coMax} noAvatar
                         active={selCompany === r.name} onClick={() => setSelCompany(r.name)} />
