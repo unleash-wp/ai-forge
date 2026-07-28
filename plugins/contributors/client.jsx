@@ -139,6 +139,19 @@ function RunButton({ onClick, loading }) {
   );
 }
 
+// Whole-toolbar placeholder while branch lists load (mirrors the changelog form skeleton).
+function ControlsSkeleton() {
+  const Fld = ({ flex }) => (
+    <Box flex={flex}><Skeleton h="0.75rem" w="4.5rem" mb="2" /><Skeleton h="2.75rem" borderRadius="forge" /></Box>
+  );
+  return (
+    <Flex gap={{ base: '4', lg: '6' }} align="flex-end" wrap="wrap">
+      <Fld flex="1 1 12rem" /><Fld flex="1 1 10rem" /><Fld flex="1 1 10rem" />
+      <Box ml={{ lg: 'auto' }}><Skeleton h="2.75rem" w="8.5rem" borderRadius="forge" /></Box>
+    </Flex>
+  );
+}
+
 const RepoMark = ({ repo }) => (repo === 'core' ? <CoreIcon size={18} /> : <GutenbergIcon size={18} />);
 
 // Small round avatar with a coloured-dot fallback.
@@ -411,26 +424,24 @@ export default function Contributors() {
   return (
     <>
       <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
-        <Flex gap={{ base: '4', lg: '6' }} align="flex-end" wrap="wrap">
-          <Field label="Period">
-            <Select block searchable ariaLabel="Period" value={periodVal} onChange={onPeriod}
-              options={periods.map((p) => ({ value: p.value, label: p.label }))} placeholder="Select" />
-          </Field>
-          {custom && <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />}
-          <Field label="Gutenberg branch">
-            {branchesLoading ? <Skeleton h="2.75rem" borderRadius="forge" /> : (
+        {branchesLoading ? <ControlsSkeleton /> : (
+          <Flex gap={{ base: '4', lg: '6' }} align="flex-end" wrap="wrap">
+            <Field label="Period">
+              <Select block searchable ariaLabel="Period" value={periodVal} onChange={onPeriod}
+                options={periods.map((p) => ({ value: p.value, label: p.label }))} placeholder="Select" />
+            </Field>
+            {custom && <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />}
+            <Field label="Gutenberg branch">
               <Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch}
                 options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
-            )}
-          </Field>
-          <Field label="Core branch">
-            {branchesLoading ? <Skeleton h="2.75rem" borderRadius="forge" /> : (
+            </Field>
+            <Field label="Core branch">
               <Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch}
                 options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
-            )}
-          </Field>
-          <Box pb="0.5" ml={{ lg: 'auto' }}><RunButton onClick={run} loading={loading} /></Box>
-        </Flex>
+            </Field>
+            <Box pb="0.5" ml={{ lg: 'auto' }}><RunButton onClick={run} loading={loading} /></Box>
+          </Flex>
+        )}
       </Box>
 
       {error && <Box mb="4" color="ui.bad" fontSize="0.875rem">{error}</Box>}
@@ -443,7 +454,7 @@ export default function Contributors() {
             <StatCard n={report.totals.gutenbergCommits} label="Gutenberg changes" />
             <StatCard n={co ? co.byCompany.length : report.totals.coreCommits + report.totals.gutenbergCommits} label={co ? 'Companies' : 'Total changes'} />
           </SimpleGrid>
-          <Text color="ui.muted" fontSize="0.75rem" mb="6" lineHeight="1.5">Counts only merged changes that landed on the branch (Core changesets and Gutenberg merges). Release plumbing, open pull requests and reverted work are not counted.</Text>
+          <Text color="ui.muted" fontSize="0.75rem" pt="2" mb="6" lineHeight="1.5">Counts only merged changes (Core changesets, Gutenberg merges). Open PRs, reverts and release plumbing are excluded.</Text>
 
           {report.timeline && report.timeline.length > 1 && (
             <>
