@@ -16,7 +16,7 @@ import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
 const UA = 'uwp-ai-forge contributors (+https://unleash-wp.com)';
-const CACHE = join(homedir(), '.config', 'uwp-ai-forge', 'profile-cache-v2.json');
+const CACHE = join(homedir(), '.config', 'uwp-ai-forge', 'profile-cache-v3.json');
 
 function loadCache() {
   try { return JSON.parse(readFileSync(CACHE, 'utf8')); } catch { return {}; }
@@ -66,6 +66,15 @@ export function parseEmployer(html) {
   return null;
 }
 
+// Join year from the profile's "Member Since" line (or null). The profile prints
+// e.g. "Member Since: October 28th, 2011"; we keep the year.
+export function parseMemberSince(html) {
+  const m = html.match(/Member Since:\s*<\/span>\s*<strong>([\s\S]*?)<\/strong>/i);
+  if (!m) return null;
+  const y = m[1].match(/\b(?:19|20)\d{2}\b/);
+  return y ? Number(y[0]) : null;
+}
+
 // Gravatar avatar URL from the profile HTML (or null), normalised to 120px.
 export function parseAvatar(html) {
   const m = html.match(/(?:https?:)?\/\/(?:secure\.|www\.)?gravatar\.com\/avatar\/[0-9a-f]+/i);
@@ -74,18 +83,38 @@ export function parseAvatar(html) {
   return `${url}?s=120&d=mp`;
 }
 
-// One profile fetch -> { employer, avatar }, cached to disk.
+// One profile fetch -> { employer, avatar, memberSince }, cached to disk.
 export async function profileOf(slug, cache) {
   if (cache && slug in cache) {
     const v = cache[slug];
-    return typeof v === 'string' ? { employer: v, avatar: null } : v;
+    return typeof v === 'string' ? { employer: v, avatar: null, memberSince: null } : v;
   }
-  let out = { employer: null, avatar: null };
+  let out = { employer: null, avatar: null, memberSince: null };
   try {
     const html = await getText(`https://profiles.wordpress.org/${slug}/`);
-    out = { employer: parseEmployer(html), avatar: parseAvatar(html) };
+    out = { employer: parseEmployer(html), avatar: parseAvatar(html), memberSince: parseMemberSince(html) };
   } catch { /* leave nulls */ }
   if (cache) cache[slug] = out;
+  return out;
+}
+
+// Attach each Core committer's employer, avatar and join year from their wp.org
+// profile (their GitHub login is their wp.org username). Shares the profile cache
+// with companyBreakdown, so overlapping runs are fast.
+export async function enrichCommitters(committers, { concurrency = 10 } = {}) {
+  const cache = loadCache();
+  const out = new Array(committers.length);
+  let i = 0;
+  async function worker() {
+    while (i < committers.length) {
+      const idx = i++;
+      const c = committers[idx];
+      const prof = await profileOf(c.login, cache);
+      out[idx] = { ...c, employer: prof.employer, avatar: prof.avatar, memberSince: prof.memberSince ?? null };
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, committers.length || 1) }, worker));
+  saveCache(cache);
   return out;
 }
 

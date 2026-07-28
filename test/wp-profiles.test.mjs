@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseEmployer } from '../src/lib/wp-profiles.mjs';
+import { parseEmployer, parseMemberSince } from '../src/lib/wp-profiles.mjs';
 
 const jobEntry = (dates, company) =>
   `<div class="job-entry"><div class="dates">${dates}</div><div class="summary">x</div><div class="company">${company}</div></div>`;
@@ -18,4 +18,13 @@ test('parseEmployer returns null when no current job is listed', () => {
 
 test('parseEmployer decodes an ampersand entity in the name', () => {
   assert.equal(parseEmployer(jobEntry('Present', 'Ben &amp; Jerry')), 'Ben & Jerry');
+});
+
+test('parseMemberSince extracts the join year from the "Member Since" line', () => {
+  const html = '<li class="member-since"><span>Member Since:</span><strong>October 28th, 2011</strong></li>';
+  assert.equal(parseMemberSince(html), 2011);
+});
+
+test('parseMemberSince returns null when the profile has no "Member Since" line', () => {
+  assert.equal(parseMemberSince('<div class="item-meta-about">no join date here</div>'), null);
 });

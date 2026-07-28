@@ -1,5 +1,5 @@
 import { fetchContributors } from '../../../src/lib/wp-contributors.mjs';
-import { companyBreakdown } from '../../../src/lib/wp-profiles.mjs';
+import { companyBreakdown, enrichCommitters } from '../../../src/lib/wp-profiles.mjs';
 import { resolveWindow } from './quarters.mjs';
 
 // Orchestrate: resolve the period window, then pull Core + Gutenberg contributors
@@ -13,6 +13,10 @@ export async function contributorsReport(opts = {}) {
   const window = resolveWindow(opts);
   const data = await fetchContributors({ since: window.since, until: window.until, coreBranch: opts.coreBranch, gbBranch: opts.gbBranch, components: opts.components });
   const report = { window, ...data };
+  // Enrich the Core committers with employer + join year from their profiles.
+  if (opts.committers && report.committers?.length) {
+    report.committers = await enrichCommitters(report.committers);
+  }
   if (opts.companies) {
     const companies = await companyBreakdown(data.byContributor);
     report.companies = companies;
