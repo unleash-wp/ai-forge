@@ -5,3 +5,4 @@ export { TextInput } from './TextInput.jsx';
 export { TextArea } from './TextArea.jsx';
 export { Checkbox } from './Checkbox.jsx';
 export { Select } from './Select.jsx';
+export { DateRangePicker } from './DateRangePicker.jsx';

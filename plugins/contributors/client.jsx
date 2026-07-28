@@ -1,21 +1,13 @@
 // Contributors — client side of the bundled UnleashWP core plugin. The shell
-// mounts this default-exported component in <main>. It calls the plugin's own
-// /api/contributors route and renders the leaderboard + company breakdown using
-// the same StatCard / surface tokens the Changelog tool uses.
-import { useState, useCallback } from 'react';
+// mounts this default-exported component in <main>. It reuses the shell's shared
+// DateRangePicker, renders the leaderboard + company breakdown with Chakra UI
+// Charts (Recharts), and matches the Changelog tool's StatCard / surface tokens.
+import { useState, useCallback, useMemo } from 'react';
 import { Box, Flex, HStack, SimpleGrid, Spinner, Text, chakra } from '@chakra-ui/react';
+import { Chart, useChart } from '@chakra-ui/charts';
+import { Bar, BarChart, XAxis, YAxis, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
-import { Button, TextInput, Checkbox } from '../../src/client/ui';
-
-// One input → the right query param: "2025-Q4", "2025-10", or "a..b" range.
-function periodParams(input) {
-  const v = (input || '').trim();
-  if (/^\d{4}[-\s]?q[1-4]$/i.test(v)) return { quarter: v };
-  if (/^\d{4}-\d{2}$/.test(v)) return { month: v };
-  const m = v.match(/^(\d{4}-\d{2}-\d{2})\s*(?:\.\.|to)\s*(\d{4}-\d{2}-\d{2})$/i);
-  if (m) return { since: m[1], until: m[2] };
-  return null;
-}
+import { Button, TextInput, Checkbox, DateRangePicker } from '../../src/client/ui';
 
 // Bar colour by where the credit comes from (matches the CLI/SVG charts).
 const SRC_COLOR = { core: '#3858e9', gutenberg: '#1a9d6b', both: '#7c3aed', company: '#7c3aed' };
@@ -31,95 +23,101 @@ function StatCard({ n, label, counted }) {
   );
 }
 
-function Row({ rank, label, sub, value, max, color }) {
-  const pct = Math.max(2, Math.round((value / (max || 1)) * 100));
+// Horizontal bar chart via Chakra UI Charts. `rows` = [{ name, value, fill }].
+function HBar({ rows }) {
+  const chart = useChart({ data: rows });
+  const h = rows.length * 28 + 16;
   return (
-    <Flex align="center" gap="3" py="1.5" borderBottomWidth="1px" borderColor="ui.border">
-      <Text w="2rem" textAlign="right" color="ui.muted" fontVariantNumeric="tabular-nums" fontSize="0.8125rem">{rank}</Text>
-      <Box flex="0 0 11rem" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">
-        <Text as="span" color="ui.text" title={label}>{label}</Text>
-      </Box>
-      <Box flex="1"><Box h="10px" borderRadius="sm" bg={color} w={pct + '%'} minW="3px" /></Box>
-      {sub && <Text w="4.5rem" textAlign="right" color="ui.muted" fontSize="0.75rem">{sub}</Text>}
-      <Text w="3rem" textAlign="right" fontWeight="700" color="ui.heading" fontVariantNumeric="tabular-nums">{value}</Text>
-    </Flex>
+    <Chart.Root chart={chart} w="full">
+      <ResponsiveContainer width="100%" height={h}>
+        <BarChart data={chart.data} layout="vertical" margin={{ left: 8, right: 34, top: 2, bottom: 2 }} barSize={14} barCategoryGap={6}>
+          <XAxis type="number" hide />
+          <YAxis type="category" dataKey="name" width={140} tickLine={false} axisLine={false}
+            tick={{ fontSize: 12, fill: 'var(--chakra-colors-ui-text)' }} />
+          <Tooltip cursor={{ fill: 'rgba(128,128,128,0.10)' }} />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}
+            label={{ position: 'right', fontSize: 11, fill: 'var(--chakra-colors-ui-muted)' }}>
+            {chart.data.map((d, i) => <Cell key={i} fill={d.fill} />)}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </Chart.Root>
   );
 }
 
 export default function Contributors() {
   const core = useCore() || {};
-  const [period, setPeriod] = useState('2025-10');
+  const [since, setSince] = useState('2025-10-01');
+  const [until, setUntil] = useState('2025-10-31');
   const [withCompanies, setWithCompanies] = useState(false);
+  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
 
   const run = useCallback(async () => {
-    const params = periodParams(period);
-    if (!params) { setError('Use a period like 2025-Q4, 2025-10, or 2025-10-01..2025-10-31.'); return; }
+    if (!since || !until) { setError('Pick a date range first.'); return; }
     setError(''); setLoading(true); setData(null);
-    const qs = new URLSearchParams({ ...params, ...(withCompanies ? { companies: 'true' } : {}) });
+    const qs = new URLSearchParams({ since, until, ...(withCompanies ? { companies: 'true' } : {}) });
     try {
       const { ok, data: body } = await fetchJSON('/api/contributors?' + qs.toString());
       if (!ok) setError(body.error || 'Request failed'); else setData(body);
     } catch (e) { setError(e.message); }
     setLoading(false);
-  }, [period, withCompanies]);
+  }, [since, until, withCompanies]);
 
   const report = data && data.report;
-  const lead = report ? report.byContributor.slice(0, 25) : [];
-  const leadMax = lead.reduce((m, r) => Math.max(m, r.props), 0);
+  const q = search.trim().toLowerCase();
+  const leadRows = useMemo(() => (!report ? [] : report.byContributor
+    .filter((c) => !q || c.name.toLowerCase().includes(q)).slice(0, 20)
+    .map((c) => ({ name: c.name, value: c.props, fill: SRC_COLOR[c.source] || SRC_COLOR.both }))), [report, q]);
   const co = report && report.companies;
-  const coMax = co ? co.byCompany.reduce((m, r) => Math.max(m, r.contributions), 0) : 0;
+  const coRows = useMemo(() => (!co ? [] : co.byCompany
+    .filter((c) => !q || c.company.toLowerCase().includes(q)).slice(0, 15)
+    .map((c) => ({ name: c.company, value: c.contributions, fill: SRC_COLOR.company }))), [co, q]);
 
   return (
     <Box p="6" maxW="900px" mx="auto">
-      <Flex gap="3" align="center" wrap="wrap" mb="6">
-        <Box w="16rem">
-          <TextInput value={period} placeholder="2025-Q4 · 2025-10 · a..b"
-            onChange={(e) => setPeriod(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') run(); }} />
-        </Box>
-        <HStack gap="2">
+      <Flex gap="4" align="flex-end" wrap="wrap" mb="6">
+        <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
+        <HStack gap="2" pb="2.5">
           <Checkbox checked={withCompanies} onChange={(e) => setWithCompanies(e.target.checked)} />
           <Text color="ui.text" fontSize="0.875rem">Company investment (slower)</Text>
         </HStack>
-        <Button variant="primary" onClick={run}>Run</Button>
-        {loading && <Spinner size="sm" color="ui.primary" />}
+        <Box pb="0.5"><Button variant="primary" onClick={run}>Run</Button></Box>
+        {loading && <Spinner size="sm" color="ui.primary" mb="2.5" />}
       </Flex>
 
       {error && <Box mb="4" color="ui.bad" fontSize="0.875rem">{error}</Box>}
 
       {report && (
         <>
-          <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="8">
+          <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
             <StatCard n={report.totals.contributors} label="Contributors" counted />
             <StatCard n={report.totals.coreCommits} label="Core changes" />
             <StatCard n={report.totals.gutenbergCommits} label="Gutenberg changes" />
-            <StatCard n={co ? co.byCompany.length : report.window.label} label={co ? 'Companies' : 'Period'} />
+            <StatCard n={co ? co.byCompany.length : report.totals.coreCommits + report.totals.gutenbergCommits} label={co ? 'Companies' : 'Total changes'} />
           </SimpleGrid>
 
-          <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="2">Leaderboard — {report.window.label}</Text>
-          <Box mb={co ? '8' : '4'}>
-            {lead.map((r, i) => (
-              <Row key={r.name} rank={i + 1} label={r.name} sub={r.source} value={r.props} max={leadMax} color={SRC_COLOR[r.source] || SRC_COLOR.both} />
-            ))}
+          <Box w="16rem" mb="5">
+            <TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} />
           </Box>
 
+          <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="3">Leaderboard</Text>
+          {leadRows.length ? <HBar rows={leadRows} /> : <Text color="ui.muted" fontSize="0.875rem">No matching contributors.</Text>}
+
           {co && (
-            <Box>
+            <Box mt="8">
               <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="1">Which company invested most</Text>
               <Text color="ui.muted" fontSize="0.8125rem" mb="3">
                 Employer known for {co.coverage.peopleKnown}/{co.coverage.peopleTotal} ({co.coverage.pct}%). Location/geography is not published on wp.org profiles, so it is not shown.
               </Text>
-              {co.byCompany.slice(0, 15).map((r, i) => (
-                <Row key={r.company} rank={i + 1} label={r.company} sub={`${r.people} ppl`} value={r.contributions} max={coMax} color={SRC_COLOR.company} />
-              ))}
+              {coRows.length ? <HBar rows={coRows} /> : <Text color="ui.muted" fontSize="0.875rem">No matching companies.</Text>}
             </Box>
           )}
 
           {data.markdown && (
-            <Button mt="6" onClick={() => { try { navigator.clipboard.writeText(data.markdown); core.toast && core.toast('Markdown copied', 'success'); } catch { /* ignore */ } }}>Copy Markdown</Button>
+            <Button mt="8" onClick={() => { try { navigator.clipboard.writeText(data.markdown); core.toast && core.toast('Markdown copied', 'success'); } catch { /* ignore */ } }}>Copy Markdown</Button>
           )}
         </>
       )}
