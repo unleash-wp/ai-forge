@@ -1,5 +1,5 @@
 import { fetchContributors } from '../../../src/lib/wp-contributors.mjs';
-import { companyBreakdown, enrichCommitters } from '../../../src/lib/wp-profiles.mjs';
+import { companyBreakdown, enrichCommitters, resolveIdentities } from '../../../src/lib/wp-profiles.mjs';
 import { ticketActivity } from '../../../src/lib/wp-tickets.mjs';
 import { resolveWindow } from './quarters.mjs';
 
@@ -26,14 +26,18 @@ export async function contributorsReport(opts = {}) {
     report.tickets = await ticketActivity({ since: window.since, until: window.until }).catch(() => null);
   }
   if (opts.companies) {
-    const companies = await companyBreakdown(data.byContributor);
+    // Merge GitHub-vs-wp.org duplicate identities (e.g. GitHub "t-hamano" == wp.org
+    // "wildworks") so counts and the company breakdown aren't split across handles.
+    report.byContributor = await resolveIdentities(data.byContributor);
+    report.totals = { ...report.totals, contributors: report.byContributor.length };
+    const companies = await companyBreakdown(report.byContributor);
     report.companies = companies;
     // Fold each contributor's employer + avatar back onto byContributor, so the
     // UI can show where a person works and their photo without a second lookup.
-    const byName = new Map(companies.resolved.map((r) => [r.name, r]));
+    const bySlug = new Map(companies.resolved.map((r) => [r.slug, r]));
     for (const p of report.byContributor) {
-      const r = byName.get(p.name);
-      if (r) { p.employer = r.employer; p.avatar = r.avatar; p.slug = r.slug; }
+      const r = bySlug.get(p.slug);
+      if (r) { p.employer = r.employer; p.avatar = r.avatar; }
     }
   }
   return report;
@@ -49,5 +53,8 @@ export async function priorContributors(opts = {}) {
   const since = shiftMonths(window.since, months);
   const until = dayBefore(window.since);
   const data = await fetchContributors({ since, until, coreBranch: opts.coreBranch, gbBranch: opts.gbBranch });
-  return { since, until, months, names: data.byContributor.map((p) => p.name) };
+  // Resolve to canonical wp.org slugs so first-timer matching lines up with the
+  // (identity-merged) report, not raw GitHub logins.
+  const merged = await resolveIdentities(data.byContributor);
+  return { since, until, months, names: merged.map((p) => p.slug) };
 }
