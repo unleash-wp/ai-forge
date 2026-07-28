@@ -171,7 +171,7 @@ function saveBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function exportSvg(svg, name) { saveBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), name + '.svg'); }
-// Rasterise the SVG to a crisp @2x PNG in the browser — no dependency.
+// Rasterise the SVG to a crisp @2x PNG in the browser - no dependency.
 function exportPng(svg, name, scale = 2) {
   const img = new Image();
   img.onload = () => {
@@ -436,7 +436,7 @@ function CompanyMembers({ company, members }) {
           '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,0.75)' },
         }}>
         {pageItems.map((p, i) => (
-          <Flex key={p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
+          <Flex key={p.slug || p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
             <Avatar src={p.avatar} />
             <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(p.slug || p.name)}/`} target="_blank" rel="noopener noreferrer"
               flex="1" minW="0" color="ui.text" fontSize="0.875rem" fontWeight="500" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap"
@@ -716,7 +716,7 @@ export default function Contributors() {
   const people = useMemo(() => (!report ? [] : report.byContributor
     .filter((c) => valueOf(c) > 0)
     .filter((c) => !q || c.name.toLowerCase().includes(q))
-    .filter((c) => !newOnly || isNew(c.name))
+    .filter((c) => !newOnly || isNew(c.slug || c.name))
     .sort((a, b) => valueOf(b) - valueOf(a))), [report, q, repoFilter, newOnly, isNew]);
   const listMax = people.length ? valueOf(people[0]) : 1;
   const list = useMemo(() => people.slice(0, 20).map((p) => ({ name: p.name, value: valueOf(p) })), [people, repoFilter]);
@@ -840,7 +840,7 @@ export default function Contributors() {
                     <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
                     <Stack gap="0">
                       {pageItems.map((p, i) => (
-                        <RankRow key={p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
+                        <RankRow key={p.slug || p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
                           active={selPerson?.name === p.name} onClick={() => setSelected((s) => (s === p.name ? null : p.name))} isNew={isNew(p.slug || p.name)} />
                       ))}
                     </Stack>
@@ -894,7 +894,7 @@ export default function Contributors() {
                   )}
                 </Box>
                 <Box flex="1 1 0" minW="0" w="full">
-                  {selCompany ? <CompanyMembers company={selCompany} members={companyMembers} /> : <DetailEmpty label="Select a company to see its contributors." />}
+                  {selCompany && coList.some((r) => r.name === selCompany) ? <CompanyMembers company={selCompany} members={companyMembers} /> : <DetailEmpty label="Select a company to see its contributors." />}
                 </Box>
               </Flex>
             </>

@@ -22,7 +22,15 @@ import { fetchComponentMap, componentBreakdown } from './wp-components.mjs';
 
 const cmp = (a, b) => a.toLowerCase().localeCompare(b.toLowerCase());
 
-const shiftMonths = (iso, months) => { const d = new Date(iso); d.setUTCMonth(d.getUTCMonth() - months); return d.toISOString().slice(0, 10); };
+const shiftMonths = (iso, months) => {
+  const d = new Date(iso);
+  const day = d.getUTCDate();
+  d.setUTCDate(1); // avoid month-length overflow (e.g. Mar 31 minus 1 month)
+  d.setUTCMonth(d.getUTCMonth() - months);
+  const lastDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+  d.setUTCDate(Math.min(day, lastDay));
+  return d.toISOString().slice(0, 10);
+};
 const dayBefore = (iso) => { const d = new Date(iso); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); };
 
 export async function fetchContributors({ since, until, coreBranch = 'trunk', gbBranch = 'trunk', components = false, firstTimersMonths = 0 } = {}) {
