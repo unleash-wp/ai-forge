@@ -45,6 +45,29 @@ function toSlices(rows, top) {
 const sliceColor = (row, i, selected) => (row.name === selected ? YELLOW : row.others ? OTHERS : RAMP[i % RAMP.length]);
 const fmtDay = (d) => { const [y, m, day] = String(d).split('-'); return new Date(Date.UTC(+y, +m - 1, +day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
 
+// Best-effort company logo: wp.org has none, so we guess a domain from the name
+// and use Google's favicon service. Curated map for the tricky multi-word names;
+// single-word brands are guessed as <name>.com; anything ambiguous stays a dot.
+const LOGO_MAP = {
+  'wp engine': 'wpengine.com', 'human made': 'humanmade.com', 'human made ltd': 'humanmade.com',
+  'awesome motive': 'awesomemotive.com', 'parshipmeet group': 'parshipmeet.com', 'wordpress': 'wordpress.org',
+  'accessible web design': 'accessiblewebdesign.us', 'digicube ag': 'digicube.ch', 'buzz geek llc': 'buzzgeek.com',
+  'addweb solution': 'addwebsolution.com', 'yith': 'yithemes.com', 'a8c': 'automattic.com',
+};
+const NON_COMPANY = /^(unknown|self.?employed|open to work|freelanc|not listed|n\/a)/i;
+function companyLogo(name) {
+  if (!name) return null;
+  const key = name.toLowerCase().trim();
+  if (NON_COMPANY.test(key)) return null;
+  let domain = LOGO_MAP[key];
+  if (!domain) {
+    const base = key.replace(/[.,]/g, '').replace(/\b(inc|llc|ltd|gmbh|ag|co|corp|group|incorporated|limited|company)\b/g, '').trim();
+    if (/\s/.test(base) || base.length < 2) return null; // multi-word is too ambiguous to guess
+    domain = base.replace(/[^a-z0-9]/g, '') + '.com';
+  }
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+}
+
 function Field({ label, children }) {
   return (
     <Box display="flex" flexDir="column" gap="1.5" flex="1 1 10rem" minW="9rem">
@@ -443,7 +466,7 @@ export default function Contributors() {
                 <Donut data={coSlices} total={co.byCompany.length} unit="companies" />
                 <Stack gap="0" flex="1 1 16rem" minW="0">
                   {coList.slice(0, 15).map((r, i) => (
-                    <RankRow key={r.name} i={i + 1} person={{ name: r.name }} value={r.value} max={coMax} />
+                    <RankRow key={r.name} i={i + 1} person={{ name: r.name, avatar: companyLogo(r.name) }} value={r.value} max={coMax} />
                   ))}
                 </Stack>
               </Flex>
