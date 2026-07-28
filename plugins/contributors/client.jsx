@@ -525,7 +525,7 @@ function CommitterDetail({ committer }) {
   if (!committer) return null;
   const c = committer;
   const items = c.items || [];
-  const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(c.login)}/`;
+  const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(c.slug || c.login)}/`;
   return (
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
       <Flex align="flex-start" gap="4" mb="4">
@@ -703,8 +703,9 @@ export default function Contributors() {
     fetchJSON('/api/contributors/prior?' + qs.toString()).then(({ ok, data: b }) => {
       if (!live) return;
       if (!ok) { setFirstTimers({ loading: false, count: 0, names: new Set(), failed: true }); return; }
+      const key = (p) => (p.slug || p.name).toLowerCase();
       const prior = new Set((b.names || []).map((n) => n.toLowerCase()));
-      const names = new Set(report.byContributor.filter((p) => !prior.has(p.name.toLowerCase())).map((p) => p.name.toLowerCase()));
+      const names = new Set(report.byContributor.filter((p) => !prior.has(key(p))).map(key));
       setFirstTimers({ loading: false, count: names.size, names, lookback: b });
     }).catch(() => { if (live) setFirstTimers({ loading: false, count: 0, names: new Set(), failed: true }); });
     return () => { live = false; };
@@ -840,7 +841,7 @@ export default function Contributors() {
                     <Stack gap="0">
                       {pageItems.map((p, i) => (
                         <RankRow key={p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
-                          active={selPerson?.name === p.name} onClick={() => setSelected((s) => (s === p.name ? null : p.name))} isNew={isNew(p.name)} />
+                          active={selPerson?.name === p.name} onClick={() => setSelected((s) => (s === p.name ? null : p.name))} isNew={isNew(p.slug || p.name)} />
                       ))}
                     </Stack>
                     {totalPages > 1 && (

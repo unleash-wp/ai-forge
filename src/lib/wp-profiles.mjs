@@ -98,23 +98,76 @@ export async function profileOf(slug, cache) {
   return out;
 }
 
+// GitHub-login -> wp.org-slug cache. Many contributors use a different handle on
+// GitHub than on wp.org (e.g. GitHub "t-hamano" is wp.org "wildworks"), so the raw
+// commit name is not a reliable profile slug or dedup key.
+const SLUG_CACHE = join(homedir(), '.config', 'uwp-ai-forge', 'ghslug-cache-v1.json');
+function loadSlugCache() { try { return JSON.parse(readFileSync(SLUG_CACHE, 'utf8')); } catch { return {}; } }
+function saveSlugCache(c) { try { mkdirSync(dirname(SLUG_CACHE), { recursive: true }); writeFileSync(SLUG_CACHE, JSON.stringify(c)); } catch { /* best effort */ } }
+
+// Canonical wp.org slug for a name, cached. Returns the wp.org username when the
+// name is a GitHub login mapped to a profile, else the name unchanged.
+async function canonicalSlug(name, slugCache) {
+  if (!(name in slugCache)) slugCache[name] = (await githubToWporg(name)) || null;
+  return slugCache[name] || name;
+}
+
+async function pool(items, concurrency, fn) {
+  let i = 0;
+  const worker = async () => { while (i < items.length) await fn(items[i++]); };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length || 1) }, worker));
+}
+
+// Merge a byContributor list by canonical wp.org identity, so the same person
+// credited under a GitHub login (Gutenberg) and a wp.org username (Core) collapses
+// into one entry. Sums props/core/gutenberg, unions their shipped items, sets the
+// wp.org display name + slug. Returns the merged list ranked by props.
+export async function resolveIdentities(byContributor, { concurrency = 10 } = {}) {
+  const slugCache = loadSlugCache();
+  const names = [...new Set(byContributor.map((c) => c.name))];
+  await pool(names, concurrency, (name) => canonicalSlug(name, slugCache));
+  saveSlugCache(slugCache);
+  const slugOf = (name) => (slugCache[name] || name).toLowerCase();
+
+  const merged = new Map();
+  for (const c of byContributor) {
+    const key = slugOf(c.name);
+    let cur = merged.get(key);
+    if (!cur) { cur = { name: c.name, slug: key, props: 0, core: 0, gutenberg: 0, source: 'core', items: [] }; merged.set(key, cur); }
+    cur.props += c.props || 0;
+    cur.core += c.core || 0;
+    cur.gutenberg += c.gutenberg || 0;
+    if (c.name.toLowerCase() === key) cur.name = c.name; // prefer the wp.org-username spelling
+    for (const it of (c.items || [])) cur.items.push(it);
+  }
+  return [...merged.values()]
+    .map((c) => ({
+      ...c,
+      source: c.core > 0 && c.gutenberg > 0 ? 'both' : c.gutenberg > 0 ? 'gutenberg' : 'core',
+      items: c.items.sort((a, b) => (b.date || '').localeCompare(a.date || '')).slice(0, 100),
+    }))
+    .sort((a, b) => b.props - a.props || a.name.localeCompare(b.name));
+}
+
 // Attach each Core committer's employer, avatar and join year from their wp.org
-// profile (their GitHub login is their wp.org username). Shares the profile cache
-// with companyBreakdown, so overlapping runs are fast.
+// profile, resolving the GitHub login to the wp.org slug first (they often differ).
+// Shares the profile + slug caches, so overlapping runs are fast.
 export async function enrichCommitters(committers, { concurrency = 10 } = {}) {
   const cache = loadCache();
+  const slugCache = loadSlugCache();
   const out = new Array(committers.length);
   let i = 0;
   async function worker() {
     while (i < committers.length) {
       const idx = i++;
       const c = committers[idx];
-      const prof = await profileOf(c.login, cache);
-      out[idx] = { ...c, employer: prof.employer, avatar: prof.avatar, memberSince: prof.memberSince ?? null };
+      const slug = await canonicalSlug(c.login, slugCache);
+      const prof = await profileOf(slug, cache);
+      out[idx] = { ...c, slug, employer: prof.employer, avatar: prof.avatar, memberSince: prof.memberSince ?? null };
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, committers.length || 1) }, worker));
-  saveCache(cache);
+  saveCache(cache); saveSlugCache(slugCache);
   return out;
 }
 
@@ -130,7 +183,8 @@ export async function companyBreakdown(byContributor, { concurrency = 10 } = {})
     while (i < byContributor.length) {
       const idx = i++;
       const c = byContributor[idx];
-      const slug = c.source === 'gutenberg' ? await githubToWporg(c.name) : c.name;
+      // Prefer the canonical slug from resolveIdentities; fall back for direct callers.
+      const slug = c.slug || (c.source === 'gutenberg' ? await githubToWporg(c.name) : c.name);
       const prof = slug ? await profileOf(slug, cache) : { employer: null, avatar: null };
       resolved[idx] = { ...c, slug, employer: prof.employer, avatar: prof.avatar };
     }
