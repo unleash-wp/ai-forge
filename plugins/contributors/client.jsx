@@ -77,16 +77,18 @@ export default function Contributors() {
     .map((c) => ({ name: c.company, value: c.contributions, fill: SRC_COLOR.company }))), [co, q]);
 
   return (
-    <Box p="6" maxW="900px" mx="auto">
-      <Flex gap="4" align="flex-end" wrap="wrap" mb="6">
-        <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-        <HStack gap="2" pb="2.5">
-          <Checkbox checked={withCompanies} onChange={(e) => setWithCompanies(e.target.checked)} />
-          <Text color="ui.text" fontSize="0.875rem">Company investment (slower)</Text>
-        </HStack>
-        <Box pb="0.5"><Button variant="primary" onClick={run}>Run</Button></Box>
-        {loading && <Spinner size="sm" color="ui.primary" mb="2.5" />}
-      </Flex>
+    <>
+      <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
+        <Flex gap={{ base: '4', lg: '6' }} align="flex-end" wrap="wrap">
+          <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
+          <HStack gap="2" pb="2.5">
+            <Checkbox checked={withCompanies} onChange={(e) => setWithCompanies(e.target.checked)} />
+            <Text color="ui.text" fontSize="0.875rem">Company investment (slower)</Text>
+          </HStack>
+          <Box pb="0.5" ml={{ lg: 'auto' }}><Button variant="primary" onClick={run} px="7.5" fontWeight="700">Run</Button></Box>
+          {loading && <Spinner size="sm" color="navy" mb="2.5" />}
+        </Flex>
+      </Box>
 
       {error && <Box mb="4" color="ui.bad" fontSize="0.875rem">{error}</Box>}
 
@@ -121,6 +123,6 @@ export default function Contributors() {
           )}
         </>
       )}
-    </Box>
+    </>
   );
 }
