@@ -42,7 +42,8 @@ export default function App() {
         if (cur === PLUGINS_VIEW || cur === HOME_VIEW) return cur;
         const enabled = list.filter((p) => p.enabled !== false);
         if (cur && enabled.some((p) => p.id === cur)) return cur;
-        return enabled.length ? enabled[0].id : PLUGINS_VIEW;
+        // Default landing is the branded Home ("Start"), not the first tool.
+        return HOME_VIEW;
       });
     }).catch(() => {});
   }, []);
