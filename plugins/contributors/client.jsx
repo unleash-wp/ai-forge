@@ -1,21 +1,44 @@
 // Contributors — client side of the bundled UnleashWP core plugin. The shell
-// mounts this default-exported component in <main>. It reuses the shell's shared
-// DateRangePicker + branch pickers, renders the leaderboard + company breakdown
-// with Chakra UI Charts (Recharts), and matches the Changelog tool's tokens.
+// mounts this default-exported component in <main>. Period is a quarter / annual
+// / custom picker; results render with Chakra UI Charts (Recharts) in a single
+// calm colour, with contributor names linked to their wp.org profiles.
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Flex, HStack, SimpleGrid, Spinner, Text, chakra } from '@chakra-ui/react';
+import { Box, Flex, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra, Checkbox as CChk } from '@chakra-ui/react';
 import { Chart, useChart } from '@chakra-ui/charts';
-import { Bar, BarChart, XAxis, YAxis, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
-import { Button, TextInput, Checkbox, Select, DateRangePicker } from '../../src/client/ui';
+import { Button, TextInput, Select, DateRangePicker } from '../../src/client/ui';
 
-// Bar colour by where the credit comes from (matches the CLI/SVG charts).
-const SRC_COLOR = { core: '#3858e9', gutenberg: '#1a9d6b', both: '#7c3aed', company: '#7c3aed' };
+const BAR = '#3858e9';           // one calm accent for the bars
+const pad = (n) => String(n).padStart(2, '0');
+
+// --- period options: recent quarters + annual reports + a custom range ---
+function quarterWindow(year, q) {
+  const sm = (q - 1) * 3 + 1;
+  const em = sm + 2;
+  const last = new Date(Date.UTC(year, em, 0)).getUTCDate();
+  return { since: `${year}-${pad(sm)}-01`, until: `${year}-${pad(em)}-${pad(last)}` };
+}
+function buildPeriods(now) {
+  const y = now.getUTCFullYear();
+  const curQ = Math.floor(now.getUTCMonth() / 3) + 1;
+  const out = [];
+  let qy = y, qq = curQ;
+  for (let i = 0; i < 8; i++) {
+    out.push({ value: `q-${qy}-${qq}`, label: `Q${qq} ${qy}${qy === y && qq === curQ ? ' · in progress' : ''}`, ...quarterWindow(qy, qq) });
+    qq -= 1; if (qq === 0) { qq = 4; qy -= 1; }
+  }
+  for (let yr = y; yr >= y - 3; yr -= 1) {
+    out.push({ value: `y-${yr}`, label: `${yr} · annual report`, since: `${yr}-01-01`, until: `${yr}-12-31` });
+  }
+  out.push({ value: 'custom', label: 'Custom range…' });
+  return out;
+}
 
 // A labelled field wrapper, matching the DateRangePicker's uppercase label.
-function Field({ label, children }) {
+function Field({ label, children, basis = '1 1 10rem' }) {
   return (
-    <Box display="flex" flexDir="column" gap="1.5" flex="1 1 10rem" minW="9rem">
+    <Box display="flex" flexDir="column" gap="1.5" flex={basis} minW="9rem">
       <Text as="span" fontSize="0.7813rem" fontWeight="600" letterSpacing=".04em" textTransform="uppercase" color="ui.muted">{label}</Text>
       {children}
     </Box>
@@ -27,38 +50,64 @@ function StatCard({ n, label, counted }) {
   return (
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" px="5" py="4" boxShadow="sm"
       css={counted ? { boxShadow: 'inset 0 2.5px 0 var(--chakra-colors-yellow), var(--chakra-shadows-sm)' } : undefined}>
-      <chakra.b display="block" fontSize="clamp(1.75rem, 1.5rem + 1vw, 2.375rem)" fontWeight="800" color="ui.heading" lineHeight="1.05" letterSpacing="-.02em" fontVariantNumeric="tabular-nums">{n}</chakra.b>
-      <Text display="block" color="ui.muted" fontSize="0.8125rem" mt="0.5">{label}</Text>
+      <chakra.b display="block" fontSize="clamp(1.5rem, 1.2rem + 1vw, 2rem)" fontWeight="800" color="ui.heading" lineHeight="1.1" letterSpacing="-.02em" fontVariantNumeric="tabular-nums" whiteSpace="nowrap">{n}</chakra.b>
+      <Text display="block" color="ui.muted" fontSize="0.8125rem" mt="1" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{label}</Text>
     </Box>
   );
 }
 
-// Horizontal bar chart via Chakra UI Charts. `rows` = [{ name, value, fill }].
-function HBar({ rows }) {
+// Y-axis tick that links a contributor name to their wp.org profile.
+function LinkedTick({ x, y, payload }) {
+  const name = payload.value;
+  return (
+    <a href={`https://profiles.wordpress.org/${encodeURIComponent(name)}/`} target="_blank" rel="noopener noreferrer">
+      <text x={x - 8} y={y} dy={4} textAnchor="end" fontSize={12} fill="var(--chakra-colors-ui-primary)"
+        style={{ cursor: 'pointer', textDecoration: 'underline' }}>{name}</text>
+    </a>
+  );
+}
+function PlainTick({ x, y, payload }) {
+  return <text x={x - 8} y={y} dy={4} textAnchor="end" fontSize={12} fill="var(--chakra-colors-ui-text)">{payload.value}</text>;
+}
+
+// Horizontal bar chart via Chakra UI Charts, one colour, optional linked ticks.
+function HBar({ rows, tick }) {
   const chart = useChart({ data: rows });
-  const h = rows.length * 28 + 16;
+  const h = rows.length * 30 + 16;
   return (
     <Chart.Root chart={chart} w="full">
       <ResponsiveContainer width="100%" height={h}>
-        <BarChart data={chart.data} layout="vertical" margin={{ left: 8, right: 34, top: 2, bottom: 2 }} barSize={14} barCategoryGap={6}>
+        <BarChart data={chart.data} layout="vertical" margin={{ left: 8, right: 40, top: 2, bottom: 2 }} barSize={15} barCategoryGap={7}>
           <XAxis type="number" hide />
-          <YAxis type="category" dataKey="name" width={140} tickLine={false} axisLine={false}
-            tick={{ fontSize: 12, fill: 'var(--chakra-colors-ui-text)' }} />
-          <Tooltip cursor={{ fill: 'rgba(128,128,128,0.10)' }} />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}
-            label={{ position: 'right', fontSize: 11, fill: 'var(--chakra-colors-ui-muted)' }}>
-            {chart.data.map((d, i) => <Cell key={i} fill={d.fill} />)}
-          </Bar>
+          <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} interval={0} tick={tick} />
+          <Tooltip cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
+          <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false} fill={BAR}
+            label={{ position: 'right', fontSize: 11, fill: 'var(--chakra-colors-ui-muted)' }} />
         </BarChart>
       </ResponsiveContainer>
     </Chart.Root>
   );
 }
 
+// The waiting frame, mirroring the Changelog tool's skeleton.
+function ResultsSkeleton() {
+  return (
+    <>
+      <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
+        {[0, 1, 2, 3].map((i) => <Skeleton key={i} h="4.75rem" borderRadius="forge" />)}
+      </SimpleGrid>
+      <Skeleton h="2.5rem" w="16rem" borderRadius="forge" mb="5" />
+      <Stack gap="2.5">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} h="1.375rem" borderRadius="sm" />)}</Stack>
+    </>
+  );
+}
+
 export default function Contributors() {
   const core = useCore() || {};
-  const [since, setSince] = useState('2025-10-01');
-  const [until, setUntil] = useState('2025-10-31');
+  const periods = useMemo(() => buildPeriods(new Date()), []);
+  const [periodVal, setPeriodVal] = useState(periods[1].value); // latest COMPLETE quarter
+  const [since, setSince] = useState(periods[1].since);
+  const [until, setUntil] = useState(periods[1].until);
   const [gbBranch, setGbBranch] = useState('trunk');
   const [coreBranch, setCoreBranch] = useState('trunk');
   const [gbBranches, setGbBranches] = useState(['trunk']);
@@ -68,8 +117,15 @@ export default function Contributors() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
+  const custom = periodVal === 'custom';
 
-  // Load the branch lists once so the pickers are populated (trunk + wp/x.y + …).
+  function onPeriod(v) {
+    setPeriodVal(v);
+    const p = periods.find((x) => x.value === v);
+    if (p && p.since) { setSince(p.since); setUntil(p.until); }
+  }
+
+  // Populate the branch pickers once (trunk + wp/x.y + …).
   useEffect(() => {
     let live = true;
     (async () => {
@@ -84,7 +140,7 @@ export default function Contributors() {
   }, []);
 
   const run = useCallback(async () => {
-    if (!since || !until) { setError('Pick a date range first.'); return; }
+    if (!since || !until) { setError('Pick a period first.'); return; }
     setError(''); setLoading(true); setData(null);
     const qs = new URLSearchParams({ since, until, gbBranch, coreBranch, ...(withCompanies ? { companies: 'true' } : {}) });
     try {
@@ -98,17 +154,23 @@ export default function Contributors() {
   const q = search.trim().toLowerCase();
   const leadRows = useMemo(() => (!report ? [] : report.byContributor
     .filter((c) => !q || c.name.toLowerCase().includes(q)).slice(0, 20)
-    .map((c) => ({ name: c.name, value: c.props, fill: SRC_COLOR[c.source] || SRC_COLOR.both }))), [report, q]);
+    .map((c) => ({ name: c.name, value: c.props }))), [report, q]);
   const co = report && report.companies;
   const coRows = useMemo(() => (!co ? [] : co.byCompany
     .filter((c) => !q || c.company.toLowerCase().includes(q)).slice(0, 15)
-    .map((c) => ({ name: c.company, value: c.contributions, fill: SRC_COLOR.company }))), [co, q]);
+    .map((c) => ({ name: c.company, value: c.contributions }))), [co, q]);
 
   return (
     <>
       <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="6" mb="8">
         <Flex gap={{ base: '4', lg: '6' }} align="flex-end" wrap="wrap">
-          <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
+          <Field label="Period">
+            <Select block searchable ariaLabel="Period" value={periodVal} onChange={onPeriod}
+              options={periods.map((p) => ({ value: p.value, label: p.label }))} placeholder="Select" />
+          </Field>
+          {custom && (
+            <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
+          )}
           <Field label="Gutenberg branch">
             <Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch}
               options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
@@ -120,22 +182,24 @@ export default function Contributors() {
         </Flex>
         <Flex align={{ base: 'stretch', lg: 'center' }} justify="space-between" gap="4" mt="6" pt="4"
           borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
-          <HStack gap="2">
-            <Checkbox checked={withCompanies} onChange={(e) => setWithCompanies(e.target.checked)} />
-            <Text color="ui.text" fontSize="0.875rem">Company investment (slower)</Text>
-          </HStack>
+          <CChk.Root checked={withCompanies} colorPalette="brand" cursor="pointer"
+            onCheckedChange={(d) => setWithCompanies(d.checked === true)}>
+            <CChk.HiddenInput />
+            <CChk.Control cursor="pointer" _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} />
+            <CChk.Label fontSize="0.875rem" fontWeight="500" cursor="pointer" color="ui.text">Company investment (slower)</CChk.Label>
+          </CChk.Root>
           <HStack gap="4">
             {loading && <Spinner size="sm" color="navy" />}
-            <Button variant="primary" onClick={run} px="7.5" fontWeight="700">Run</Button>
+            <Button variant="primary" onClick={run} disabled={loading} px="7.5" fontWeight="700">Run</Button>
           </HStack>
         </Flex>
       </Box>
 
       {error && <Box mb="4" color="ui.bad" fontSize="0.875rem">{error}</Box>}
 
-      {report && (
+      {loading ? <ResultsSkeleton /> : report && (
         <>
-          <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
+          <SimpleGrid minChildWidth="10.5rem" gap="4" mb="6">
             <StatCard n={report.totals.contributors} label="Contributors" counted />
             <StatCard n={report.totals.coreCommits} label="Core changes" />
             <StatCard n={report.totals.gutenbergCommits} label="Gutenberg changes" />
@@ -147,7 +211,8 @@ export default function Contributors() {
           </Box>
 
           <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="3">Leaderboard</Text>
-          {leadRows.length ? <HBar rows={leadRows} /> : <Text color="ui.muted" fontSize="0.875rem">No matching contributors.</Text>}
+          {leadRows.length ? <HBar rows={leadRows} tick={<LinkedTick />} />
+            : <Text color="ui.muted" fontSize="0.875rem">No matching contributors.</Text>}
 
           {co && (
             <Box mt="8">
@@ -155,7 +220,8 @@ export default function Contributors() {
               <Text color="ui.muted" fontSize="0.8125rem" mb="3">
                 Employer known for {co.coverage.peopleKnown}/{co.coverage.peopleTotal} ({co.coverage.pct}%). Location/geography is not published on wp.org profiles, so it is not shown.
               </Text>
-              {coRows.length ? <HBar rows={coRows} /> : <Text color="ui.muted" fontSize="0.875rem">No matching companies.</Text>}
+              {coRows.length ? <HBar rows={coRows} tick={<PlainTick />} />
+                : <Text color="ui.muted" fontSize="0.875rem">No matching companies.</Text>}
             </Box>
           )}
 
