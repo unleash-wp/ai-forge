@@ -82,13 +82,13 @@ function RunButton({ onClick, loading }) {
   return (
     <chakra.button type="button" onClick={onClick} disabled={loading}
       display="inline-flex" alignItems="center" gap="2" px="6" py="2.5" borderRadius="forge" fontWeight="700" fontSize="0.9375rem"
-      color="white" bg="navy" boxShadow="sm" cursor="pointer"
+      color="white" bg="navy" boxShadow="sm" cursor="pointer" whiteSpace="nowrap"
       transition="transform .14s cubic-bezier(.22,1,.36,1), box-shadow .14s ease, background .2s ease"
       _hover={{ bg: 'yellow', color: 'navy', transform: 'translateY(-2px)', boxShadow: 'md' }}
       _active={{ transform: 'translateY(0)' }}
       _disabled={{ opacity: 0.6, cursor: 'default', transform: 'none', bg: 'navy', color: 'white' }}
       css={{ '@media (prefers-reduced-motion: reduce)': { transition: 'none' } }}>
-      {loading ? <Spinner size="sm" /> : <chakra.svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></chakra.svg>}
+      {loading && <Spinner size="sm" />}
       {loading ? 'Running' : 'Run report'}
     </chakra.button>
   );
