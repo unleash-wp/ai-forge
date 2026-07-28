@@ -329,6 +329,7 @@ export default function Contributors() {
   const [page, setPage] = useState(0);
   const [selCompany, setSelCompany] = useState(null);
   const [coPage, setCoPage] = useState(0);
+  const [branchesLoading, setBranchesLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -346,12 +347,13 @@ export default function Contributors() {
   useEffect(() => {
     let live = true;
     (async () => {
-      for (const [repo, set] of [['gutenberg', setGbBranches], ['core', setCoreBranches]]) {
+      await Promise.all([['gutenberg', setGbBranches], ['core', setCoreBranches]].map(async ([repo, set]) => {
         try {
           const { ok, data: b } = await fetchJSON('/api/contributors/branches?repo=' + repo);
           if (live && ok && b.branches && b.branches.length) set(b.branches);
         } catch { /* keep the trunk default */ }
-      }
+      }));
+      if (live) setBranchesLoading(false);
     })();
     return () => { live = false; };
   }, []);
@@ -416,12 +418,16 @@ export default function Contributors() {
           </Field>
           {custom && <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />}
           <Field label="Gutenberg branch">
-            <Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch}
-              options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
+            {branchesLoading ? <Skeleton h="2.75rem" borderRadius="forge" /> : (
+              <Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch}
+                options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
+            )}
           </Field>
           <Field label="Core branch">
-            <Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch}
-              options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
+            {branchesLoading ? <Skeleton h="2.75rem" borderRadius="forge" /> : (
+              <Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch}
+                options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
+            )}
           </Field>
           <Box pb="0.5" ml={{ lg: 'auto' }}><RunButton onClick={run} loading={loading} /></Box>
         </Flex>
@@ -455,7 +461,11 @@ export default function Contributors() {
           {tab === 'contributors' ? (
             <>
               <Flex justify="flex-end" gap="3" mb="4" wrap="wrap">
-                <Segmented options={[{ value: 'all', label: 'All' }, { value: 'core', label: 'Core' }, { value: 'gutenberg', label: 'Gutenberg' }]} value={repoFilter} onChange={setRepoFilter} />
+                <Segmented value={repoFilter} onChange={setRepoFilter} options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'core', label: <><CoreIcon size={14} /> Core</> },
+                  { value: 'gutenberg', label: <><GutenbergIcon size={14} /> Gutenberg</> },
+                ]} />
                 <Box w="12rem"><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
               {list.length ? (
