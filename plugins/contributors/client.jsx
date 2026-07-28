@@ -298,6 +298,16 @@ function Donut({ data, total, unit, selected, onSelect }) {
   );
 }
 
+// Shown in the detail column when nothing is selected (click a row to select,
+// click it again to deselect).
+function DetailEmpty({ label }) {
+  return (
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="6" py="12" w="full" textAlign="center">
+      <Text color="ui.muted" fontSize="0.875rem" lineHeight="1.6" maxW="34ch" mx="auto">{label}</Text>
+    </Box>
+  );
+}
+
 // A small "New" pill for first-time contributors.
 function NewBadge() {
   return (
@@ -357,7 +367,13 @@ function Detail({ person, repoFilter }) {
         </Box>
       </Flex>
       <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
-        css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
+        css={{
+          scrollbarWidth: 'thin', scrollbarColor: 'rgba(120,130,150,0.5) transparent',
+          '&::-webkit-scrollbar': { width: '8px' },
+          '&::-webkit-scrollbar-track': { background: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { background: 'rgba(120,130,150,0.5)', borderRadius: '4px' },
+          '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,0.75)' },
+        }}>
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
             display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
@@ -412,7 +428,13 @@ function CompanyMembers({ company, members }) {
       <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{company}</Text>
       <Text color="ui.muted" fontSize="0.8125rem" mb="3">{members.length} {members.length === 1 ? 'contributor' : 'contributors'}</Text>
       <Stack gap="0" overflowY="auto" pr="1"
-        css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
+        css={{
+          scrollbarWidth: 'thin', scrollbarColor: 'rgba(120,130,150,0.5) transparent',
+          '&::-webkit-scrollbar': { width: '8px' },
+          '&::-webkit-scrollbar-track': { background: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { background: 'rgba(120,130,150,0.5)', borderRadius: '4px' },
+          '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,0.75)' },
+        }}>
         {pageItems.map((p, i) => (
           <Flex key={p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
             <Avatar src={p.avatar} />
@@ -525,7 +547,13 @@ function CommitterDetail({ committer }) {
         </Box>
       </Flex>
       <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
-        css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
+        css={{
+          scrollbarWidth: 'thin', scrollbarColor: 'rgba(120,130,150,0.5) transparent',
+          '&::-webkit-scrollbar': { width: '8px' },
+          '&::-webkit-scrollbar-track': { background: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { background: 'rgba(120,130,150,0.5)', borderRadius: '4px' },
+          '&::-webkit-scrollbar-thumb:hover': { background: 'rgba(120,130,150,0.75)' },
+        }}>
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
             display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
@@ -548,7 +576,7 @@ function Committers({ list: rawList, meta, search, setSearch }) {
   const [page, setPage] = useState(0);
   const q = (search || '').trim().toLowerCase();
   const list = useMemo(() => (rawList || []).filter((c) => !q || c.login.toLowerCase().includes(q) || (c.name || '').toLowerCase().includes(q)), [rawList, q]);
-  useEffect(() => { setPage(0); setSel(null); }, [list]);
+  useEffect(() => { setPage(0); setSel(list[0]?.login ?? null); }, [list]);
   const PAGE = 20;
   const pool = useMemo(() => list.slice(0, 100), [list]);
   const slices = useMemo(() => toSlices(list.map((c) => ({ name: c.login, value: c.commits })), 8), [list]);
@@ -556,7 +584,7 @@ function Committers({ list: rawList, meta, search, setSearch }) {
   const max = list[0]?.commits || 1;
   const totalPages = Math.max(1, Math.ceil(pool.length / PAGE));
   const pageItems = pool.slice(page * PAGE, page * PAGE + PAGE);
-  const selCom = list.find((c) => c.login === sel) || list[0];
+  const selCom = list.find((c) => c.login === sel) || null;
   return (
     <>
       <Flex justify="flex-end" align="center" gap="3" mb="4" wrap="wrap">
@@ -573,7 +601,7 @@ function Committers({ list: rawList, meta, search, setSearch }) {
             <Stack gap="0">
               {pageItems.map((c, i) => (
                 <RankRow key={c.login} i={page * PAGE + i + 1} person={{ name: c.login, avatar: c.avatar, employer: c.employer }} value={c.commits} max={max}
-                  active={selCom?.login === c.login} onClick={() => setSel(c.login)} />
+                  active={selCom?.login === c.login} onClick={() => setSel((s) => (s === c.login ? null : c.login))} />
               ))}
             </Stack>
             {totalPages > 1 && (
@@ -587,7 +615,9 @@ function Committers({ list: rawList, meta, search, setSearch }) {
               </Flex>
             )}
           </Box>
-          <Box flex="1 1 0" minW="0" w="full"><CommitterDetail committer={selCom} /></Box>
+          <Box flex="1 1 0" minW="0" w="full">
+            {selCom ? <CommitterDetail committer={selCom} /> : <DetailEmpty label="Select a committer to see the changesets they landed." />}
+          </Box>
         </Flex>
       ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching committers.</Text>}
     </>
@@ -694,7 +724,7 @@ export default function Contributors() {
   const pool = useMemo(() => people.slice(0, 100), [people]); // rank up to 100
   const totalPages = Math.max(1, Math.ceil(pool.length / PAGE));
   const pageItems = pool.slice(page * PAGE, page * PAGE + PAGE);
-  const selPerson = useMemo(() => people.find((c) => c.name === selected) || people[0] || null, [people, selected]);
+  const selPerson = useMemo(() => people.find((c) => c.name === selected) || null, [people, selected]);
 
   const co = report && report.companies;
   const coList = useMemo(() => (!co ? [] : co.byCompany.filter((c) => !q || c.company.toLowerCase().includes(q)).map((c) => ({ name: c.company, value: c.contributions }))), [co, q]);
@@ -810,7 +840,7 @@ export default function Contributors() {
                     <Stack gap="0">
                       {pageItems.map((p, i) => (
                         <RankRow key={p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
-                          active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} isNew={isNew(p.name)} />
+                          active={selPerson?.name === p.name} onClick={() => setSelected((s) => (s === p.name ? null : p.name))} isNew={isNew(p.name)} />
                       ))}
                     </Stack>
                     {totalPages > 1 && (
@@ -824,7 +854,9 @@ export default function Contributors() {
                       </Flex>
                     )}
                   </Box>
-                  <Box flex="1 1 0" minW="0" w="full"><Detail person={selPerson} repoFilter={repoFilter} /></Box>
+                  <Box flex="1 1 0" minW="0" w="full">
+                    {selPerson ? <Detail person={selPerson} repoFilter={repoFilter} /> : <DetailEmpty label="Select a contributor to see what they shipped." />}
+                  </Box>
                 </Flex>
               ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
               {report.components && <Components data={report.components} />}
@@ -846,7 +878,7 @@ export default function Contributors() {
                   <Stack gap="0">
                     {coPageItems.map((r, i) => (
                       <RankRow key={r.name} i={coPage * PAGE + i + 1} person={{ name: r.name }} value={r.value} max={coMax} noAvatar
-                        active={selCompany === r.name} onClick={() => setSelCompany(r.name)} />
+                        active={selCompany === r.name} onClick={() => setSelCompany((s) => (s === r.name ? null : r.name))} />
                     ))}
                   </Stack>
                   {coTotalPages > 1 && (
@@ -860,7 +892,9 @@ export default function Contributors() {
                     </Flex>
                   )}
                 </Box>
-                <Box flex="1 1 0" minW="0" w="full"><CompanyMembers company={selCompany} members={companyMembers} /></Box>
+                <Box flex="1 1 0" minW="0" w="full">
+                  {selCompany ? <CompanyMembers company={selCompany} members={companyMembers} /> : <DetailEmpty label="Select a company to see its contributors." />}
+                </Box>
               </Flex>
             </>
           ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No company data for this window.</Text>}
