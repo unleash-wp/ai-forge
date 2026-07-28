@@ -16,7 +16,7 @@ import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
 const UA = 'uwp-ai-forge contributors (+https://unleash-wp.com)';
-const CACHE = join(homedir(), '.config', 'uwp-ai-forge', 'profile-cache.json');
+const CACHE = join(homedir(), '.config', 'uwp-ai-forge', 'profile-cache-v2.json');
 
 function loadCache() {
   try { return JSON.parse(readFileSync(CACHE, 'utf8')); } catch { return {}; }
@@ -66,19 +66,34 @@ export function parseEmployer(html) {
   return null;
 }
 
-export async function employerOf(slug, cache) {
-  if (cache && slug in cache) return cache[slug];
-  let employer = null;
-  try { employer = parseEmployer(await getText(`https://profiles.wordpress.org/${slug}/`)); } catch { /* leave null */ }
-  if (cache) cache[slug] = employer;
-  return employer;
+// Gravatar avatar URL from the profile HTML (or null), normalised to 120px.
+export function parseAvatar(html) {
+  const m = html.match(/(?:https?:)?\/\/(?:secure\.|www\.)?gravatar\.com\/avatar\/[0-9a-f]+/i);
+  if (!m) return null;
+  const url = m[0].startsWith('//') ? `https:${m[0]}` : m[0];
+  return `${url}?s=120&d=mp`;
+}
+
+// One profile fetch -> { employer, avatar }, cached to disk.
+export async function profileOf(slug, cache) {
+  if (cache && slug in cache) {
+    const v = cache[slug];
+    return typeof v === 'string' ? { employer: v, avatar: null } : v;
+  }
+  let out = { employer: null, avatar: null };
+  try {
+    const html = await getText(`https://profiles.wordpress.org/${slug}/`);
+    out = { employer: parseEmployer(html), avatar: parseAvatar(html) };
+  } catch { /* leave nulls */ }
+  if (cache) cache[slug] = out;
+  return out;
 }
 
 // Resolve employers for a byContributor list ([{ name, props, source }]) and
 // aggregate credited contributions per company. Returns { byCompany, resolved,
 // coverage }. Bounded concurrency; results cached to disk across runs so a second
 // run of an overlapping window is fast and gentle on profiles.wordpress.org.
-export async function companyBreakdown(byContributor, { concurrency = 6 } = {}) {
+export async function companyBreakdown(byContributor, { concurrency = 10 } = {}) {
   const cache = loadCache();
   const resolved = new Array(byContributor.length);
   let i = 0;
@@ -87,8 +102,8 @@ export async function companyBreakdown(byContributor, { concurrency = 6 } = {}) 
       const idx = i++;
       const c = byContributor[idx];
       const slug = c.source === 'gutenberg' ? await githubToWporg(c.name) : c.name;
-      const employer = slug ? await employerOf(slug, cache) : null;
-      resolved[idx] = { ...c, slug, employer };
+      const prof = slug ? await profileOf(slug, cache) : { employer: null, avatar: null };
+      resolved[idx] = { ...c, slug, employer: prof.employer, avatar: prof.avatar };
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, byContributor.length || 1) }, worker));

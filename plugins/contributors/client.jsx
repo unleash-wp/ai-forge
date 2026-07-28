@@ -1,22 +1,23 @@
-// Contributors — client side of the bundled UnleashWP core plugin. Period is a
-// quarter / annual / custom picker. Results show a donut of the top contributors
-// (UnleashWP navy + yellow), a selectable ranked list, and a detail panel of what
-// the selected person actually shipped, plus a company-investment breakdown.
+// Contributors — client side of the bundled UnleashWP core plugin. An analytics
+// view of who contributed to WordPress Core + Gutenberg in a period: activity
+// over time, a donut of the top people, a selectable ranked list (with photo and
+// employer), what each person shipped, and which company invested most.
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Flex, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra, Checkbox as CChk } from '@chakra-ui/react';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { Box, Flex, Heading, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
+import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { Button, TextInput, Select, DateRangePicker } from '../../src/client/ui';
 import { CoreIcon, GutenbergIcon } from '../../src/client/wp-icons.jsx';
 
-// UnleashWP brand: navy ramp + yellow accent. The selected slice turns yellow.
+// UnleashWP brand: navy ramp + yellow accent. Selected slice/row turns yellow.
 const NAVY = '#203159';
 const YELLOW = '#fcbe00';
 const RAMP = ['#203159', '#2a3f6f', '#3c4e7d', '#4a5c8c', '#5d6f9f', '#7385b0', '#8f9dc4', '#aab6d6'];
 const OTHERS = '#c3cadb';
+const MEDAL = ['#fcbe00', '#b9c2d1', '#cd7f4f']; // gold, silver, bronze for the top three
+const AXIS = 'var(--chakra-colors-fg)';          // resolves + adapts to light/dark
 const pad = (n) => String(n).padStart(2, '0');
 
-// --- period options: recent quarters + annual reports + a custom range ---
 function quarterWindow(year, q) {
   const sm = (q - 1) * 3 + 1;
   const em = sm + 2;
@@ -26,26 +27,23 @@ function quarterWindow(year, q) {
 function buildPeriods(now) {
   const y = now.getUTCFullYear();
   const curQ = Math.floor(now.getUTCMonth() / 3) + 1;
-  const out = [];
+  const out = [{ value: 'custom', label: 'Custom dates' }]; // custom first, per request
   let qy = y, qq = curQ;
   for (let i = 0; i < 8; i++) {
-    out.push({ value: `q-${qy}-${qq}`, label: `Q${qq} ${qy}${qy === y && qq === curQ ? ' · in progress' : ''}`, ...quarterWindow(qy, qq) });
+    out.push({ value: `q-${qy}-${qq}`, label: `Q${qq} ${qy}${qy === y && qq === curQ ? ' (in progress)' : ''}`, ...quarterWindow(qy, qq) });
     qq -= 1; if (qq === 0) { qq = 4; qy -= 1; }
   }
-  for (let yr = y; yr >= y - 3; yr -= 1) {
-    out.push({ value: `y-${yr}`, label: `${yr} · annual report`, since: `${yr}-01-01`, until: `${yr}-12-31` });
-  }
-  out.push({ value: 'custom', label: 'Custom range…' });
+  for (let yr = y; yr >= y - 3; yr -= 1) out.push({ value: `y-${yr}`, label: `${yr} annual report`, since: `${yr}-01-01`, until: `${yr}-12-31` });
   return out;
 }
 
-// Group a ranked [{name,value}] list into the top N slices + an "Others" slice.
 function toSlices(rows, top) {
   const head = rows.slice(0, top);
   const rest = rows.slice(top).reduce((s, r) => s + r.value, 0);
   return rest > 0 ? [...head, { name: 'Others', value: rest, others: true }] : head;
 }
 const sliceColor = (row, i, selected) => (row.name === selected ? YELLOW : row.others ? OTHERS : RAMP[i % RAMP.length]);
+const fmtDay = (d) => { const [y, m, day] = String(d).split('-'); return new Date(Date.UTC(+y, +m - 1, +day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
 
 function Field({ label, children }) {
   return (
@@ -66,15 +64,55 @@ function StatCard({ n, label, counted }) {
   );
 }
 
-// Donut with the total in the middle. `data` = [{name,value,others?}].
+function Segmented({ options, value, onChange }) {
+  return (
+    <HStack gap="0" bg="ui.sunk" borderRadius="md" p="0.25rem" display="inline-flex" flex="none">
+      {options.map((o) => (
+        <chakra.button key={o.value} type="button" onClick={() => onChange(o.value)} px="3.5" py="1.5" borderRadius="sm"
+          fontSize="0.8125rem" fontWeight={value === o.value ? '700' : '500'} cursor="pointer" whiteSpace="nowrap" display="inline-flex" alignItems="center" gap="1.5"
+          bg={value === o.value ? 'ui.surface' : 'transparent'} color={value === o.value ? 'ui.heading' : 'ui.muted'}
+          boxShadow={value === o.value ? 'sm' : 'none'} transition="background .12s, color .12s">{o.label}</chakra.button>
+      ))}
+    </HStack>
+  );
+}
+
+// A more characterful action than a plain button: play glyph, lift + colour shift.
+function RunButton({ onClick, loading }) {
+  return (
+    <chakra.button type="button" onClick={onClick} disabled={loading}
+      display="inline-flex" alignItems="center" gap="2" px="6" py="2.5" borderRadius="forge" fontWeight="700" fontSize="0.9375rem"
+      color="white" bg="navy" boxShadow="sm" cursor="pointer"
+      transition="transform .14s cubic-bezier(.22,1,.36,1), box-shadow .14s ease, background .2s ease"
+      _hover={{ bg: 'yellow', color: 'navy', transform: 'translateY(-2px)', boxShadow: 'md' }}
+      _active={{ transform: 'translateY(0)' }}
+      _disabled={{ opacity: 0.6, cursor: 'default', transform: 'none', bg: 'navy', color: 'white' }}
+      css={{ '@media (prefers-reduced-motion: reduce)': { transition: 'none' } }}>
+      {loading ? <Spinner size="sm" /> : <chakra.svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></chakra.svg>}
+      {loading ? 'Running' : 'Run report'}
+    </chakra.button>
+  );
+}
+
+const RepoMark = ({ repo }) => (repo === 'core' ? <CoreIcon size={18} /> : <GutenbergIcon size={18} />);
+
+// Small round avatar with a coloured-dot fallback.
+function Avatar({ src, color, size = 22 }) {
+  const [ok, setOk] = useState(true);
+  if (src && ok) return <chakra.img src={src} alt="" onError={() => setOk(false)} w={`${size}px`} h={`${size}px`} borderRadius="full" flex="none" objectFit="cover" bg="ui.sunk" />;
+  return <Box w={`${size}px`} h={`${size}px`} borderRadius="full" bg={color || NAVY} flex="none" />;
+}
+
 function Donut({ data, total, unit, selected, onSelect }) {
   return (
-    <Box position="relative" w="200px" h="200px" flex="none">
+    <Box position="relative" w="200px" h="200px" flex="none"
+      css={{ '& .recharts-sector': { outline: 'none' }, '& path:focus, & g:focus, & svg:focus': { outline: 'none' } }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
+          <Tooltip formatter={(v, n) => [`${v} contributions`, n]} />
           <Pie data={data} dataKey="value" nameKey="name" innerRadius={64} outerRadius={96} paddingAngle={1.5} stroke="none"
-            isAnimationActive={false} onClick={(d) => onSelect && d && !d.others && onSelect(d.name)}>
-            {data.map((d, i) => <Cell key={i} fill={sliceColor(d, i, selected)} cursor={d.others ? 'default' : 'pointer'} />)}
+            startAngle={90} endAngle={-270} isAnimationActive={false} onClick={(d) => onSelect && d && !d.others && onSelect(d.name)}>
+            {data.map((d, i) => <Cell key={i} fill={sliceColor(d, i, selected)} cursor={d.others ? 'default' : 'pointer'} style={{ outline: 'none' }} />)}
           </Pie>
         </PieChart>
       </ResponsiveContainer>
@@ -86,15 +124,21 @@ function Donut({ data, total, unit, selected, onSelect }) {
   );
 }
 
-// One selectable row in the ranked list.
-function RankRow({ i, color, name, value, max, active, onClick }) {
+// One selectable row: rank badge (medal for top three), photo, name + employer, bar, value.
+function RankRow({ i, person, value, max, active, onClick }) {
+  const medal = i <= 3 ? MEDAL[i - 1] : null;
   return (
     <Flex as="button" type="button" onClick={onClick} align="center" gap="3" w="full" textAlign="left"
       px="2.5" py="2" borderRadius="forge" cursor="pointer" bg={active ? 'ui.sunk' : 'transparent'}
       borderWidth="1px" borderColor={active ? 'ui.border' : 'transparent'} _hover={{ bg: 'ui.sunk' }} transition="background .12s">
-      <Box w="9px" h="9px" borderRadius="full" bg={color} flex="none" />
-      <Text w="1.5rem" textAlign="right" color="ui.muted" fontSize="0.8125rem" fontVariantNumeric="tabular-nums" flex="none">{i}</Text>
-      <Text flex="1" minW="0" color="ui.text" fontSize="0.875rem" fontWeight={active ? '700' : '500'} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{name}</Text>
+      <Box w="1.6rem" h="1.6rem" flex="none" borderRadius="full" display="inline-flex" alignItems="center" justifyContent="center"
+        bg={medal || 'transparent'} color={medal ? (i === 1 ? 'navy' : 'white') : 'ui.muted'}
+        fontSize="0.8125rem" fontWeight="700" fontVariantNumeric="tabular-nums">{i}</Box>
+      <Avatar src={person.avatar} color={active ? YELLOW : NAVY} />
+      <Box flex="1" minW="0">
+        <Text color="ui.text" fontSize="0.875rem" fontWeight={active ? '700' : '500'} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.name}</Text>
+        {person.employer && <Text color="ui.muted" fontSize="0.6875rem" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.employer}</Text>}
+      </Box>
       <Box flex="0 0 3.5rem" h="7px" borderRadius="full" bg="ui.sunk" overflow="hidden">
         <Box h="full" borderRadius="full" bg={active ? YELLOW : NAVY} w={`${Math.max(6, Math.round((value / (max || 1)) * 100))}%`} />
       </Box>
@@ -103,77 +147,115 @@ function RankRow({ i, color, name, value, max, active, onClick }) {
   );
 }
 
-const RepoTag = ({ repo }) => (
-  <Box as="span" flex="none" display="inline-flex" alignItems="center" color="ui.text" title={repo === 'core' ? 'WordPress Core' : 'Gutenberg'}>
-    {repo === 'core' ? <CoreIcon size={19} /> : <GutenbergIcon size={19} />}
-  </Box>
-);
-
-// Detail panel: what the selected contributor shipped.
-function Detail({ person }) {
+function Detail({ person, repoFilter }) {
   if (!person) return null;
+  const items = (person.items || []).filter((it) => repoFilter === 'all' || it.repo === repoFilter);
+  const count = repoFilter === 'core' ? person.core : repoFilter === 'gutenberg' ? person.gutenberg : person.props;
+  const srcLabel = person.source === 'both' ? 'Core and Gutenberg' : person.source === 'core' ? 'Core' : 'Gutenberg';
   return (
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
-      <Flex align="baseline" justify="space-between" gap="3" mb="0.5">
-        <Text fontSize="1.05rem" fontWeight="700" color="ui.heading">{person.name}</Text>
-        <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(person.name)}/`} target="_blank" rel="noopener noreferrer"
-          color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" _hover={{ textDecoration: 'underline' }}>profile ↗</chakra.a>
+      <Flex align="flex-start" gap="4" mb="4">
+        <Avatar src={person.avatar} size={56} />
+        <Box flex="1" minW="0">
+          <Flex align="baseline" justify="space-between" gap="3">
+            <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.name}</Text>
+            <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(person.slug || person.name)}/`} target="_blank" rel="noopener noreferrer"
+              color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" flex="none" _hover={{ textDecoration: 'underline' }}>Visit profile ↗</chakra.a>
+          </Flex>
+          <Flex align="baseline" gap="2" mt="1">
+            <chakra.b fontSize="2rem" fontWeight="800" color="ui.heading" lineHeight="1" fontVariantNumeric="tabular-nums">{count}</chakra.b>
+            <Text color="ui.muted" fontSize="0.875rem">contributions · {srcLabel}</Text>
+          </Flex>
+          <Text color="ui.muted" fontSize="0.8125rem" mt="1.5">{person.employer ? `Works at ${person.employer}` : 'Employer not listed on wp.org'}</Text>
+        </Box>
       </Flex>
-      <Text color="ui.muted" fontSize="0.8125rem" mb="3">{person.props} contributions · {person.source === 'both' ? 'Core + Gutenberg' : person.source === 'core' ? 'Core' : 'Gutenberg'}</Text>
       <Stack gap="0" maxH="22rem" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
-        {(person.items || []).map((it, i) => (
+        {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
             display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
             _hover={{ bg: 'ui.sunk' }} borderRadius="sm" px="1" mx="-1">
-            <RepoTag repo={it.repo} />
+            <RepoMark repo={it.repo} />
             <Text flex="1" color="ui.text" fontSize="0.8125rem" lineHeight="1.4">{it.subject}</Text>
             <Text color="ui.muted" fontSize="0.75rem" fontVariantNumeric="tabular-nums" whiteSpace="nowrap" flex="none">{it.ref}</Text>
           </chakra.a>
         ))}
-        {!person.items?.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No itemised changes in this window.</Text>}
+        {!items.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No itemised changes in this window.</Text>}
       </Stack>
     </Box>
   );
 }
 
-// Before the first run — mirrors the Changelog tool's empty state.
+// Analytics: daily activity area chart over the window.
+function Activity({ timeline, metric }) {
+  return (
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" px="4" py="4" mb="8">
+      <Box h="200px" w="full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={timeline} margin={{ left: 2, right: 12, top: 6, bottom: 0 }}>
+            <defs>
+              <linearGradient id="uwpAct" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={NAVY} stopOpacity={0.32} />
+                <stop offset="100%" stopColor={NAVY} stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,.18)" vertical={false} />
+            <XAxis dataKey="date" tickFormatter={fmtDay} minTickGap={26} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: AXIS }} />
+            <YAxis allowDecimals={false} width={40} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: AXIS }} />
+            <Tooltip labelFormatter={fmtDay} formatter={(v) => [v, metric === 'contributors' ? 'contributors' : 'contributions']} />
+            <Area type="monotone" dataKey={metric} stroke={NAVY} strokeWidth={2} fill="url(#uwpAct)" isAnimationActive={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </Box>
+    </Box>
+  );
+}
+
+function LoadingState() {
+  return (
+    <>
+      <Flex align="center" gap="2.5" mb="6" mt="2" color="ui.muted" fontSize="0.9375rem">
+        <Spinner size="sm" color="navy" flex="none" />
+        <Text>Fetching commits and resolving contributor profiles…</Text>
+      </Flex>
+      <SimpleGrid minChildWidth="10.5rem" gap="4" mb="6">{[0, 1, 2, 3].map((i) => <Skeleton key={i} h="4.75rem" borderRadius="forge" />)}</SimpleGrid>
+      <Skeleton h="12rem" borderRadius="forge" mb="8" />
+      <Flex gap="8" wrap="wrap">
+        <Stack flex="1 1 20rem" gap="2.5">
+          <Skeleton w="200px" h="200px" borderRadius="full" mx="auto" mb="2" />
+          {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} h="2.25rem" borderRadius="forge" />)}
+        </Stack>
+        <Skeleton flex="1 1 20rem" h="22rem" borderRadius="forge" />
+      </Flex>
+    </>
+  );
+}
+
 function EmptyState() {
   return (
     <Box mt="4"><Box textAlign="center" py="16" px="5">
       <chakra.img src="/brand/bulb.svg" alt="" w="3.5rem" h="3.5rem" opacity="0.95" mb="4" mx="auto" />
       <Heading as="h3" fontSize="1.125rem" color="ui.heading" fontWeight="700" mb="2">No contributors yet</Heading>
       <Text mx="auto" maxW="52ch" color="ui.muted" fontSize="0.9688rem" lineHeight="1.6">
-        Pick a period, then Run. You get the top contributors, what each person shipped, and — with the company toggle — which company invested most.
+        Pick a period, then run the report. You get activity over time, the top contributors with their employer, what each person shipped, and which company invested most.
       </Text>
     </Box></Box>
-  );
-}
-
-function ResultsSkeleton() {
-  return (
-    <>
-      <SimpleGrid minChildWidth="10.5rem" gap="4" mb="6">{[0, 1, 2, 3].map((i) => <Skeleton key={i} h="4.75rem" borderRadius="forge" />)}</SimpleGrid>
-      <Flex gap="6" wrap="wrap">
-        <Skeleton w="200px" h="200px" borderRadius="full" />
-        <Stack flex="1 1 20rem" gap="2.5">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} h="1.75rem" borderRadius="forge" />)}</Stack>
-        <Skeleton flex="1 1 20rem" h="18rem" borderRadius="forge" />
-      </Flex>
-    </>
   );
 }
 
 export default function Contributors() {
   const core = useCore() || {};
   const periods = useMemo(() => buildPeriods(new Date()), []);
-  const [periodVal, setPeriodVal] = useState(periods[1].value);
-  const [since, setSince] = useState(periods[1].since);
-  const [until, setUntil] = useState(periods[1].until);
+  const firstQuarter = periods.find((p) => p.value.startsWith('q-')) || periods[1];
+  const [periodVal, setPeriodVal] = useState(firstQuarter.value);
+  const [since, setSince] = useState(firstQuarter.since);
+  const [until, setUntil] = useState(firstQuarter.until);
   const [gbBranch, setGbBranch] = useState('trunk');
   const [coreBranch, setCoreBranch] = useState('trunk');
   const [gbBranches, setGbBranches] = useState(['trunk']);
   const [coreBranches, setCoreBranches] = useState(['trunk']);
-  const [withCompanies, setWithCompanies] = useState(false);
+  const [repoFilter, setRepoFilter] = useState('all');
+  const [chartMetric, setChartMetric] = useState('contributions');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -203,21 +285,25 @@ export default function Contributors() {
   const run = useCallback(async () => {
     if (!since || !until) { setError('Pick a period first.'); return; }
     setError(''); setLoading(true); setData(null); setSelected(null);
-    const qs = new URLSearchParams({ since, until, gbBranch, coreBranch, ...(withCompanies ? { companies: 'true' } : {}) });
+    const qs = new URLSearchParams({ since, until, gbBranch, coreBranch });
     try {
       const { ok, data: body } = await fetchJSON('/api/contributors?' + qs.toString());
       if (!ok) setError(body.error || 'Request failed');
       else { setData(body); setSelected(body.report?.byContributor?.[0]?.name || null); }
     } catch (e) { setError(e.message); }
     setLoading(false);
-  }, [since, until, gbBranch, coreBranch, withCompanies]);
+  }, [since, until, gbBranch, coreBranch]);
 
   const report = data && data.report;
   const q = search.trim().toLowerCase();
-  const people = useMemo(() => (!report ? [] : report.byContributor.filter((c) => !q || c.name.toLowerCase().includes(q))), [report, q]);
-  const list = useMemo(() => people.slice(0, 20).map((c) => ({ name: c.name, value: c.props })), [people]);
+  const valueOf = (p) => (repoFilter === 'core' ? p.core : repoFilter === 'gutenberg' ? p.gutenberg : p.props);
+  const people = useMemo(() => (!report ? [] : report.byContributor
+    .filter((c) => valueOf(c) > 0)
+    .filter((c) => !q || c.name.toLowerCase().includes(q))
+    .sort((a, b) => valueOf(b) - valueOf(a))), [report, q, repoFilter]);
+  const listMax = people.length ? valueOf(people[0]) : 1;
+  const list = useMemo(() => people.slice(0, 20).map((p) => ({ name: p.name, value: valueOf(p) })), [people, repoFilter]);
   const slices = useMemo(() => toSlices(list, 8), [list]);
-  const listMax = list.length ? list[0].value : 1;
   const selPerson = useMemo(() => people.find((c) => c.name === selected) || people[0] || null, [people, selected]);
 
   const co = report && report.companies;
@@ -242,24 +328,13 @@ export default function Contributors() {
             <Select block searchable ariaLabel="Core branch" value={coreBranch} onChange={setCoreBranch}
               options={coreBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
           </Field>
-        </Flex>
-        <Flex align={{ base: 'stretch', lg: 'center' }} justify="space-between" gap="4" mt="6" pt="4"
-          borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
-          <CChk.Root checked={withCompanies} colorPalette="brand" cursor="pointer" onCheckedChange={(d) => setWithCompanies(d.checked === true)}>
-            <CChk.HiddenInput />
-            <CChk.Control cursor="pointer" _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} />
-            <CChk.Label fontSize="0.875rem" fontWeight="500" cursor="pointer" color="ui.text">Company investment (slower)</CChk.Label>
-          </CChk.Root>
-          <HStack gap="4">
-            {loading && <Spinner size="sm" color="navy" />}
-            <Button variant="primary" onClick={run} disabled={loading} px="7.5" fontWeight="700">Run</Button>
-          </HStack>
+          <Box pb="0.5" ml={{ lg: 'auto' }}><RunButton onClick={run} loading={loading} /></Box>
         </Flex>
       </Box>
 
       {error && <Box mb="4" color="ui.bad" fontSize="0.875rem">{error}</Box>}
 
-      {loading ? <ResultsSkeleton /> : !report ? <EmptyState /> : (
+      {loading ? <LoadingState /> : !report ? <EmptyState /> : (
         <>
           <SimpleGrid minChildWidth="10.5rem" gap="4" mb="6">
             <StatCard n={report.totals.contributors} label="Contributors" counted />
@@ -268,42 +343,53 @@ export default function Contributors() {
             <StatCard n={co ? co.byCompany.length : report.totals.coreCommits + report.totals.gutenbergCommits} label={co ? 'Companies' : 'Total changes'} />
           </SimpleGrid>
 
-          <Box w="18rem" maxW="full" mb="6">
-            <TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} />
-          </Box>
+          {report.timeline && report.timeline.length > 1 && (
+            <>
+              <Flex align="center" justify="space-between" gap="3" mb="3" wrap="wrap">
+                <Text fontSize="1.05rem" fontWeight="700" color="ui.heading">Activity over time</Text>
+                <Segmented options={[{ value: 'contributions', label: 'Contributions' }, { value: 'contributors', label: 'Contributors' }]} value={chartMetric} onChange={setChartMetric} />
+              </Flex>
+              <Activity timeline={report.timeline} metric={chartMetric} />
+            </>
+          )}
 
-          <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="4">Top contributors</Text>
+          <Flex align="center" justify="space-between" gap="3" mb="4" wrap="wrap">
+            <Text fontSize="1.05rem" fontWeight="700" color="ui.heading">Top contributors</Text>
+            <HStack gap="3" wrap="wrap">
+              <Segmented options={[{ value: 'all', label: 'All' }, { value: 'core', label: 'Core' }, { value: 'gutenberg', label: 'Gutenberg' }]} value={repoFilter} onChange={setRepoFilter} />
+              <Box w="12rem"><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
+            </HStack>
+          </Flex>
+
           {list.length ? (
-            <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb={co ? '10' : '2'}>
+            <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="10">
               <Box flex="1 1 0" minW="0" w="full">
                 <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
                 <Stack gap="0">
-                  {list.map((r, i) => (
-                    <RankRow key={r.name} i={i + 1} color={i < 8 ? RAMP[i % RAMP.length] : OTHERS} name={r.name} value={r.value} max={listMax}
-                      active={selPerson?.name === r.name} onClick={() => setSelected(r.name)} />
+                  {people.slice(0, 20).map((p, i) => (
+                    <RankRow key={p.name} i={i + 1} person={p} value={valueOf(p)} max={listMax}
+                      active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} />
                   ))}
                 </Stack>
               </Box>
-              <Box flex="1 1 0" minW="0" w="full" position={{ xl: 'sticky' }} top={{ xl: '1rem' }}><Detail person={selPerson} /></Box>
+              <Box flex="1 1 0" minW="0" w="full"><Detail person={selPerson} repoFilter={repoFilter} /></Box>
             </Flex>
           ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
 
-          {co && (
+          {co && coList.length > 0 && (
             <Box>
               <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="1">Which company invested most</Text>
               <Text color="ui.muted" fontSize="0.8125rem" mb="4">
-                Employer known for {co.coverage.peopleKnown}/{co.coverage.peopleTotal} ({co.coverage.pct}%). Location/geography is not published on wp.org profiles.
+                Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Location is not published on wp.org profiles.
               </Text>
-              {coList.length ? (
-                <Flex gap="6" align="center" wrap="wrap">
-                  <Donut data={coSlices} total={co.byCompany.length} unit="companies" />
-                  <Stack gap="0" flex="1 1 14rem" minW="0">
-                    {coList.slice(0, 12).map((r, i) => (
-                      <RankRow key={r.name} i={i + 1} color={i < 8 ? RAMP[i % RAMP.length] : OTHERS} name={r.name} value={r.value} max={coMax} />
-                    ))}
-                  </Stack>
-                </Flex>
-              ) : <Text color="ui.muted" fontSize="0.875rem">No matching companies.</Text>}
+              <Flex gap="6" align="center" wrap="wrap">
+                <Donut data={coSlices} total={co.byCompany.length} unit="companies" />
+                <Stack gap="0" flex="1 1 14rem" minW="0">
+                  {coList.slice(0, 12).map((r, i) => (
+                    <RankRow key={r.name} i={i + 1} person={{ name: r.name }} value={r.value} max={coMax} />
+                  ))}
+                </Stack>
+              </Flex>
             </Box>
           )}
 

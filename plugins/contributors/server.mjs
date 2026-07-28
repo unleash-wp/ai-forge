@@ -31,7 +31,7 @@ async function reportHandler(req, res, url, ctx) {
       until: q.get('until') || undefined,
       gbBranch: q.get('gbBranch') || undefined,
       coreBranch: q.get('coreBranch') || undefined,
-      companies: q.get('companies') === 'true',
+      companies: q.get('companies') !== 'false',
     });
     ctx.json(res, 200, { report, markdown: toMarkdown(report) });
   } catch (err) {
@@ -106,12 +106,12 @@ export const commands = [
 
       if (args.svg) {
         const top = Number(args.top) || 20;
-        writeFileSync(args.svg, leaderboardSvg(report.byContributor, { top, title: `Contributors — ${report.window.label}` }));
+        writeFileSync(args.svg, leaderboardSvg(report.byContributor, { top, title: `Contributors · ${report.window.label}` }));
         ctx.error(`uwp: wrote leaderboard chart (top ${top}) to ${args.svg}`);
       }
       if (args['company-svg'] && report.companies) {
         const top = Number(args.top) || 15;
-        writeFileSync(args['company-svg'], companySvg(report.companies.byCompany, { top, title: `Company investment — ${report.window.label}` }));
+        writeFileSync(args['company-svg'], companySvg(report.companies.byCompany, { top, title: `Company investment · ${report.window.label}` }));
         ctx.error(`uwp: wrote company chart (top ${top}) to ${args['company-svg']}`);
       }
       if (args.json) { ctx.log(JSON.stringify(report, null, 2)); return; }

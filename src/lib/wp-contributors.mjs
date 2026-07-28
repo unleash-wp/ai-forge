@@ -41,23 +41,41 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
   const ITEM_CAP = 100;
   const tally = new Map();
   const bump = (name, source, item) => {
-    const cur = tally.get(name) || { name, props: 0, source, items: [] };
+    const cur = tally.get(name) || { name, props: 0, core: 0, gutenberg: 0, source, items: [] };
     cur.props += 1;
+    cur[source] += 1;
     if (cur.source !== source) cur.source = 'both';
     if (cur.items.length < ITEM_CAP) cur.items.push(item);
     tally.set(name, cur);
   };
   for (const c of core) {
-    const item = { repo: 'core', subject: c.subject, url: c.url, ref: c.changeset ? `r${c.changeset}` : c.shortSha };
+    const item = { repo: 'core', subject: c.subject, url: c.url, ref: c.changeset ? `r${c.changeset}` : c.shortSha, date: (c.date || '').slice(0, 10) };
     for (const p of c.props) bump(p, 'core', item);
   }
   for (const c of gb) {
     if (!c.author || c.author === 'unknown') continue;
-    bump(c.author, 'gutenberg', { repo: 'gutenberg', subject: c.subject, url: c.url, ref: c.pr ? `#${c.pr}` : c.shortSha });
+    bump(c.author, 'gutenberg', { repo: 'gutenberg', subject: c.subject, url: c.url, ref: c.pr ? `#${c.pr}` : c.shortSha, date: (c.date || '').slice(0, 10) });
   }
 
   const byContributor = [...tally.values()]
     .sort((a, b) => b.props - a.props || cmp(a.name, b.name));
+
+  // Daily activity histogram over the window, analytics-style (day granularity).
+  const byDay = new Map();
+  const tick = (c, source, names) => {
+    const d = (c.date || '').slice(0, 10);
+    if (!d) return;
+    const e = byDay.get(d) || { date: d, contributions: 0, core: 0, gutenberg: 0, _set: new Set() };
+    e.contributions += 1;
+    e[source] += 1;
+    for (const n of names) if (n && n !== 'unknown') e._set.add(n);
+    byDay.set(d, e);
+  };
+  for (const c of core) tick(c, 'core', c.props);
+  for (const c of gb) tick(c, 'gutenberg', [c.author]);
+  const timeline = [...byDay.values()]
+    .map((e) => ({ date: e.date, contributions: e.contributions, core: e.core, gutenberg: e.gutenberg, contributors: e._set.size }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
   const coreContribs = [...new Set(core.flatMap((c) => c.props))].sort(cmp);
   const gbContribs = [...new Set(gb.map((c) => c.author).filter((a) => a && a !== 'unknown'))].sort(cmp);
@@ -68,6 +86,7 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
     core: { contributors: coreContribs, commits: core.length },
     gutenberg: { contributors: gbContribs, commits: gb.length },
     byContributor,
+    timeline,
     totals: {
       contributors: all.size,
       coreCommits: core.length,

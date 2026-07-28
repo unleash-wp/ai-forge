@@ -9,7 +9,7 @@ export function toMarkdown(report) {
   const w = report.window;
   const t = report.totals;
   const lines = [
-    `## Contributors — ${w.label}`,
+    `## Contributors · ${w.label}`,
     '',
     `**${t.contributors}** contributors · ${t.coreCommits} Core changes · ${t.gutenbergCommits} Gutenberg changes  `,
     `_Window: ${w.since} to ${w.until} (Core + Gutenberg)_`,
@@ -33,7 +33,7 @@ export function toText(report) {
   const w = report.window;
   const t = report.totals;
   const lines = [
-    `Contributors — ${w.label}  (${w.since} to ${w.until})`,
+    `Contributors · ${w.label}  (${w.since} to ${w.until})`,
     `${t.contributors} contributors · ${t.coreCommits} Core · ${t.gutenbergCommits} Gutenberg`,
     '',
   ];

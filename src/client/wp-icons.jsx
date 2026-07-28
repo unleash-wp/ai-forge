@@ -27,6 +27,6 @@ export function CoreIcon({ size = 16, color = CORE_COLOR, ...rest }) {
 }
 
 export const gutenbergSvgHtml = (size = 15, color = 'currentColor') =>
-  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${color}" style="display:inline-block;vertical-align:-2px" aria-hidden="true"><path d="${GB_PATH}"/></svg>`;
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="${color}" style="display:inline-block;vertical-align:middle" aria-hidden="true"><path d="${GB_PATH}"/></svg>`;
 export const coreSvgHtml = (size = 15, color = CORE_COLOR) =>
-  `<svg viewBox="0 0 20 20" width="${size}" height="${size}" style="display:inline-block;vertical-align:-2px" aria-hidden="true"><path d="${CORE_PATH}" fill="${color}"/></svg>`;
+  `<svg viewBox="0 0 20 20" width="${size}" height="${size}" style="display:inline-block;vertical-align:middle" aria-hidden="true"><path d="${CORE_PATH}" fill="${color}"/></svg>`;
