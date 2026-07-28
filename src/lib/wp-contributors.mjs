@@ -96,8 +96,11 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
   for (const c of core) {
     if (!c.author || c.author === 'unknown') continue;
     const key = c.author.toLowerCase();
-    const cur = committerMap.get(key) || { login: c.author, name: c.authorName || c.author, commits: 0 };
+    const cur = committerMap.get(key) || { login: c.author, name: c.authorName || c.author, commits: 0, items: [] };
     cur.commits += 1;
+    if (cur.items.length < ITEM_CAP) {
+      cur.items.push({ repo: 'core', subject: c.subject, url: c.url, ref: c.changeset ? `r${c.changeset}` : c.shortSha, date: (c.date || '').slice(0, 10) });
+    }
     committerMap.set(key, cur);
   }
   const committers = [...committerMap.values()]

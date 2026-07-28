@@ -3,7 +3,7 @@
 // over time, a donut of the top people, a selectable ranked list (with photo and
 // employer), what each person shipped, and which company invested most.
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Box, Flex, Grid, Heading, HStack, Popover, Portal, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
+import { Box, Flex, Heading, HStack, Popover, Portal, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { TextInput, Select, DateRangePicker } from '../../src/client/ui';
@@ -479,49 +479,91 @@ function Components({ data }) {
   );
 }
 
-// Core committers: who actually landed the changesets (distinct from Props
-// credit), with employer + wp.org join year. Country is intentionally absent -
-// wp.org profiles don't publish it. Scrolls horizontally on narrow screens.
-function Committers({ list, total }) {
-  if (!list?.length) return null;
-  const shown = list.slice(0, 100);
-  const cols = '2rem minmax(8rem, 1.7fr) minmax(5.5rem, 1.1fr) 3.5rem 5.25rem 2.75rem';
-  const cell = { px: '2.5', py: '2.5' };
-  const head = { ...cell, fontSize: '0.6875rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'ui.muted', whiteSpace: 'nowrap' };
+// Detail card for the selected Core committer: profile, company, join year, and
+// the changesets they landed. Mirrors the contributor Detail structure.
+function CommitterDetail({ committer }) {
+  if (!committer) return null;
+  const c = committer;
+  const items = c.items || [];
   return (
-    <Box>
-      <Text color="ui.muted" fontSize="0.8125rem" mb="4">
-        Who landed the {total} Core changes, with their employer and wp.org join year. Country isn't published on wp.org profiles.
-      </Text>
-      <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" overflowX="auto">
-        <Box minW="28rem">
-          <Grid templateColumns={cols} bg="ui.sunk">
-            <Box {...head}>#</Box><Box {...head}>Committer</Box><Box {...head}>Company</Box>
-            <Box {...head} textAlign="right">Since</Box><Box {...head} textAlign="right">Commits</Box><Box {...head} textAlign="right">%</Box>
-          </Grid>
-          {shown.map((c, i) => (
-            <Grid key={c.login} templateColumns={cols} borderTopWidth="1px" borderColor="ui.border" _hover={{ bg: 'ui.sunk' }} fontSize="0.8125rem">
-              <Flex {...cell} align="center" color="ui.muted" fontVariantNumeric="tabular-nums">{i + 1}</Flex>
-              <Flex {...cell} align="center" gap="2.5" minW="0">
-                <Avatar src={c.avatar} color={NAVY} size={26} />
-                <Box minW="0">
-                  <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(c.login)}/`} target="_blank" rel="noopener noreferrer"
-                    display="block" fontWeight="600" color="ui.heading" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis"
-                    _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{c.login}</chakra.a>
-                  {c.name && c.name.toLowerCase() !== c.login.toLowerCase() && (
-                    <Text color="ui.muted" fontSize="0.75rem" whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.name}</Text>
-                  )}
-                </Box>
-              </Flex>
-              <Flex {...cell} align="center" color="ui.text" minW="0"><Text whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis">{c.employer || '—'}</Text></Flex>
-              <Flex {...cell} align="center" justify="flex-end" color="ui.text" fontVariantNumeric="tabular-nums">{c.memberSince || '—'}</Flex>
-              <Flex {...cell} align="center" justify="flex-end" fontWeight="700" color="ui.heading" fontVariantNumeric="tabular-nums">{c.commits}</Flex>
-              <Flex {...cell} align="center" justify="flex-end" color="ui.muted" fontVariantNumeric="tabular-nums">{c.pct}%</Flex>
-            </Grid>
-          ))}
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
+      <Flex align="flex-start" gap="4" mb="4">
+        <Avatar src={c.avatar} size={56} />
+        <Box flex="1" minW="0">
+          <Flex align="baseline" justify="space-between" gap="3">
+            <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{c.login}</Text>
+            <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(c.login)}/`} target="_blank" rel="noopener noreferrer"
+              color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" flex="none" _hover={{ textDecoration: 'underline' }}>Visit profile ↗</chakra.a>
+          </Flex>
+          <Flex align="baseline" gap="2" mt="1">
+            <chakra.b fontSize="2rem" fontWeight="800" color="ui.heading" lineHeight="1" fontVariantNumeric="tabular-nums">{c.commits}</chakra.b>
+            <Text color="ui.muted" fontSize="0.875rem">commits landed{c.name && c.name.toLowerCase() !== c.login.toLowerCase() ? ` · ${c.name}` : ''}</Text>
+          </Flex>
+          <Text color="ui.muted" fontSize="0.8125rem" mt="1.5">
+            {c.employer ? `Works at ${c.employer}` : 'Employer not listed'}{c.memberSince ? ` · Member since ${c.memberSince}` : ''}
+          </Text>
         </Box>
-      </Box>
+      </Flex>
+      <Stack gap="0" maxH="22rem" overflowY="auto" pr="1"
+        css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
+        {items.map((it, i) => (
+          <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
+            display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
+            _hover={{ bg: 'ui.sunk' }} borderRadius="sm" px="1" mx="-1">
+            <RepoMark repo={it.repo} />
+            <Text flex="1" color="ui.text" fontSize="0.8125rem" lineHeight="1.4">{it.subject}</Text>
+            <Text color="ui.muted" fontSize="0.75rem" fontVariantNumeric="tabular-nums" whiteSpace="nowrap" flex="none">{it.ref}</Text>
+          </chakra.a>
+        ))}
+        {!items.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No changesets in this window.</Text>}
+      </Stack>
     </Box>
+  );
+}
+
+// Core committers: who actually landed the changesets (distinct from Props credit).
+// Same structure as the Contributors tab: donut + selectable ranked list + detail.
+function Committers({ list, meta }) {
+  const [sel, setSel] = useState(null);
+  const [page, setPage] = useState(0);
+  useEffect(() => { setPage(0); setSel(null); }, [list]);
+  const PAGE = 20;
+  const pool = useMemo(() => (list || []).slice(0, 100), [list]);
+  const slices = useMemo(() => toSlices((list || []).map((c) => ({ name: c.login, value: c.commits })), 8), [list]);
+  if (!list?.length) return <Text color="ui.muted" fontSize="0.875rem" mb="6">No committer data for this window.</Text>;
+  const max = list[0].commits || 1;
+  const totalPages = Math.max(1, Math.ceil(pool.length / PAGE));
+  const pageItems = pool.slice(page * PAGE, page * PAGE + PAGE);
+  const selCom = list.find((c) => c.login === sel) || list[0];
+  return (
+    <>
+      <Flex justify="flex-end" mb="4">
+        <ExportChart name={`committers-${meta.since.slice(0, 10)}`}
+          build={() => donutSvg(slices, { title: `Core committers · ${meta.since.slice(0, 10)} to ${meta.until.slice(0, 10)}`, total: list.length, unit: 'committers' })} />
+      </Flex>
+      <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
+        <Box flex="1 1 0" minW="0" w="full">
+          <Flex justify="center" mb="6"><Donut data={slices} total={list.length} unit="committers" selected={selCom?.login} onSelect={setSel} /></Flex>
+          <Stack gap="0">
+            {pageItems.map((c, i) => (
+              <RankRow key={c.login} i={page * PAGE + i + 1} person={{ name: c.login, avatar: c.avatar, employer: c.employer }} value={c.commits} max={max}
+                active={selCom?.login === c.login} onClick={() => setSel(c.login)} />
+            ))}
+          </Stack>
+          {totalPages > 1 && (
+            <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
+              {Array.from({ length: totalPages }, (_, n) => (
+                <chakra.button key={n} type="button" onClick={() => setPage(n)}
+                  minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
+                  fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
+                  borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
+              ))}
+            </Flex>
+          )}
+        </Box>
+        <Box flex="1 1 0" minW="0" w="full"><CommitterDetail committer={selCom} /></Box>
+      </Flex>
+    </>
   );
 }
 
@@ -761,7 +803,7 @@ export default function Contributors() {
               {report.components && <Components data={report.components} />}
             </>
           ) : tab === 'committers' ? (
-            <Committers list={report.committers} total={report.totals.coreCommits} />
+            <Committers list={report.committers} meta={report.meta} />
           ) : co && coList.length > 0 ? (
             <>
               <Flex justify="space-between" align="center" gap="3" mb="4" wrap="wrap">
