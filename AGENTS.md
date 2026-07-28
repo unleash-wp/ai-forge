@@ -2,7 +2,10 @@
 
 AI Forge is a **plugin platform for WordPress tooling** that bridges to your AI
 over MCP. **Zero runtime dependencies, plain Node ≥18.** Every capability is a
-plugin under `plugins/<id>`; the one bundled plugin is the **Changelog Generator**.
+plugin under `plugins/<id>`; the bundled plugins are the **Changelog Generator**
+and **Contributors** (who contributed to Core + Gutenberg in a period — the
+make.wordpress.org "Month in Core" analysis), both built on shared, plugin-facing
+Core services in `src/lib/`.
 
 Human docs: the **[Handbook](https://unleash-wp.github.io/ai-forge/)** (the single
 source of truth) and `CONTRIBUTING.md`. This file is the quick map for agents
@@ -31,6 +34,21 @@ working *in* the repo.
    Link inline. Never invent features or estimate counts — the tool's numbers and
    links are the source of truth.
 
+## Task: who contributed / a "Month in Core" post
+
+```bash
+node bin/ai-forge.mjs contributors --month 2025-10 --companies
+```
+- Ranks contributors (Core props ∪ Gutenberg commits). Window: `--month YYYY-MM` |
+  `--quarter YYYY-Qn` | `--since --until`. `--companies` = employer / "which company
+  invested most"; `--svg <file>` writes a chart image; `--json` = structured data.
+- In chat the MCP tools are `get_contributors` (flags `companies` / `committers` /
+  `components` / `tickets`; `format=json`; `top=N` caps table rows for context
+  budget) and `draft_month_in_core` (full post scaffold; highlights left as TODOs).
+- **Identity:** Gutenberg GitHub logins and Core wp.org usernames are merged to one
+  wp.org identity (GitHub `t-hamano` = wp.org `wildworks`) so counts don't
+  double-count. Country/geography is not on wp.org profiles — never fabricated.
+
 ## Optional
 
 - `gh auth login` raises the GitHub API rate limit from 60/h to 5000/h.
@@ -46,7 +64,25 @@ working *in* the repo.
 - `plugins/<id>/` — a plugin: `plugin.json` (manifest) + `server.mjs` (exports
   `routes` / `mcpTools` / `skills` / `commands`) + `client.jsx` (the React UI).
   Bundled plugins ship here; community installs land in `~/.config/uwp-ai-forge/plugins`.
-- `plugins/changelog/lib/report.mjs` — the fetch + aggregate pipeline;
+- `src/lib/` — **shared, plugin-facing Core services** (import via `../../src/lib/…`):
+  `wp-contributors` (rank + tally), `wp-commits` (cached GitHub commit fetch),
+  `wp-profiles` (employer + GitHub→wp.org identity resolution), `wp-components`,
+  `wp-tickets`, `wp-branches`, plus `cache-store` (disk cache: `UWP_CACHE_DIR`,
+  `UWP_OFFLINE`) and `net` (fetch `timeoutSignal` + a bounded concurrency `pool`).
+- `plugins/changelog/lib/report.mjs` — fetch + aggregate pipeline (now on `src/lib`);
   `plugins/changelog/lib/format.mjs` — Markdown report + post template.
+- `plugins/contributors/lib/` — `report.mjs` (build + identity dedup + company fold),
+  `format.mjs` (Markdown / `capReport` context-cap / `monthInCorePost`), `charts.mjs`.
 - Sources: Gutenberg = `WordPress/gutenberg`; Core = `WordPress/wordpress-develop`
   mirror; Core grouping = `WordPress/Documentation-Issue-Tracker` dev-notes tracker.
+
+## Hosting-safe caching + release
+
+- wp.org + GitHub responses are disk-cached. To not get blocked by Automattic on a
+  server: `uwp contributors ingest-profiles …` (online, paced by `UWP_FETCH_RPS`)
+  warms the shared cache; the app then runs with `UWP_OFFLINE=1` and only reads it.
+  Fetch timeout: `UWP_FETCH_TIMEOUT_MS` (default 20s).
+- Release: bump `package.json`, push a `vX.Y.Z` tag → `.github/workflows/release.yml`
+  runs the version-sync check + build + tests, then publishes npm (provenance) +
+  a GitHub Release (`.mcpb`) + GitHub Packages. Idempotent. Do **not** add a Claude
+  co-author trailer to commits on this repo.
