@@ -3,7 +3,15 @@ import { companyBreakdown, enrichCommitters, resolveIdentities } from '../../../
 import { ticketActivity } from '../../../src/lib/wp-tickets.mjs';
 import { resolveWindow } from './quarters.mjs';
 
-const shiftMonths = (iso, months) => { const d = new Date(iso); d.setUTCMonth(d.getUTCMonth() - months); return d.toISOString().slice(0, 10); };
+const shiftMonths = (iso, months) => {
+  const d = new Date(iso);
+  const day = d.getUTCDate();
+  d.setUTCDate(1); // avoid month-length overflow (e.g. Mar 31 minus 1 month)
+  d.setUTCMonth(d.getUTCMonth() - months);
+  const lastDay = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+  d.setUTCDate(Math.min(day, lastDay));
+  return d.toISOString().slice(0, 10);
+};
 const dayBefore = (iso) => { const d = new Date(iso); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); };
 
 // Orchestrate: resolve the period window, then pull Core + Gutenberg contributors
@@ -25,20 +33,23 @@ export async function contributorsReport(opts = {}) {
   if (opts.tickets) {
     report.tickets = await ticketActivity({ since: window.since, until: window.until }).catch(() => null);
   }
-  if (opts.companies) {
-    // Merge GitHub-vs-wp.org duplicate identities (e.g. GitHub "t-hamano" == wp.org
-    // "wildworks") so counts and the company breakdown aren't split across handles.
+  // Merge GitHub-vs-wp.org duplicate identities (e.g. GitHub "t-hamano" == wp.org
+  // "wildworks") by default, so counts are correct in the UI, CLI and MCP alike.
+  // Opt out with identities:false to skip the wp.org slug lookups.
+  if (opts.identities !== false) {
     report.byContributor = await resolveIdentities(data.byContributor);
     report.totals = { ...report.totals, contributors: report.byContributor.length };
+  }
+  if (opts.companies) {
     const companies = await companyBreakdown(report.byContributor);
     report.companies = companies;
-    // Fold each contributor's employer + avatar back onto byContributor, so the
-    // UI can show where a person works and their photo without a second lookup.
-    const bySlug = new Map(companies.resolved.map((r) => [r.slug, r]));
-    for (const p of report.byContributor) {
-      const r = bySlug.get(p.slug);
-      if (r) { p.employer = r.employer; p.avatar = r.avatar; }
-    }
+    // Fold employer + avatar (+ slug) back onto byContributor by index (resolved is
+    // index-aligned), so the UI shows employer/photo without a second lookup.
+    companies.resolved.forEach((r, i) => {
+      report.byContributor[i].employer = r.employer;
+      report.byContributor[i].avatar = r.avatar;
+      report.byContributor[i].slug = r.slug;
+    });
   }
   return report;
 }

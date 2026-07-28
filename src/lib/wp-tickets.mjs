@@ -12,7 +12,13 @@
 //     closed drifts out of the count - so it is reported as an approximation.
 import { TRAC, UA, tracBlocked, resolveCookie } from '../connectors/wporg-cookie.mjs';
 
-const day = (d) => String(d).slice(0, 10);
+// A strict YYYY-MM-DD day, so an unvalidated ?since/&until can't inject extra
+// parameters into the Trac query URL (e.g. "1&status=x").
+const day = (d) => {
+  const s = String(d).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) throw new Error(`invalid date: ${s}`);
+  return s;
+};
 
 // Count the rows a Trac query returns. Requesting only col=id keeps every row on
 // its own line (no multi-line description fields), so a line count is exact.

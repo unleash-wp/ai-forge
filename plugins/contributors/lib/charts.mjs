@@ -62,7 +62,7 @@ function segPath(cx, cy, R, r, f0, f1) {
 }
 const clip = (s, max = 26) => (s.length > max ? s.slice(0, max - 1) + '…' : s);
 
-// A self-contained, brand-navy donut with a ranked legend — an image you can drop
+// A self-contained, brand-navy donut with a ranked legend - an image you can drop
 // straight into a "Month in Core" style post. `slices` are the on-screen slices
 // [{ name, value, others? }]; `total`/`unit` fill the center.
 export function donutSvg(slices, { title = '', total = '', unit = '' } = {}) {
@@ -80,11 +80,17 @@ export function donutSvg(slices, { title = '', total = '', unit = '' } = {}) {
   ];
   if (title) out.push(`<text x="32" y="42" font-size="18" font-weight="700" fill="${INK}">${esc(title)}</text>`);
 
-  let acc = 0;
-  rows.forEach((row, i) => {
-    const f0 = acc / sum; acc += row.value; const f1 = acc / sum;
-    out.push(`<path d="${segPath(cx, cy, R, r, f0, f1)}" fill="${colorOf(row, i)}"/>`);
-  });
+  if (rows.length === 1) {
+    // A single 100% slice: an arc from a point back to itself is degenerate, so
+    // draw the full ring as a thick stroked circle instead.
+    out.push(`<circle cx="${cx}" cy="${cy}" r="${(R + r) / 2}" fill="none" stroke="${colorOf(rows[0], 0)}" stroke-width="${R - r}"/>`);
+  } else {
+    let acc = 0;
+    rows.forEach((row, i) => {
+      const f0 = acc / sum; acc += row.value; const f1 = acc / sum;
+      out.push(`<path d="${segPath(cx, cy, R, r, f0, f1)}" fill="${colorOf(row, i)}"/>`);
+    });
+  }
   out.push(`<text x="${cx}" y="${cy - 1}" font-size="30" font-weight="800" text-anchor="middle" fill="${INK}">${esc(String(total))}</text>`);
   if (unit) out.push(`<text x="${cx}" y="${cy + 19}" font-size="12" text-anchor="middle" fill="${MUTE}">${esc(unit)}</text>`);
 

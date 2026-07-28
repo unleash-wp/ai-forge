@@ -27,22 +27,21 @@ function saveCache(c) {
 
 async function getText(url) {
   const res = await fetch(url, { headers: { 'User-Agent': UA } });
-  if (!res.ok) throw new Error(`${res.status} ${url}`);
+  if (!res.ok) { const e = new Error(`${res.status} ${url}`); e.status = res.status; throw e; }
   return res.text();
 }
 
 // Map a GitHub login to a wp.org username via the official lookup endpoint, or
 // null. This is how Gutenberg contributors (GitHub handles) join to profiles.
 export async function githubToWporg(login) {
-  try {
-    const res = await fetch(
-      `https://profiles.wordpress.org/wp-json/wporg-github/v1/lookup/${encodeURIComponent(login)}`,
-      { headers: { 'User-Agent': UA } },
-    );
-    if (!res.ok) return null;
-    const j = await res.json();
-    return j && j.slug ? j.slug : null;
-  } catch { return null; }
+  const res = await fetch(
+    `https://profiles.wordpress.org/wp-json/wporg-github/v1/lookup/${encodeURIComponent(login)}`,
+    { headers: { 'User-Agent': UA } },
+  );
+  if (res.status === 404) return null;            // definitive: no such GitHub user / no mapping
+  if (!res.ok) throw new Error(`lookup ${res.status}`); // transient: let the caller skip caching
+  const j = await res.json();
+  return j && j.slug ? j.slug : null;
 }
 
 // Current employer from a wp.org profile's job history: the `company` of the job
@@ -93,8 +92,12 @@ export async function profileOf(slug, cache) {
   try {
     const html = await getText(`https://profiles.wordpress.org/${slug}/`);
     out = { employer: parseEmployer(html), avatar: parseAvatar(html), memberSince: parseMemberSince(html) };
-  } catch { /* leave nulls */ }
-  if (cache) cache[slug] = out;
+    if (cache) cache[slug] = out;
+  } catch (e) {
+    // Cache a definitive miss (404: no such profile); never cache a transient
+    // failure (network / 5xx / bot wall) - it must retry on the next run.
+    if (cache && e.status === 404) cache[slug] = out;
+  }
   return out;
 }
 
@@ -108,7 +111,12 @@ function saveSlugCache(c) { try { mkdirSync(dirname(SLUG_CACHE), { recursive: tr
 // Canonical wp.org slug for a name, cached. Returns the wp.org username when the
 // name is a GitHub login mapped to a profile, else the name unchanged.
 async function canonicalSlug(name, slugCache) {
-  if (!(name in slugCache)) slugCache[name] = (await githubToWporg(name)) || null;
+  if (!(name in slugCache)) {
+    // Only cache a resolved value or a definitive miss; a transient lookup failure
+    // must not poison the cache (it would never retry that name again).
+    try { slugCache[name] = (await githubToWporg(name)) || null; }
+    catch { return name; }
+  }
   return slugCache[name] || name;
 }
 
@@ -177,7 +185,7 @@ export async function enrichCommitters(committers, { concurrency = 10 } = {}) {
     while (i < committers.length) {
       const idx = i++;
       const c = committers[idx];
-      const slug = await canonicalSlug(c.login, slugCache);
+      const slug = (await canonicalSlug(c.login, slugCache)).toLowerCase(); // match resolveIdentities' slug casing
       const prof = await profileOf(slug, cache);
       out[idx] = { ...c, slug, employer: prof.employer, avatar: prof.avatar, memberSince: prof.memberSince ?? null };
     }
@@ -199,8 +207,10 @@ export async function companyBreakdown(byContributor, { concurrency = 10 } = {})
     while (i < byContributor.length) {
       const idx = i++;
       const c = byContributor[idx];
-      // Prefer the canonical slug from resolveIdentities; fall back for direct callers.
-      const slug = c.slug || (c.source === 'gutenberg' ? await githubToWporg(c.name) : c.name);
+      // Prefer the canonical slug from resolveIdentities; fall back for direct callers
+      // (guarded: githubToWporg throws on a transient failure).
+      let slug = c.slug;
+      if (!slug) { try { slug = c.source === 'gutenberg' ? await githubToWporg(c.name) : c.name; } catch { slug = c.name; } }
       const prof = slug ? await profileOf(slug, cache) : { employer: null, avatar: null };
       resolved[idx] = { ...c, slug, employer: prof.employer, avatar: prof.avatar };
     }
