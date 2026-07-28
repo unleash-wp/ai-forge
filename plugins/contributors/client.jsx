@@ -1,15 +1,18 @@
-// Contributors — client side of the bundled UnleashWP core plugin. The shell
-// mounts this default-exported component in <main>. Period is a quarter / annual
-// / custom picker; results render with Chakra UI Charts (Recharts) in a single
-// calm colour, with contributor names linked to their wp.org profiles.
+// Contributors — client side of the bundled UnleashWP core plugin. Period is a
+// quarter / annual / custom picker. Results show a donut of the top contributors
+// (UnleashWP navy + yellow), a selectable ranked list, and a detail panel of what
+// the selected person actually shipped, plus a company-investment breakdown.
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Flex, HStack, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra, Checkbox as CChk } from '@chakra-ui/react';
-import { Chart, useChart } from '@chakra-ui/charts';
-import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useCore, fetchJSON } from '../../src/client/core.jsx';
 import { Button, TextInput, Select, DateRangePicker } from '../../src/client/ui';
 
-const BAR = '#3858e9';           // one calm accent for the bars
+// UnleashWP brand: navy ramp + yellow accent. The selected slice turns yellow.
+const NAVY = '#203159';
+const YELLOW = '#fcbe00';
+const RAMP = ['#203159', '#2a3f6f', '#3c4e7d', '#4a5c8c', '#5d6f9f', '#7385b0', '#8f9dc4', '#aab6d6'];
+const OTHERS = '#c3cadb';
 const pad = (n) => String(n).padStart(2, '0');
 
 // --- period options: recent quarters + annual reports + a custom range ---
@@ -35,17 +38,23 @@ function buildPeriods(now) {
   return out;
 }
 
-// A labelled field wrapper, matching the DateRangePicker's uppercase label.
-function Field({ label, children, basis = '1 1 10rem' }) {
+// Group a ranked [{name,value}] list into the top N slices + an "Others" slice.
+function toSlices(rows, top) {
+  const head = rows.slice(0, top);
+  const rest = rows.slice(top).reduce((s, r) => s + r.value, 0);
+  return rest > 0 ? [...head, { name: 'Others', value: rest, others: true }] : head;
+}
+const sliceColor = (row, i, selected) => (row.name === selected ? YELLOW : row.others ? OTHERS : RAMP[i % RAMP.length]);
+
+function Field({ label, children }) {
   return (
-    <Box display="flex" flexDir="column" gap="1.5" flex={basis} minW="9rem">
+    <Box display="flex" flexDir="column" gap="1.5" flex="1 1 10rem" minW="9rem">
       <Text as="span" fontSize="0.7813rem" fontWeight="600" letterSpacing=".04em" textTransform="uppercase" color="ui.muted">{label}</Text>
       {children}
     </Box>
   );
 }
 
-// Same card the Changelog tool uses; `counted` adds the yellow top inset.
 function StatCard({ n, label, counted }) {
   return (
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" px="5" py="4" boxShadow="sm"
@@ -56,48 +65,88 @@ function StatCard({ n, label, counted }) {
   );
 }
 
-// Y-axis tick that links a contributor name to their wp.org profile.
-function LinkedTick({ x, y, payload }) {
-  const name = payload.value;
+// Donut with the total in the middle. `data` = [{name,value,others?}].
+function Donut({ data, total, unit, selected, onSelect }) {
   return (
-    <a href={`https://profiles.wordpress.org/${encodeURIComponent(name)}/`} target="_blank" rel="noopener noreferrer">
-      <text x={x - 8} y={y} dy={4} textAnchor="end" fontSize={12} fill="var(--chakra-colors-ui-primary)"
-        style={{ cursor: 'pointer', textDecoration: 'underline' }}>{name}</text>
-    </a>
-  );
-}
-function PlainTick({ x, y, payload }) {
-  return <text x={x - 8} y={y} dy={4} textAnchor="end" fontSize={12} fill="var(--chakra-colors-ui-text)">{payload.value}</text>;
-}
-
-// Horizontal bar chart via Chakra UI Charts, one colour, optional linked ticks.
-function HBar({ rows, tick }) {
-  const chart = useChart({ data: rows });
-  const h = rows.length * 30 + 16;
-  return (
-    <Chart.Root chart={chart} w="full">
-      <ResponsiveContainer width="100%" height={h}>
-        <BarChart data={chart.data} layout="vertical" margin={{ left: 8, right: 40, top: 2, bottom: 2 }} barSize={15} barCategoryGap={7}>
-          <XAxis type="number" hide />
-          <YAxis type="category" dataKey="name" width={150} tickLine={false} axisLine={false} interval={0} tick={tick} />
-          <Tooltip cursor={{ fill: 'rgba(128,128,128,0.08)' }} />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false} fill={BAR}
-            label={{ position: 'right', fontSize: 11, fill: 'var(--chakra-colors-ui-muted)' }} />
-        </BarChart>
+    <Box position="relative" w="200px" h="200px" flex="none">
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie data={data} dataKey="value" nameKey="name" innerRadius={64} outerRadius={96} paddingAngle={1.5} stroke="none"
+            isAnimationActive={false} onClick={(d) => onSelect && d && !d.others && onSelect(d.name)}>
+            {data.map((d, i) => <Cell key={i} fill={sliceColor(d, i, selected)} cursor={d.others ? 'default' : 'pointer'} />)}
+          </Pie>
+        </PieChart>
       </ResponsiveContainer>
-    </Chart.Root>
+      <Box position="absolute" inset="0" display="flex" flexDir="column" alignItems="center" justifyContent="center" pointerEvents="none">
+        <chakra.b fontSize="1.75rem" fontWeight="800" color="ui.heading" lineHeight="1" fontVariantNumeric="tabular-nums">{total}</chakra.b>
+        <Text fontSize="0.75rem" color="ui.muted">{unit}</Text>
+      </Box>
+    </Box>
   );
 }
 
-// The waiting frame, mirroring the Changelog tool's skeleton.
+// One selectable row in the ranked list.
+function RankRow({ i, color, name, value, max, active, onClick }) {
+  return (
+    <Flex as="button" type="button" onClick={onClick} align="center" gap="3" w="full" textAlign="left"
+      px="2.5" py="2" borderRadius="forge" cursor="pointer" bg={active ? 'ui.sunk' : 'transparent'}
+      borderWidth="1px" borderColor={active ? 'ui.border' : 'transparent'} _hover={{ bg: 'ui.sunk' }} transition="background .12s">
+      <Box w="9px" h="9px" borderRadius="full" bg={color} flex="none" />
+      <Text w="1.5rem" textAlign="right" color="ui.muted" fontSize="0.8125rem" fontVariantNumeric="tabular-nums" flex="none">{i}</Text>
+      <Text flex="1" minW="0" color="ui.text" fontSize="0.875rem" fontWeight={active ? '700' : '500'} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{name}</Text>
+      <Box flex="0 0 3.5rem" h="7px" borderRadius="full" bg="ui.sunk" overflow="hidden">
+        <Box h="full" borderRadius="full" bg={active ? YELLOW : NAVY} w={`${Math.max(6, Math.round((value / (max || 1)) * 100))}%`} />
+      </Box>
+      <Text w="2.25rem" textAlign="right" color="ui.heading" fontSize="0.875rem" fontWeight="700" fontVariantNumeric="tabular-nums" flex="none">{value}</Text>
+    </Flex>
+  );
+}
+
+const RepoTag = ({ repo }) => (
+  <Box as="span" flex="none" px="1.5" py="0.5" borderRadius="sm" fontSize="0.625rem" fontWeight="700" letterSpacing=".02em"
+    textTransform="uppercase" bg={repo === 'core' ? 'rgba(32,49,89,.10)' : 'rgba(114,127,159,.16)'}
+    color={repo === 'core' ? 'ui.primary' : 'ui.muted'} _dark={{ bg: repo === 'core' ? 'rgba(124,147,255,.16)' : 'rgba(148,161,189,.16)' }}>
+    {repo === 'core' ? 'Core' : 'GB'}
+  </Box>
+);
+
+// Detail panel: what the selected contributor shipped.
+function Detail({ person }) {
+  if (!person) return null;
+  return (
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
+      <Flex align="baseline" justify="space-between" gap="3" mb="0.5">
+        <Text fontSize="1.05rem" fontWeight="700" color="ui.heading">{person.name}</Text>
+        <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(person.name)}/`} target="_blank" rel="noopener noreferrer"
+          color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" _hover={{ textDecoration: 'underline' }}>profile ↗</chakra.a>
+      </Flex>
+      <Text color="ui.muted" fontSize="0.8125rem" mb="3">{person.props} contributions · {person.source === 'both' ? 'Core + Gutenberg' : person.source === 'core' ? 'Core' : 'Gutenberg'}</Text>
+      <Stack gap="0" maxH="22rem" overflowY="auto" pr="1"
+        css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
+        {(person.items || []).map((it, i) => (
+          <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
+            display="flex" alignItems="baseline" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
+            _hover={{ bg: 'ui.sunk' }} borderRadius="sm" px="1" mx="-1">
+            <RepoTag repo={it.repo} />
+            <Text flex="1" color="ui.text" fontSize="0.8125rem" lineHeight="1.4">{it.subject}</Text>
+            <Text color="ui.muted" fontSize="0.75rem" fontVariantNumeric="tabular-nums" whiteSpace="nowrap" flex="none">{it.ref}</Text>
+          </chakra.a>
+        ))}
+        {!person.items?.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No itemised changes in this window.</Text>}
+      </Stack>
+    </Box>
+  );
+}
+
 function ResultsSkeleton() {
   return (
     <>
-      <SimpleGrid columns={{ base: 2, md: 4 }} gap="4" mb="6">
-        {[0, 1, 2, 3].map((i) => <Skeleton key={i} h="4.75rem" borderRadius="forge" />)}
-      </SimpleGrid>
-      <Skeleton h="2.5rem" w="16rem" borderRadius="forge" mb="5" />
-      <Stack gap="2.5">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} h="1.375rem" borderRadius="sm" />)}</Stack>
+      <SimpleGrid minChildWidth="10.5rem" gap="4" mb="6">{[0, 1, 2, 3].map((i) => <Skeleton key={i} h="4.75rem" borderRadius="forge" />)}</SimpleGrid>
+      <Flex gap="6" wrap="wrap">
+        <Skeleton w="200px" h="200px" borderRadius="full" />
+        <Stack flex="1 1 20rem" gap="2.5">{Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} h="1.75rem" borderRadius="forge" />)}</Stack>
+        <Skeleton flex="1 1 20rem" h="18rem" borderRadius="forge" />
+      </Flex>
     </>
   );
 }
@@ -105,7 +154,7 @@ function ResultsSkeleton() {
 export default function Contributors() {
   const core = useCore() || {};
   const periods = useMemo(() => buildPeriods(new Date()), []);
-  const [periodVal, setPeriodVal] = useState(periods[1].value); // latest COMPLETE quarter
+  const [periodVal, setPeriodVal] = useState(periods[1].value);
   const [since, setSince] = useState(periods[1].since);
   const [until, setUntil] = useState(periods[1].until);
   const [gbBranch, setGbBranch] = useState('trunk');
@@ -114,6 +163,7 @@ export default function Contributors() {
   const [coreBranches, setCoreBranches] = useState(['trunk']);
   const [withCompanies, setWithCompanies] = useState(false);
   const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
@@ -125,7 +175,6 @@ export default function Contributors() {
     if (p && p.since) { setSince(p.since); setUntil(p.until); }
   }
 
-  // Populate the branch pickers once (trunk + wp/x.y + …).
   useEffect(() => {
     let live = true;
     (async () => {
@@ -141,24 +190,28 @@ export default function Contributors() {
 
   const run = useCallback(async () => {
     if (!since || !until) { setError('Pick a period first.'); return; }
-    setError(''); setLoading(true); setData(null);
+    setError(''); setLoading(true); setData(null); setSelected(null);
     const qs = new URLSearchParams({ since, until, gbBranch, coreBranch, ...(withCompanies ? { companies: 'true' } : {}) });
     try {
       const { ok, data: body } = await fetchJSON('/api/contributors?' + qs.toString());
-      if (!ok) setError(body.error || 'Request failed'); else setData(body);
+      if (!ok) setError(body.error || 'Request failed');
+      else { setData(body); setSelected(body.report?.byContributor?.[0]?.name || null); }
     } catch (e) { setError(e.message); }
     setLoading(false);
   }, [since, until, gbBranch, coreBranch, withCompanies]);
 
   const report = data && data.report;
   const q = search.trim().toLowerCase();
-  const leadRows = useMemo(() => (!report ? [] : report.byContributor
-    .filter((c) => !q || c.name.toLowerCase().includes(q)).slice(0, 20)
-    .map((c) => ({ name: c.name, value: c.props }))), [report, q]);
+  const people = useMemo(() => (!report ? [] : report.byContributor.filter((c) => !q || c.name.toLowerCase().includes(q))), [report, q]);
+  const list = useMemo(() => people.slice(0, 20).map((c) => ({ name: c.name, value: c.props })), [people]);
+  const slices = useMemo(() => toSlices(list, 8), [list]);
+  const listMax = list.length ? list[0].value : 1;
+  const selPerson = useMemo(() => people.find((c) => c.name === selected) || people[0] || null, [people, selected]);
+
   const co = report && report.companies;
-  const coRows = useMemo(() => (!co ? [] : co.byCompany
-    .filter((c) => !q || c.company.toLowerCase().includes(q)).slice(0, 15)
-    .map((c) => ({ name: c.company, value: c.contributions }))), [co, q]);
+  const coList = useMemo(() => (!co ? [] : co.byCompany.filter((c) => !q || c.company.toLowerCase().includes(q)).map((c) => ({ name: c.company, value: c.contributions }))), [co, q]);
+  const coSlices = useMemo(() => toSlices(coList, 6), [coList]);
+  const coMax = coList.length ? coList[0].value : 1;
 
   return (
     <>
@@ -168,9 +221,7 @@ export default function Contributors() {
             <Select block searchable ariaLabel="Period" value={periodVal} onChange={onPeriod}
               options={periods.map((p) => ({ value: p.value, label: p.label }))} placeholder="Select" />
           </Field>
-          {custom && (
-            <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />
-          )}
+          {custom && <DateRangePicker since={since} until={until} onChange={(a, b) => { setSince(a); setUntil(b); }} />}
           <Field label="Gutenberg branch">
             <Select block searchable ariaLabel="Gutenberg branch" value={gbBranch} onChange={setGbBranch}
               options={gbBranches.map((b) => ({ value: b, label: b }))} placeholder="trunk" />
@@ -182,8 +233,7 @@ export default function Contributors() {
         </Flex>
         <Flex align={{ base: 'stretch', lg: 'center' }} justify="space-between" gap="4" mt="6" pt="4"
           borderTop="1px solid" borderColor="ui.border" direction={{ base: 'column', lg: 'row' }}>
-          <CChk.Root checked={withCompanies} colorPalette="brand" cursor="pointer"
-            onCheckedChange={(d) => setWithCompanies(d.checked === true)}>
+          <CChk.Root checked={withCompanies} colorPalette="brand" cursor="pointer" onCheckedChange={(d) => setWithCompanies(d.checked === true)}>
             <CChk.HiddenInput />
             <CChk.Control cursor="pointer" _checked={{ bg: 'navy', borderColor: 'navy', color: 'white' }} />
             <CChk.Label fontSize="0.875rem" fontWeight="500" cursor="pointer" color="ui.text">Company investment (slower)</CChk.Label>
@@ -206,22 +256,42 @@ export default function Contributors() {
             <StatCard n={co ? co.byCompany.length : report.totals.coreCommits + report.totals.gutenbergCommits} label={co ? 'Companies' : 'Total changes'} />
           </SimpleGrid>
 
-          <Box w="16rem" mb="5">
+          <Box w="18rem" maxW="full" mb="6">
             <TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} />
           </Box>
 
-          <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="3">Leaderboard</Text>
-          {leadRows.length ? <HBar rows={leadRows} tick={<LinkedTick />} />
-            : <Text color="ui.muted" fontSize="0.875rem">No matching contributors.</Text>}
+          <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="4">Top contributors</Text>
+          {list.length ? (
+            <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb={co ? '10' : '2'}>
+              <Box flex="1 1 0" minW="0" w="full">
+                <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
+                <Stack gap="0">
+                  {list.map((r, i) => (
+                    <RankRow key={r.name} i={i + 1} color={i < 8 ? RAMP[i % RAMP.length] : OTHERS} name={r.name} value={r.value} max={listMax}
+                      active={selPerson?.name === r.name} onClick={() => setSelected(r.name)} />
+                  ))}
+                </Stack>
+              </Box>
+              <Box flex="1 1 0" minW="0" w="full" position={{ xl: 'sticky' }} top={{ xl: '1rem' }}><Detail person={selPerson} /></Box>
+            </Flex>
+          ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
 
           {co && (
-            <Box mt="8">
+            <Box>
               <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="1">Which company invested most</Text>
-              <Text color="ui.muted" fontSize="0.8125rem" mb="3">
-                Employer known for {co.coverage.peopleKnown}/{co.coverage.peopleTotal} ({co.coverage.pct}%). Location/geography is not published on wp.org profiles, so it is not shown.
+              <Text color="ui.muted" fontSize="0.8125rem" mb="4">
+                Employer known for {co.coverage.peopleKnown}/{co.coverage.peopleTotal} ({co.coverage.pct}%). Location/geography is not published on wp.org profiles.
               </Text>
-              {coRows.length ? <HBar rows={coRows} tick={<PlainTick />} />
-                : <Text color="ui.muted" fontSize="0.875rem">No matching companies.</Text>}
+              {coList.length ? (
+                <Flex gap="6" align="center" wrap="wrap">
+                  <Donut data={coSlices} total={co.byCompany.length} unit="companies" />
+                  <Stack gap="0" flex="1 1 14rem" minW="0">
+                    {coList.slice(0, 12).map((r, i) => (
+                      <RankRow key={r.name} i={i + 1} color={i < 8 ? RAMP[i % RAMP.length] : OTHERS} name={r.name} value={r.value} max={coMax} />
+                    ))}
+                  </Stack>
+                </Flex>
+              ) : <Text color="ui.muted" fontSize="0.875rem">No matching companies.</Text>}
             </Box>
           )}
 
