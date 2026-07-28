@@ -5,23 +5,9 @@
 import { execFileSync } from 'node:child_process';
 import { githubFetch, nextLink, apiJson } from '../../../src/connectors/github-token.mjs';
 
-// All commits on `branch` of `repo` within [since, until] (ISO 8601), following pagination.
-export async function commits(repo, branch, since, until) {
-  const start = new URL(`https://api.github.com/repos/${repo}/commits`);
-  start.searchParams.set('sha', branch);
-  start.searchParams.set('since', since);
-  start.searchParams.set('until', until);
-  start.searchParams.set('per_page', '100');
-
-  const out = [];
-  let url = start.toString();
-  while (url) {
-    const { data, link } = await githubFetch(url);
-    out.push(...data);
-    url = nextLink(link);
-  }
-  return out;
-}
+// commits() moved to Core (src/lib/wp-commits.mjs) so every plugin shares one
+// fetch; re-exported here so this plugin's imports stay unchanged.
+export { commits } from '../../../src/lib/wp-commits.mjs';
 
 // Branch names via the git protocol (git ls-remote). This is NOT subject to the
 // REST API rate limit, so the milestone/branch pickers keep working even when the
