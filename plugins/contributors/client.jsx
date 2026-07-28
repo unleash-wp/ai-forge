@@ -339,7 +339,7 @@ function Detail({ person, repoFilter }) {
   const srcLabel = person.source === 'both' ? 'Core and Gutenberg' : person.source === 'core' ? 'Core' : 'Gutenberg';
   const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(person.slug || person.name)}/`;
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full" h="full" display="flex" flexDirection="column">
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
       <Flex align="flex-start" gap="4" mb="4">
         <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" flex="none" borderRadius="full" _hover={{ opacity: 0.85 }} transition="opacity .12s"><Avatar src={person.avatar} size={56} /></chakra.a>
         <Box flex="1" minW="0">
@@ -356,7 +356,7 @@ function Detail({ person, repoFilter }) {
           <Text color="ui.muted" fontSize="0.8125rem" mt="1.5">{person.employer ? `Works at ${person.employer}` : 'Employer not listed on wp.org'}</Text>
         </Box>
       </Flex>
-      <Stack gap="0" flex="1" minH="0" overflowY="auto" pr="1"
+      <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
@@ -404,8 +404,9 @@ function CompanyMembers({ company, members }) {
   useEffect(() => { setPage(0); }, [company]);
   const PAGE = 20;
   if (!company) return null;
-  const totalPages = Math.max(1, Math.ceil(members.length / PAGE));
-  const pageItems = members.slice(page * PAGE, page * PAGE + PAGE);
+  const shown = members.slice(0, 100); // top 100, like the other lists (max 5 pages)
+  const totalPages = Math.max(1, Math.ceil(shown.length / PAGE));
+  const pageItems = shown.slice(page * PAGE, page * PAGE + PAGE);
   return (
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
       <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{company}</Text>
@@ -504,7 +505,7 @@ function CommitterDetail({ committer }) {
   const items = c.items || [];
   const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(c.login)}/`;
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full" h="full" display="flex" flexDirection="column">
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
       <Flex align="flex-start" gap="4" mb="4">
         <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" flex="none" borderRadius="full" _hover={{ opacity: 0.85 }} transition="opacity .12s"><Avatar src={c.avatar} size={56} /></chakra.a>
         <Box flex="1" minW="0">
@@ -523,7 +524,7 @@ function CommitterDetail({ committer }) {
           </Text>
         </Box>
       </Flex>
-      <Stack gap="0" flex="1" minH="0" overflowY="auto" pr="1"
+      <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
         css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
         {items.map((it, i) => (
           <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
@@ -566,7 +567,7 @@ function Committers({ list: rawList, meta, search, setSearch }) {
         <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
       </Flex>
       {list.length ? (
-        <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
+        <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
           <Box flex="1 1 0" minW="0" w="full">
             <Flex justify="center" mb="6"><Donut data={slices} total={list.length} unit="committers" selected={selCom?.login} onSelect={setSel} /></Flex>
             <Stack gap="0">
@@ -803,7 +804,7 @@ export default function Contributors() {
                 <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
               {list.length ? (
-                <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
+                <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
                   <Box flex="1 1 0" minW="0" w="full">
                     <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
                     <Stack gap="0">
@@ -839,7 +840,7 @@ export default function Contributors() {
                 </Box>
                 <Box w={{ base: 'full', sm: '12rem' }}><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
-              <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="stretch" mb="4">
+              <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
                 <Box flex="1 1 0" minW="0" w="full">
                   <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
                   <Stack gap="0">
