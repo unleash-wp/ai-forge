@@ -11,25 +11,58 @@
 //     resolved here. Don't fabricate it — a geography feature needs another source.
 //   - Employer is the person's job, a good but imperfect proxy for the Five for
 //     the Future *sponsor* (which is not exposed in the static profile HTML).
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
 const UA = 'uwp-ai-forge contributors (+https://unleash-wp.com)';
-const CACHE = join(homedir(), '.config', 'uwp-ai-forge', 'profile-cache-v3.json');
 
-function loadCache() {
-  try { return JSON.parse(readFileSync(CACHE, 'utf8')); } catch { return {}; }
+// Cache location is configurable so a hosted deploy can point it at a shared,
+// persistent volume (UWP_CACHE_DIR). OFFLINE mode makes the app read the cache
+// only and never fetch profiles.wordpress.org - so a user-facing app server can't
+// get the host rate-limited/blocked; a separate `ingest-profiles` job fills it.
+const CACHE_DIR = process.env.UWP_CACHE_DIR || join(homedir(), '.config', 'uwp-ai-forge');
+export const OFFLINE = /^(1|true)$/i.test(process.env.UWP_OFFLINE || '');
+const CACHE = join(CACHE_DIR, 'profile-cache-v3.json');
+const SLUG_CACHE = join(CACHE_DIR, 'ghslug-cache-v1.json');
+
+function loadJson(file) {
+  try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return {}; }
 }
-function saveCache(c) {
-  try { mkdirSync(dirname(CACHE), { recursive: true }); writeFileSync(CACHE, JSON.stringify(c)); } catch { /* best effort */ }
+// Atomic write (temp + rename) so a concurrent reader never sees a half-written
+// file - important when the ingestion job writes while the app reads a shared cache.
+function saveJson(file, obj) {
+  try {
+    mkdirSync(dirname(file), { recursive: true });
+    const tmp = `${file}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(obj));
+    renameSync(tmp, file);
+  } catch { /* best effort */ }
+}
+const loadCache = () => loadJson(CACHE);
+const saveCache = (c) => saveJson(CACHE, c);
+const loadSlugCache = () => loadJson(SLUG_CACHE);
+const saveSlugCache = (c) => saveJson(SLUG_CACHE, c);
+
+// Optional global request pacing: UWP_FETCH_RPS caps outbound requests to N/sec
+// across all workers, so a hosted ingestion job stays a good citizen. 0/unset =
+// no pacing (fine for interactive local use, which is already cached + bounded).
+const RPS = Number(process.env.UWP_FETCH_RPS) || 0;
+let nextSlot = 0;
+async function paceGate() {
+  if (RPS <= 0) return;
+  const now = Date.now();
+  const wait = Math.max(0, nextSlot - now);
+  nextSlot = Math.max(now, nextSlot) + 1000 / RPS;
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
 }
 
-// fetch that backs off once when profiles.wordpress.org throttles us (429/503),
-// honouring Retry-After, so a burst doesn't hammer Automattic's server.
+// fetch that paces + backs off once when profiles.wordpress.org throttles us
+// (429/503), honouring Retry-After, so a burst doesn't hammer Automattic's server.
 async function politeFetch(url) {
   const opts = { headers: { 'User-Agent': UA } };
   for (let attempt = 1; ; attempt++) {
+    await paceGate();
     const res = await fetch(url, opts);
     if ((res.status === 429 || res.status === 503) && attempt < 3) {
       const wait = Math.min((Number(res.headers.get('retry-after')) || attempt * 1.5) * 1000, 10000);
@@ -100,10 +133,13 @@ export async function profileOf(slug, cache) {
     const v = cache[slug];
     return typeof v === 'string' ? { employer: v, avatar: null, memberSince: null } : v;
   }
-  let out = { employer: null, avatar: null, memberSince: null };
+  const out = { employer: null, avatar: null, memberSince: null };
+  if (OFFLINE) return out; // read-only host: never fetch, just miss
   try {
-    const html = await getText(`https://profiles.wordpress.org/${slug}/`);
-    out = { employer: parseEmployer(html), avatar: parseAvatar(html), memberSince: parseMemberSince(html) };
+    // encodeURIComponent so a slug can't manipulate the request path (defense in
+    // depth; slugs come from commit data, not direct user input).
+    const html = await getText(`https://profiles.wordpress.org/${encodeURIComponent(slug)}/`);
+    Object.assign(out, { employer: parseEmployer(html), avatar: parseAvatar(html), memberSince: parseMemberSince(html) });
     if (cache) cache[slug] = out;
   } catch (e) {
     // Cache a definitive miss (404: no such profile); never cache a transient
@@ -113,17 +149,15 @@ export async function profileOf(slug, cache) {
   return out;
 }
 
-// GitHub-login -> wp.org-slug cache. Many contributors use a different handle on
-// GitHub than on wp.org (e.g. GitHub "t-hamano" is wp.org "wildworks"), so the raw
-// commit name is not a reliable profile slug or dedup key.
-const SLUG_CACHE = join(homedir(), '.config', 'uwp-ai-forge', 'ghslug-cache-v1.json');
-function loadSlugCache() { try { return JSON.parse(readFileSync(SLUG_CACHE, 'utf8')); } catch { return {}; } }
-function saveSlugCache(c) { try { mkdirSync(dirname(SLUG_CACHE), { recursive: true }); writeFileSync(SLUG_CACHE, JSON.stringify(c)); } catch { /* best effort */ } }
+// GitHub-login -> wp.org-slug map: many contributors use a different handle on
+// GitHub than on wp.org (GitHub "t-hamano" is wp.org "wildworks"), so the raw
+// commit name is not a reliable profile slug or dedup key. (Cache defined above.)
 
 // Canonical wp.org slug for a name, cached. Returns the wp.org username when the
 // name is a GitHub login mapped to a profile, else the name unchanged.
 async function canonicalSlug(name, slugCache) {
   if (!(name in slugCache)) {
+    if (OFFLINE) return name; // read-only host: never fetch, keep the raw name
     // Only cache a resolved value or a definitive miss; a transient lookup failure
     // must not poison the cache (it would never retry that name again).
     try { slugCache[name] = (await githubToWporg(name)) || null; }

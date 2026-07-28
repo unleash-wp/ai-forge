@@ -6,6 +6,7 @@
 import { writeFileSync } from 'node:fs';
 import { authenticated } from '../../src/connectors/github-token.mjs';
 import { branches } from '../../src/lib/wp-branches.mjs';
+import { OFFLINE } from '../../src/lib/wp-profiles.mjs';
 import { contributorsReport, priorContributors } from './lib/report.mjs';
 import { toMarkdown, toText } from './lib/format.mjs';
 import { leaderboardSvg, companySvg } from './lib/charts.mjs';
@@ -140,6 +141,25 @@ export const commands = [
       }
       if (args.json) { ctx.log(JSON.stringify(report, null, 2)); return; }
       ctx.log(toText(report));
+    },
+  },
+  {
+    name: 'ingest-profiles',
+    summary: 'Warm the shared wp.org profile cache for a period, politely. Deploy as a cron with UWP_CACHE_DIR (shared volume) + UWP_FETCH_RPS (e.g. 2); the app then runs read-only with UWP_OFFLINE=1. Run this WITHOUT UWP_OFFLINE.',
+    run: async (args, ctx) => {
+      if (OFFLINE) { ctx.error('uwp: UWP_OFFLINE is set - ingestion needs to fetch. Unset it for the ingest job.'); return; }
+      const report = await build({
+        quarter: args.quarter,
+        month: args.month,
+        since: args.since ?? args._[1],
+        until: args.until ?? args._[2],
+        gbBranch: args['gb-branch'],
+        coreBranch: args['core-branch'],
+        companies: true,
+        committers: true,
+      }, { warn: ctx.error });
+      const known = report.byContributor.filter((p) => p.employer).length;
+      ctx.error(`uwp: ingested ${report.window.label} - ${report.totals.contributors} contributors, employer resolved for ${known}. Cache dir: ${process.env.UWP_CACHE_DIR || '~/.config/uwp-ai-forge'}`);
     },
   },
 ];

@@ -31,9 +31,12 @@ async function countQuery(filter, cookie) {
   return Math.max(0, lines.length - 1); // drop the "id" header row
 }
 
-// { opened, closed, closedApprox: true } for the window, or null with no cookie.
+const OFFLINE = /^(1|true)$/i.test(process.env.UWP_OFFLINE || '');
+
+// { opened, closed, closedApprox: true } for the window, or null with no cookie /
+// in offline mode (a read-only host must not hit Trac on wordpress.org either).
 export async function ticketActivity({ since, until, cookie = resolveCookie() } = {}) {
-  if (!cookie) return null;
+  if (OFFLINE || !cookie) return null;
   // Trac's creation-date field is `time` (it silently ignores `created`, which
   // would return every ticket). `changetime` is last-modified: a close proxy.
   const [opened, closed] = await Promise.all([
