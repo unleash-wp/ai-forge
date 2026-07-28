@@ -8,7 +8,7 @@ import { authenticated } from '../../src/connectors/github-token.mjs';
 import { branches } from '../../src/lib/wp-branches.mjs';
 import { OFFLINE } from '../../src/lib/wp-profiles.mjs';
 import { contributorsReport, priorContributors } from './lib/report.mjs';
-import { toMarkdown, toText } from './lib/format.mjs';
+import { toMarkdown, toText, capReport, monthInCorePost } from './lib/format.mjs';
 import { leaderboardSvg, companySvg } from './lib/charts.mjs';
 
 // stdout is reserved for JSON-RPC under `uwp mcp`, so notes go to stderr.
@@ -89,7 +89,8 @@ export const routes = [
 export const mcpTools = [
   {
     name: 'get_contributors',
-    description: 'Who contributed to WordPress Core + Gutenberg in a period, ranked by credited contributions (Core props + Gutenberg authored commits). Toggle the flags to also get the company breakdown, the Core committers table, the component breakdown and Trac ticket activity. Use format=json to get every field for further analysis.',
+    description: 'Who contributed to WordPress Core + Gutenberg in a period, ranked by credited contributions (Core props + Gutenberg authored commits). Toggle the flags to also get the company breakdown, the Core committers table, the component breakdown and Trac ticket activity. Tables are capped to `top` rows (raise it for more; totals are always exact). Use format=json for the structured report.',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     inputSchema: {
       type: 'object',
       properties: {
@@ -103,12 +104,35 @@ export const mcpTools = [
         committers: { type: 'boolean', description: 'Add the Core committers table (who landed the changesets, with employer + wp.org join year).' },
         components: { type: 'boolean', description: 'Add the Core-changes-by-component breakdown (cookie-free, from the active dev-notes tracker).' },
         tickets: { type: 'boolean', description: 'Add Trac opened/closed ticket counts for the window (needs a WordPress.org session).' },
-        format: { type: 'string', enum: ['markdown', 'json'], description: 'Output format (default: markdown). Use json for the full structured report.' },
+        top: { type: 'number', description: 'Max rows per table (default 25). Raise it for more; totals stay exact. Keep it modest to protect your context budget.' },
+        format: { type: 'string', enum: ['markdown', 'json'], description: 'Output format (default: markdown). Use json for the structured report (also capped to `top`).' },
       },
     },
     run: async (a) => {
       const report = await build(a, { warn: mcpWarn });
-      return a.format === 'json' ? JSON.stringify(report, null, 2) : toMarkdown(report);
+      const top = Math.max(1, Number(a.top) || 25);
+      return a.format === 'json' ? JSON.stringify(capReport(report, top), null, 2) : toMarkdown(report, { top });
+    },
+  },
+  {
+    name: 'draft_month_in_core',
+    description: 'Draft a make.wordpress.org "Month in Core"-style post for a period. Pulls contributors, Core committers, the component breakdown, the company (Five for the Future) breakdown and Trac ticket activity, and assembles a ready-to-edit Markdown post scaffold with the honest coverage notes. Prose highlights are left as TODOs - fill them in from real changesets/PRs you have read; never invent features.',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        quarter: { type: 'string', description: 'Quarter, e.g. 2025-Q4' },
+        month: { type: 'string', description: 'Month, e.g. 2025-10 (a Month-in-Core post is usually monthly)' },
+        since: { type: 'string', description: 'Start date YYYY-MM-DD (use with until)' },
+        until: { type: 'string', description: 'End date YYYY-MM-DD (use with since)' },
+        gbBranch: { type: 'string', description: 'Gutenberg branch (default: trunk; e.g. wp/7.1)' },
+        coreBranch: { type: 'string', description: 'Core branch (default: trunk)' },
+        top: { type: 'number', description: 'Max rows per table in the post (default 100).' },
+      },
+    },
+    run: async (a) => {
+      const report = await build({ ...a, companies: true, committers: true, components: true, tickets: true }, { warn: mcpWarn });
+      return monthInCorePost(report, { top: Math.max(1, Number(a.top) || 100) });
     },
   },
 ];

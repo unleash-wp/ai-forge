@@ -146,6 +146,7 @@ export async function startMcpServer() {
             description: t.description || '',
             inputSchema: t.inputSchema || { type: 'object', properties: {} },
           };
+          if (t.annotations) entry.annotations = t.annotations; // readOnlyHint / openWorldHint / …
           // MCP Apps: link the tool to its ui:// panel, and/or restrict visibility
           // (an app-only tool is hidden from the model).
           if (t.ui) entry._meta = { ui: { resourceUri: t.ui, visibility: t.visibility || ['model', 'app'] } };

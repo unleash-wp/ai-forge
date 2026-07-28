@@ -1,0 +1,32 @@
+<!--
+  MCP evaluation for the contributors plugin (get_contributors / draft_month_in_core).
+  Each question is answerable by an AI using the tools against a fixed PAST window
+  (2026-06-01 to 2026-06-30), whose merged-commit set is immutable, so the answers
+  are stable. Extend with more windows/facets as the tools grow.
+-->
+<evaluation>
+  <qa_pair>
+    <question>Using the WordPress contributors data for June 2026 (since 2026-06-01, until 2026-06-30, trunk on both repos), how many people contributed to Core and Gutenberg combined?</question>
+    <answer>198</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), who was the single most-credited contributor to WordPress Core + Gutenberg (Core props + Gutenberg authored commits)?</question>
+    <answer>wildworks</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), how many Core changesets were merged (Core changes count)?</question>
+    <answer>152</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), which company invested the most in WordPress Core + Gutenberg, ignoring the "Unknown / not listed" bucket?</question>
+    <answer>Automattic</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), which contributor landed the most Core changesets (the top Core committer, distinct from Props credit)?</question>
+    <answer>SergeyBiryukov</answer>
+  </qa_pair>
+  <qa_pair>
+    <question>For June 2026 (2026-06-01 to 2026-06-30), which Core component had the most changes, excluding "Uncategorized"?</question>
+    <answer>Editor</answer>
+  </qa_pair>
+</evaluation>
