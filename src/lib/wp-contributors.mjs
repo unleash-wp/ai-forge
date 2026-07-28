@@ -18,10 +18,11 @@
 // Core props received + Gutenberg commits authored.
 import { commits, normDate, GB_REPO, CORE_REPO } from './wp-commits.mjs';
 import { parseCommit, isPlumbing } from './wp-parse.mjs';
+import { fetchComponentMap, componentBreakdown } from './wp-components.mjs';
 
 const cmp = (a, b) => a.toLowerCase().localeCompare(b.toLowerCase());
 
-export async function fetchContributors({ since, until, coreBranch = 'trunk', gbBranch = 'trunk' } = {}) {
+export async function fetchContributors({ since, until, coreBranch = 'trunk', gbBranch = 'trunk', components = false } = {}) {
   const s = normDate(since, false);
   const u = normDate(until, true);
   if (!s || !u) throw new Error('since and until are required');
@@ -85,10 +86,19 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
   const coreContribs = [...new Set(core.flatMap((c) => c.props))].sort(cmp);
   const gbContribs = [...new Set(gb.map((c) => c.author).filter((a) => a && a !== 'unknown'))].sort(cmp);
 
+  // Optional: break the Core changes down by Trac component (cookie-free, via the
+  // active-cycle dev-notes tracker). Opt-in because it costs extra fetches.
+  let componentsData = null;
+  if (components) {
+    const { slug, map } = await fetchComponentMap();
+    componentsData = { slug, ...componentBreakdown(core, map) };
+  }
+
   return {
     meta: { since: s, until: u, coreBranch, gbBranch },
     core: { contributors: coreContribs, commits: core.length },
     gutenberg: { contributors: gbContribs, commits: gb.length },
+    components: componentsData,
     byContributor,
     timeline,
     totals: {

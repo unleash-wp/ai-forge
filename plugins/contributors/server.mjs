@@ -32,6 +32,7 @@ async function reportHandler(req, res, url, ctx) {
       gbBranch: q.get('gbBranch') || undefined,
       coreBranch: q.get('coreBranch') || undefined,
       companies: q.get('companies') !== 'false',
+      components: q.get('components') !== 'false',
     });
     ctx.json(res, 200, { report, markdown: toMarkdown(report) });
   } catch (err) {
