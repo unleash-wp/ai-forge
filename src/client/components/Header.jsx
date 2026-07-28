@@ -37,6 +37,12 @@ export default function Header({ railCollapsed, onToggleRail, onHome }) {
       .catch(() => core.toast(t('Could not clear the cache')))
       .finally(() => setClearing(false));
   }
+  function toggleTheme() {
+    const el = document.documentElement;
+    el.classList.add('theme-anim');
+    setTheme(dark ? 'light' : 'dark');
+    window.setTimeout(() => el.classList.remove('theme-anim'), 360);
+  }
   return (
     <Box as="header" flex="none" bg="ui.surface" borderBottom="1px solid" borderColor="ui.border">
       {/* One left cluster: burger + wordmark together (no gap-void). The burger is
@@ -58,7 +64,7 @@ export default function Header({ railCollapsed, onToggleRail, onHome }) {
           <chakra.button {...iconBtn} onClick={clearCache} disabled={clearing} aria-label={t('Clear cached data')} title={t('Clear cached wp.org profile data')}
             _disabled={{ opacity: 0.5, cursor: 'default' }}
             css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: TRASH }} />
-          <chakra.button {...iconBtn} onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={t('Toggle dark mode')} title={dark ? t('Light mode') : t('Dark mode')}
+          <chakra.button {...iconBtn} onClick={toggleTheme} aria-label={t('Toggle dark mode')} title={dark ? t('Light mode') : t('Dark mode')}
             css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: dark ? SUN : MOON }} />
         </HStack>
       </Flex>

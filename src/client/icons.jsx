@@ -8,7 +8,7 @@ import {
   RiSparklingLine, RiMagicLine, RiToolsLine, RiRocketLine,
   RiTerminalBoxLine, RiPaletteLine, RiPlugLine, RiFlashlightLine, RiApps2Line,
   RiArrowLeftSLine, RiArrowRightSLine, RiCalendar2Line, RiHome5Line,
-  RiMenuLine, RiSettings3Line,
+  RiMenuLine, RiSettings3Line, RiGroupLine, RiTeamLine,
 } from '@remixicon/react';
 
 const MAP = {
@@ -25,6 +25,9 @@ const MAP = {
   palette: RiPaletteLine,
   plug: RiPlugLine,
   flash: RiFlashlightLine,
+  users: RiGroupLine,
+  contributors: RiGroupLine,
+  community: RiTeamLine,
 };
 
 export const ICON_NAMES = Object.keys(MAP);

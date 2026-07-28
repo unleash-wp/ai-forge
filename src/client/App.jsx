@@ -24,6 +24,9 @@ export default function App() {
   const [status, setStatus] = useState(null);
   const [plugins, setPlugins] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  // Tools that have been opened: kept mounted (just hidden) so switching tools in
+  // the rail never loses a generated report / in-progress state.
+  const [visited, setVisited] = useState(() => new Set());
   const [wizardOpen, setWizardOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState('general');
   const [railCollapsed, setRailCollapsed] = useState(() => { try { return localStorage.getItem('forge:rail-collapsed') === '1'; } catch { return false; } });
@@ -69,7 +72,12 @@ export default function App() {
   const goHome = useCallback(() => setActiveId(HOME_VIEW), []);
 
   // Let tools react when they become the active tool.
-  useEffect(() => { if (activeId && activeId !== PLUGINS_VIEW && activeId !== HOME_VIEW) doAction('forge.tool.open', activeId); }, [activeId]);
+  useEffect(() => {
+    if (activeId && activeId !== PLUGINS_VIEW && activeId !== HOME_VIEW) {
+      doAction('forge.tool.open', activeId);
+      if (REGISTRY[activeId]) setVisited((v) => (v.has(activeId) ? v : new Set(v).add(activeId)));
+    }
+  }, [activeId]);
 
   const inHome = activeId === HOME_VIEW;
   const inPlugins = activeId === PLUGINS_VIEW;
@@ -115,16 +123,22 @@ export default function App() {
                   </Text>
                 </Box>
               )}
-              {inHome ? <HomeView plugins={plugins} openTool={setActiveId} />
-                : inPlugins ? <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} />
-                : ActiveTool ? <ActiveTool />
-                : active ? (
-                  // A community plugin loaded server-side (MCP/CLI) with no bundled browser UI.
-                  <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="6" py="10" textAlign="center" maxW="36rem" mx="auto" mt="4">
-                    <Heading as="h3" fontSize="1rem" fontWeight="700" color="ui.heading" mb="2">{t(active.name)}</Heading>
-                    <Text fontSize="0.875rem" color="ui.muted" lineHeight="1.55">{t('This plugin works through your AI and the terminal — it has no browser screen. Use it from Claude Code, Claude Desktop or Codex.')}</Text>
-                  </Box>
-                ) : null}
+              {inHome && <HomeView plugins={plugins} openTool={setActiveId} />}
+              {inPlugins && <PluginsManager plugins={plugins} onOpen={setActiveId} onChanged={loadPluginList} />}
+              {/* Every opened tool stays mounted; only the active one is shown, so
+                  switching tools in the rail never discards a generated report. */}
+              {[...visited].map((id) => {
+                const Tool = REGISTRY[id];
+                if (!Tool) return null;
+                return <Box key={id} display={!inHome && !inPlugins && activeId === id ? 'block' : 'none'}><Tool /></Box>;
+              })}
+              {!inHome && !inPlugins && active && !ActiveTool && (
+                // A community plugin loaded server-side (MCP/CLI) with no bundled browser UI.
+                <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="6" py="10" textAlign="center" maxW="36rem" mx="auto" mt="4">
+                  <Heading as="h3" fontSize="1rem" fontWeight="700" color="ui.heading" mb="2">{t(active.name)}</Heading>
+                  <Text fontSize="0.875rem" color="ui.muted" lineHeight="1.55">{t('This plugin works through your AI and the terminal — it has no browser screen. Use it from Claude Code, Claude Desktop or Codex.')}</Text>
+                </Box>
+              )}
             </Box>
             <Footer version={status && status.version} onCredits={() => openSettings('credits')} />
           </Box>
