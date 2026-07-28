@@ -586,13 +586,10 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                             </HStack>
                           </Box>
                         ) : (
-                          <Stack gap="3">
-                            <HStack gap="2" wrap="wrap">
-                              <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" danger color="ui.bad" borderColor="rgba(192,57,43,.4)" onClick={() => setConfirmClear(true)}>{t('Clear local settings')}</Button>
-                              <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" bg="ui.surface" borderColor="ui.border" onClick={clearCache}>{t('Clear cached data')}</Button>
-                            </HStack>
-                            <Text fontSize="0.75rem" color="ui.muted">{t('Cached wp.org profile data on this machine is re-fetched next time.')}</Text>
-                          </Stack>
+                          <HStack gap="2" wrap="wrap">
+                            <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" danger color="ui.bad" borderColor="rgba(192,57,43,.4)" onClick={() => setConfirmClear(true)}>{t('Clear local settings')}</Button>
+                            <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" bg="ui.surface" borderColor="ui.border" onClick={clearCache}>{t('Clear cached data')}</Button>
+                          </HStack>
                         )}
                       </Box>
                     </Stack>

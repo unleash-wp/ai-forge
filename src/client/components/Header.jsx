@@ -11,8 +11,8 @@ import NotificationBell from './NotificationBell.jsx';
 
 const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
 const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-// Broom: clear the cached wp.org profile data.
-const BROOM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-8 8-5-5z"/><path d="m8.5 10.5-4.5 4.5c-1 1-1 2.6 0 3.6s2.6 1 3.6 0L12 14.6"/><path d="m14 5 5 5"/></svg>';
+// Trash: clear the cached wp.org profile data.
+const TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>';
 
 const iconBtn = {
   type: 'button', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
@@ -57,7 +57,7 @@ export default function Header({ railCollapsed, onToggleRail, onHome }) {
           <NotificationBell />
           <chakra.button {...iconBtn} onClick={clearCache} disabled={clearing} aria-label={t('Clear cached data')} title={t('Clear cached wp.org profile data')}
             _disabled={{ opacity: 0.5, cursor: 'default' }}
-            css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: BROOM }} />
+            css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: TRASH }} />
           <chakra.button {...iconBtn} onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={t('Toggle dark mode')} title={dark ? t('Light mode') : t('Dark mode')}
             css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: dark ? SUN : MOON }} />
         </HStack>
