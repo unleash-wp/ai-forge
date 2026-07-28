@@ -77,7 +77,41 @@ function Segmented({ options, value, onChange }) {
   );
 }
 
-// A more characterful action than a plain button: play glyph, lift + colour shift.
+// Small, themed chart tooltip (recharts' default is oversized and unstyled).
+function TipBox({ active, payload, label, kind, dated }) {
+  if (!active || !payload || !payload.length) return null;
+  const p = payload[0];
+  return (
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="md" boxShadow="md" px="2.5" py="1.5" css={{ pointerEvents: 'none' }}>
+      {dated ? (
+        <>
+          <Text color="ui.muted" fontSize="0.6875rem" lineHeight="1.2">{fmtDay(label)}</Text>
+          <Text color="ui.heading" fontSize="0.8125rem" fontWeight="700" lineHeight="1.3" fontVariantNumeric="tabular-nums">{p.value} {kind}</Text>
+        </>
+      ) : (
+        <Text color="ui.heading" fontSize="0.75rem" fontWeight="600" lineHeight="1.2">{p.name ?? p.payload?.name}: {p.value} {kind}</Text>
+      )}
+    </Box>
+  );
+}
+
+// Underlined tab bar for switching Contributors / Companies.
+function TabBar({ tabs, value, onChange }) {
+  return (
+    <Flex gap="1" borderBottomWidth="1px" borderColor="ui.border" mb="6">
+      {tabs.map((t) => (
+        <chakra.button key={t.value} type="button" onClick={() => onChange(t.value)}
+          px="4" py="2.5" fontSize="0.9375rem" fontWeight={value === t.value ? '700' : '500'} cursor="pointer"
+          color={value === t.value ? 'ui.heading' : 'ui.muted'} borderBottomWidth="2px" mb="-1px"
+          borderColor={value === t.value ? 'navy' : 'transparent'} transition="color .12s, border-color .12s" _hover={{ color: 'ui.heading' }}>
+          {t.label}
+        </chakra.button>
+      ))}
+    </Flex>
+  );
+}
+
+// A more characterful action than a plain button: colour shift + lift on hover.
 function RunButton({ onClick, loading }) {
   return (
     <chakra.button type="button" onClick={onClick} disabled={loading}
@@ -109,7 +143,7 @@ function Donut({ data, total, unit, selected, onSelect }) {
       css={{ '& .recharts-sector': { outline: 'none' }, '& path:focus, & g:focus, & svg:focus': { outline: 'none' } }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Tooltip formatter={(v, n) => [`${v} contributions`, n]} />
+          <Tooltip content={<TipBox kind="contributions" />} wrapperStyle={{ zIndex: 1000 }} />
           <Pie data={data} dataKey="value" nameKey="name" innerRadius={64} outerRadius={96} paddingAngle={1.5} stroke="none"
             startAngle={90} endAngle={-270} isAnimationActive={false} onClick={(d) => onSelect && d && !d.others && onSelect(d.name)}>
             {data.map((d, i) => <Cell key={i} fill={sliceColor(d, i, selected)} cursor={d.others ? 'default' : 'pointer'} style={{ outline: 'none' }} />)}
@@ -202,7 +236,7 @@ function Activity({ timeline, metric }) {
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,.18)" vertical={false} />
             <XAxis dataKey="date" tickFormatter={fmtDay} minTickGap={26} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: AXIS }} />
             <YAxis allowDecimals={false} width={40} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: AXIS }} />
-            <Tooltip labelFormatter={fmtDay} formatter={(v) => [v, metric === 'contributors' ? 'contributors' : 'contributions']} />
+            <Tooltip content={<TipBox dated kind={metric === 'contributors' ? 'contributors' : 'contributions'} />} wrapperStyle={{ zIndex: 1000 }} />
             <Area type="monotone" dataKey={metric} stroke={NAVY} strokeWidth={2} fill="url(#uwpAct)" isAnimationActive={false} />
           </AreaChart>
         </ResponsiveContainer>
@@ -256,6 +290,7 @@ export default function Contributors() {
   const [coreBranches, setCoreBranches] = useState(['trunk']);
   const [repoFilter, setRepoFilter] = useState('all');
   const [chartMetric, setChartMetric] = useState('contributions');
+  const [tab, setTab] = useState('contributors');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -353,45 +388,45 @@ export default function Contributors() {
             </>
           )}
 
-          <Flex align="center" justify="space-between" gap="3" mb="4" wrap="wrap">
-            <Text fontSize="1.05rem" fontWeight="700" color="ui.heading">Top contributors</Text>
-            <HStack gap="3" wrap="wrap">
-              <Segmented options={[{ value: 'all', label: 'All' }, { value: 'core', label: 'Core' }, { value: 'gutenberg', label: 'Gutenberg' }]} value={repoFilter} onChange={setRepoFilter} />
-              <Box w="12rem"><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
-            </HStack>
-          </Flex>
+          <TabBar value={tab} onChange={setTab}
+            tabs={[{ value: 'contributors', label: 'Contributors' }, { value: 'companies', label: co ? `Companies (${co.byCompany.length})` : 'Companies' }]} />
 
-          {list.length ? (
-            <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="10">
-              <Box flex="1 1 0" minW="0" w="full">
-                <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
-                <Stack gap="0">
-                  {people.slice(0, 20).map((p, i) => (
-                    <RankRow key={p.name} i={i + 1} person={p} value={valueOf(p)} max={listMax}
-                      active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} />
-                  ))}
-                </Stack>
-              </Box>
-              <Box flex="1 1 0" minW="0" w="full"><Detail person={selPerson} repoFilter={repoFilter} /></Box>
-            </Flex>
-          ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
-
-          {co && coList.length > 0 && (
-            <Box>
-              <Text fontSize="1.05rem" fontWeight="700" color="ui.heading" mb="1">Which company invested most</Text>
+          {tab === 'contributors' ? (
+            <>
+              <Flex justify="flex-end" gap="3" mb="4" wrap="wrap">
+                <Segmented options={[{ value: 'all', label: 'All' }, { value: 'core', label: 'Core' }, { value: 'gutenberg', label: 'Gutenberg' }]} value={repoFilter} onChange={setRepoFilter} />
+                <Box w="12rem"><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
+              </Flex>
+              {list.length ? (
+                <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
+                  <Box flex="1 1 0" minW="0" w="full">
+                    <Flex justify="center" mb="6"><Donut data={slices} total={report.totals.contributors} unit="people" selected={selPerson?.name} onSelect={setSelected} /></Flex>
+                    <Stack gap="0">
+                      {people.slice(0, 20).map((p, i) => (
+                        <RankRow key={p.name} i={i + 1} person={p} value={valueOf(p)} max={listMax}
+                          active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} />
+                      ))}
+                    </Stack>
+                  </Box>
+                  <Box flex="1 1 0" minW="0" w="full"><Detail person={selPerson} repoFilter={repoFilter} /></Box>
+                </Flex>
+              ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No matching contributors.</Text>}
+            </>
+          ) : co && coList.length > 0 ? (
+            <>
               <Text color="ui.muted" fontSize="0.8125rem" mb="4">
                 Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Location is not published on wp.org profiles.
               </Text>
-              <Flex gap="6" align="center" wrap="wrap">
+              <Flex gap="8" align="center" wrap="wrap" mb="4">
                 <Donut data={coSlices} total={co.byCompany.length} unit="companies" />
-                <Stack gap="0" flex="1 1 14rem" minW="0">
-                  {coList.slice(0, 12).map((r, i) => (
+                <Stack gap="0" flex="1 1 16rem" minW="0">
+                  {coList.slice(0, 15).map((r, i) => (
                     <RankRow key={r.name} i={i + 1} person={{ name: r.name }} value={r.value} max={coMax} />
                   ))}
                 </Stack>
               </Flex>
-            </Box>
-          )}
+            </>
+          ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No company data for this window.</Text>}
 
           {data.markdown && (
             <Button mt="8" onClick={() => { try { navigator.clipboard.writeText(data.markdown); core.toast && core.toast('Markdown copied', 'success'); } catch { /* ignore */ } }}>Copy Markdown</Button>
