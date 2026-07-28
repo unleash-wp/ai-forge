@@ -331,6 +331,12 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
     } catch { /* blocked */ }
     setLocale('en'); setTz(browserTz()); core.toast(t('Settings cleared'), 'success');
   }
+  // Drop the cached wp.org profile/slug data on this machine (re-fetched next run).
+  function clearCache() {
+    fetchJSON('/api/cache/clear', { method: 'POST' })
+      .then(({ ok, data }) => core.toast(ok && data.ok ? t('Cleared %s cached profiles', data.profiles ?? 0) : t('Could not clear the cache'), ok && data.ok ? 'success' : undefined))
+      .catch(() => core.toast(t('Could not clear the cache')));
+  }
 
   function copyStr(text, id) {
     copyText(text)
@@ -580,7 +586,13 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                             </HStack>
                           </Box>
                         ) : (
-                          <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" danger color="ui.bad" borderColor="rgba(192,57,43,.4)" onClick={() => setConfirmClear(true)}>{t('Clear local settings')}</Button>
+                          <Stack gap="3">
+                            <HStack gap="2" wrap="wrap">
+                              <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" danger color="ui.bad" borderColor="rgba(192,57,43,.4)" onClick={() => setConfirmClear(true)}>{t('Clear local settings')}</Button>
+                              <Button variant="ghost" size="sm" py="1.5" fontSize="0.8125rem" bg="ui.surface" borderColor="ui.border" onClick={clearCache}>{t('Clear cached data')}</Button>
+                            </HStack>
+                            <Text fontSize="0.75rem" color="ui.muted">{t('Cached wp.org profile data on this machine is re-fetched next time.')}</Text>
+                          </Stack>
                         )}
                       </Box>
                     </Stack>

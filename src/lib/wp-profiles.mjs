@@ -11,7 +11,7 @@
 //     resolved here. Don't fabricate it — a geography feature needs another source.
 //   - Employer is the person's job, a good but imperfect proxy for the Five for
 //     the Future *sponsor* (which is not exposed in the static profile HTML).
-import { readFileSync, writeFileSync, renameSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, renameSync, rmSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 
@@ -43,6 +43,15 @@ const loadCache = () => loadJson(CACHE);
 const saveCache = (c) => saveJson(CACHE, c);
 const loadSlugCache = () => loadJson(SLUG_CACHE);
 const saveSlugCache = (c) => saveJson(SLUG_CACHE, c);
+
+// Delete the cached wp.org data (profiles + slug map). Non-destructive: the next
+// run just re-fetches. Returns how many entries were dropped (for a nice message).
+export function clearCaches() {
+  const profiles = Object.keys(loadCache()).length;
+  const slugs = Object.keys(loadSlugCache()).length;
+  for (const f of [CACHE, SLUG_CACHE]) { try { rmSync(f, { force: true }); } catch { /* ignore */ } }
+  return { profiles, slugs, dir: CACHE_DIR };
+}
 
 // Optional global request pacing: UWP_FETCH_RPS caps outbound requests to N/sec
 // across all workers, so a hosted ingestion job stays a good citizen. 0/unset =

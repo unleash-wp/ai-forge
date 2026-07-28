@@ -32,6 +32,7 @@ import { checkUpdates } from './update.mjs';
 import { runSelfUpdate, detectInstall } from './self-update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
+import { clearCaches } from './lib/wp-profiles.mjs';
 import { tmpdir } from 'node:os';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
@@ -244,6 +245,14 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         connectors: await listConnectors(),
         mcp: { available: wporgAvailable() },
       });
+      return;
+    }
+
+    // Clear the cached wp.org profile + slug data (non-destructive; re-fetched on
+    // the next report). Used by the header "clear cache" action and Settings.
+    if (url.pathname === '/api/cache/clear' && req.method === 'POST') {
+      try { json(res, 200, { ok: true, ...clearCaches() }); }
+      catch (err) { json(res, 500, { ok: false, error: err.message }); }
       return;
     }
 
