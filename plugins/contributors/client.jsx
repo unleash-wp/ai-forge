@@ -170,7 +170,7 @@ function Donut({ data, total, unit, selected, onSelect }) {
 }
 
 // One selectable row: rank badge (medal for top three), photo, name + employer, bar, value.
-function RankRow({ i, person, value, max, active, onClick }) {
+function RankRow({ i, person, value, max, active, onClick, noAvatar }) {
   const medal = i <= 3 ? MEDAL[i - 1] : null;
   return (
     <Flex as="button" type="button" onClick={onClick} align="center" gap="3" w="full" textAlign="left"
@@ -179,7 +179,7 @@ function RankRow({ i, person, value, max, active, onClick }) {
       <Box w="1.6rem" h="1.6rem" flex="none" borderRadius="full" display="inline-flex" alignItems="center" justifyContent="center"
         bg={medal || 'transparent'} color={medal ? (i === 1 ? 'navy' : 'white') : 'ui.muted'}
         fontSize="0.8125rem" fontWeight="700" fontVariantNumeric="tabular-nums">{i}</Box>
-      <Avatar src={person.avatar} color={active ? YELLOW : NAVY} />
+      {!noAvatar && <Avatar src={person.avatar} color={active ? YELLOW : NAVY} />}
       <Box flex="1" minW="0">
         <Text color="ui.text" fontSize="0.875rem" fontWeight={active ? '700' : '500'} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.name}</Text>
         {person.employer && <Text color="ui.muted" fontSize="0.6875rem" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.employer}</Text>}
@@ -492,7 +492,7 @@ export default function Contributors() {
                   <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
                   <Stack gap="0">
                     {coPageItems.map((r, i) => (
-                      <RankRow key={r.name} i={coPage * PAGE + i + 1} person={{ name: r.name }} value={r.value} max={coMax}
+                      <RankRow key={r.name} i={coPage * PAGE + i + 1} person={{ name: r.name }} value={r.value} max={coMax} noAvatar
                         active={selCompany === r.name} onClick={() => setSelCompany(r.name)} />
                     ))}
                   </Stack>
