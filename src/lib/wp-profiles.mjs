@@ -149,6 +149,22 @@ export async function resolveIdentities(byContributor, { concurrency = 10 } = {}
     .sort((a, b) => b.props - a.props || a.name.localeCompare(b.name));
 }
 
+// Dedupe a flat list of contributor handles by canonical wp.org identity (for the
+// changelog's props/credits list). Returns each person once as their wp.org
+// username, sorted. Degrades to the raw handle when there's no mapping.
+export async function canonicalNames(names, { concurrency = 10 } = {}) {
+  const slugCache = loadSlugCache();
+  const uniq = [...new Set(names)];
+  await pool(uniq, concurrency, (n) => canonicalSlug(n, slugCache));
+  saveSlugCache(slugCache);
+  const bySlug = new Map();
+  for (const n of uniq) {
+    const slug = slugCache[n] || n;
+    bySlug.set(slug.toLowerCase(), slug);
+  }
+  return [...bySlug.values()].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}
+
 // Attach each Core committer's employer, avatar and join year from their wp.org
 // profile, resolving the GitHub login to the wp.org slug first (they often differ).
 // Shares the profile + slug caches, so overlapping runs are fast.
