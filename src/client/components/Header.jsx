@@ -1,14 +1,18 @@
 // The white brand bar: UnleashWP wordmark + "Forge", a dark-mode toggle and a
 // Settings button that opens the settings panel.
+import { useState } from 'react';
 import { useTheme } from 'next-themes';
 import { Box, Flex, HStack, Link, Separator, chakra } from '@chakra-ui/react';
 import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
 import { BurgerIcon } from '../icons.jsx';
 import { useT } from '../i18n.jsx';
+import { useCore, fetchJSON } from '../core.jsx';
 import NotificationBell from './NotificationBell.jsx';
 
 const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
 const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+// Broom: clear the cached wp.org profile data.
+const BROOM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 5 5-8 8-5-5z"/><path d="m8.5 10.5-4.5 4.5c-1 1-1 2.6 0 3.6s2.6 1 3.6 0L12 14.6"/><path d="m14 5 5 5"/></svg>';
 
 const iconBtn = {
   type: 'button', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flex: 'none',
@@ -20,6 +24,19 @@ export default function Header({ railCollapsed, onToggleRail, onHome }) {
   const { resolvedTheme, setTheme } = useTheme();
   const dark = resolvedTheme === 'dark';
   const t = useT();
+  const core = useCore();
+  const [clearing, setClearing] = useState(false);
+  function clearCache() {
+    if (clearing) return;
+    setClearing(true);
+    fetchJSON('/api/cache/clear', { method: 'POST' })
+      .then(({ ok, data }) => {
+        if (ok && data.ok) core.toast(t('Cleared %s cached profiles', data.profiles ?? 0), 'success');
+        else core.toast(t('Could not clear the cache'));
+      })
+      .catch(() => core.toast(t('Could not clear the cache')))
+      .finally(() => setClearing(false));
+  }
   return (
     <Box as="header" flex="none" bg="ui.surface" borderBottom="1px solid" borderColor="ui.border">
       {/* One left cluster: burger + wordmark together (no gap-void). The burger is
@@ -38,6 +55,9 @@ export default function Header({ railCollapsed, onToggleRail, onHome }) {
           color="ui.heading" fontWeight="500" fontSize="0.9688rem" hideBelow="sm" _hover={{ opacity: 0.7 }}>AI Forge</Link>
         <HStack ml="auto" gap="1">
           <NotificationBell />
+          <chakra.button {...iconBtn} onClick={clearCache} disabled={clearing} aria-label={t('Clear cached data')} title={t('Clear cached wp.org profile data')}
+            _disabled={{ opacity: 0.5, cursor: 'default' }}
+            css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: BROOM }} />
           <chakra.button {...iconBtn} onClick={() => setTheme(dark ? 'light' : 'dark')} aria-label={t('Toggle dark mode')} title={dark ? t('Light mode') : t('Dark mode')}
             css={{ '& svg': { width: '1.1875rem', height: '1.1875rem' } }} dangerouslySetInnerHTML={{ __html: dark ? SUN : MOON }} />
         </HStack>
