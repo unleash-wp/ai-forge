@@ -17,6 +17,7 @@ const OTHERS = '#c3cadb';
 const MEDAL = ['#fcbe00', '#b9c2d1', '#cd7f4f']; // gold, silver, bronze for the top three
 const AXIS = 'var(--chakra-colors-fg)';          // resolves + adapts to light/dark
 const pad = (n) => String(n).padStart(2, '0');
+const todayIso = () => { const d = new Date(); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
 
 function quarterWindow(year, q) {
   const sm = (q - 1) * 3 + 1;
@@ -45,28 +46,11 @@ function toSlices(rows, top) {
 const sliceColor = (row, i, selected) => (row.name === selected ? YELLOW : row.others ? OTHERS : RAMP[i % RAMP.length]);
 const fmtDay = (d) => { const [y, m, day] = String(d).split('-'); return new Date(Date.UTC(+y, +m - 1, +day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); };
 
-// Best-effort company logo: wp.org has none, so we guess a domain from the name
-// and use Google's favicon service. Curated map for the tricky multi-word names;
-// single-word brands are guessed as <name>.com; anything ambiguous stays a dot.
-const LOGO_MAP = {
-  'wp engine': 'wpengine.com', 'human made': 'humanmade.com', 'human made ltd': 'humanmade.com',
-  'awesome motive': 'awesomemotive.com', 'parshipmeet group': 'parshipmeet.com', 'wordpress': 'wordpress.org',
-  'accessible web design': 'accessiblewebdesign.us', 'digicube ag': 'digicube.ch', 'buzz geek llc': 'buzzgeek.com',
-  'addweb solution': 'addwebsolution.com', 'yith': 'yithemes.com', 'a8c': 'automattic.com',
-};
-const NON_COMPANY = /^(unknown|self.?employed|open to work|freelanc|not listed|n\/a)/i;
-function companyLogo(name) {
-  if (!name) return null;
-  const key = name.toLowerCase().trim();
-  if (NON_COMPANY.test(key)) return null;
-  let domain = LOGO_MAP[key];
-  if (!domain) {
-    const base = key.replace(/[.,]/g, '').replace(/\b(inc|llc|ltd|gmbh|ag|co|corp|group|incorporated|limited|company)\b/g, '').trim();
-    if (/\s/.test(base) || base.length < 2) return null; // multi-word is too ambiguous to guess
-    domain = base.replace(/[^a-z0-9]/g, '') + '.com';
-  }
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-}
+// Match a contributor's employer to a company display name the same way the
+// backend groups them ("Open to work" is not an employer; case/punctuation-
+// insensitive), so clicking a company can list the people who work there.
+const canonCompany = (e) => { if (!e) return null; const c = String(e).replace(/\s+/g, ' ').trim(); return /^open to work$/i.test(c) ? null : c; };
+const coKey = (e) => { const c = canonCompany(e); return c ? c.toLowerCase().replace(/[^a-z0-9]+/g, '') : '__unknown__'; };
 
 function Field({ label, children }) {
   return (
@@ -272,6 +256,30 @@ function Activity({ timeline, metric }) {
   );
 }
 
+// The people who work at the selected company.
+function CompanyMembers({ company, members }) {
+  if (!company) return null;
+  return (
+    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
+      <Text fontSize="1.15rem" fontWeight="800" color="ui.heading" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{company}</Text>
+      <Text color="ui.muted" fontSize="0.8125rem" mb="3">{members.length} {members.length === 1 ? 'contributor' : 'contributors'}</Text>
+      <Stack gap="0" maxH="26rem" overflowY="auto" pr="1"
+        css={{ '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--chakra-colors-ui-border)', borderRadius: '3px' } }}>
+        {members.map((p, i) => (
+          <Flex key={p.name} align="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border">
+            <Avatar src={p.avatar} />
+            <chakra.a href={`https://profiles.wordpress.org/${encodeURIComponent(p.slug || p.name)}/`} target="_blank" rel="noopener noreferrer"
+              flex="1" minW="0" color="ui.text" fontSize="0.875rem" fontWeight="500" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap"
+              _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{p.name}</chakra.a>
+            <Text color="ui.heading" fontSize="0.875rem" fontWeight="700" fontVariantNumeric="tabular-nums" flex="none">{p.props}</Text>
+          </Flex>
+        ))}
+        {!members.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No contributors resolved to this company.</Text>}
+      </Stack>
+    </Box>
+  );
+}
+
 function LoadingState() {
   return (
     <>
@@ -319,6 +327,7 @@ export default function Contributors() {
   const [chartMetric, setChartMetric] = useState('contributions');
   const [tab, setTab] = useState('contributors');
   const [page, setPage] = useState(0);
+  const [selCompany, setSelCompany] = useState(null);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -328,6 +337,7 @@ export default function Contributors() {
 
   function onPeriod(v) {
     setPeriodVal(v);
+    if (v === 'custom') { const t = todayIso(); setUntil((u) => (u > t ? t : u)); return; } // don't open the picker on a future month
     const p = periods.find((x) => x.value === v);
     if (p && p.since) { setSince(p.since); setUntil(p.until); }
   }
@@ -352,7 +362,11 @@ export default function Contributors() {
     try {
       const { ok, data: body } = await fetchJSON('/api/contributors?' + qs.toString());
       if (!ok) setError(body.error || 'Request failed');
-      else { setData(body); setSelected(body.report?.byContributor?.[0]?.name || null); }
+      else {
+        setData(body);
+        setSelected(body.report?.byContributor?.[0]?.name || null);
+        setSelCompany(body.report?.companies?.byCompany?.[0]?.company || null);
+      }
     } catch (e) { setError(e.message); }
     setLoading(false);
   }, [since, until, gbBranch, coreBranch]);
@@ -379,6 +393,14 @@ export default function Contributors() {
   const coList = useMemo(() => (!co ? [] : co.byCompany.filter((c) => !q || c.company.toLowerCase().includes(q)).map((c) => ({ name: c.company, value: c.contributions }))), [co, q]);
   const coSlices = useMemo(() => toSlices(coList, 6), [coList]);
   const coMax = coList.length ? coList[0].value : 1;
+  const companyMembers = useMemo(() => {
+    if (!report || !selCompany) return [];
+    const isUnknown = selCompany === 'Unknown / not listed';
+    const key = coKey(selCompany);
+    return report.byContributor
+      .filter((p) => (isUnknown ? canonCompany(p.employer) == null : coKey(p.employer) === key))
+      .sort((a, b) => b.props - a.props);
+  }, [report, selCompany]);
 
   return (
     <>
@@ -442,14 +464,13 @@ export default function Contributors() {
                       ))}
                     </Stack>
                     {totalPages > 1 && (
-                      <Flex align="center" justify="center" gap="3" mt="5">
-                        <chakra.button type="button" onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
-                          px="3.5" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight="600" cursor="pointer" bg="ui.sunk" color="ui.text"
-                          borderWidth="1px" borderColor="ui.border" _hover={{ borderColor: 'ui.primary' }} _disabled={{ opacity: 0.4, cursor: 'default' }}>Previous</chakra.button>
-                        <Text color="ui.muted" fontSize="0.8125rem" fontVariantNumeric="tabular-nums">Page {page + 1} of {totalPages} · top {pool.length}</Text>
-                        <chakra.button type="button" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-                          px="3.5" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight="600" cursor="pointer" bg="ui.sunk" color="ui.text"
-                          borderWidth="1px" borderColor="ui.border" _hover={{ borderColor: 'ui.primary' }} _disabled={{ opacity: 0.4, cursor: 'default' }}>Next</chakra.button>
+                      <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
+                        {Array.from({ length: totalPages }, (_, n) => (
+                          <chakra.button key={n} type="button" onClick={() => setPage(n)}
+                            minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
+                            fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
+                            borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
+                        ))}
                       </Flex>
                     )}
                   </Box>
@@ -460,15 +481,19 @@ export default function Contributors() {
           ) : co && coList.length > 0 ? (
             <>
               <Text color="ui.muted" fontSize="0.8125rem" mb="4">
-                Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Location is not published on wp.org profiles.
+                Employer known for {co.coverage.peopleKnown} of {co.coverage.peopleTotal} people ({co.coverage.pct}%). Click a company to see its contributors. Location is not published on wp.org profiles.
               </Text>
-              <Flex gap="8" align="center" wrap="wrap" mb="4">
-                <Donut data={coSlices} total={co.byCompany.length} unit="companies" />
-                <Stack gap="0" flex="1 1 16rem" minW="0">
-                  {coList.slice(0, 15).map((r, i) => (
-                    <RankRow key={r.name} i={i + 1} person={{ name: r.name, avatar: companyLogo(r.name) }} value={r.value} max={coMax} />
-                  ))}
-                </Stack>
+              <Flex direction={{ base: 'column', xl: 'row' }} gap="8" align="flex-start" mb="4">
+                <Box flex="1 1 0" minW="0" w="full">
+                  <Flex justify="center" mb="6"><Donut data={coSlices} total={co.byCompany.length} unit="companies" selected={selCompany} onSelect={setSelCompany} /></Flex>
+                  <Stack gap="0">
+                    {coList.slice(0, 15).map((r, i) => (
+                      <RankRow key={r.name} i={i + 1} person={{ name: r.name }} value={r.value} max={coMax}
+                        active={selCompany === r.name} onClick={() => setSelCompany(r.name)} />
+                    ))}
+                  </Stack>
+                </Box>
+                <Box flex="1 1 0" minW="0" w="full"><CompanyMembers company={selCompany} members={companyMembers} /></Box>
               </Flex>
             </>
           ) : <Text color="ui.muted" fontSize="0.875rem" mb="6">No company data for this window.</Text>}
