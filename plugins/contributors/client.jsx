@@ -225,8 +225,16 @@ function Donut({ data, total, unit, selected, onSelect }) {
   );
 }
 
+// A small "New" pill for first-time contributors.
+function NewBadge() {
+  return (
+    <chakra.span flex="none" bg="yellow" color="navy" fontSize="0.5625rem" fontWeight="800" letterSpacing="0.04em"
+      textTransform="uppercase" px="1.5" py="0.5" borderRadius="full" lineHeight="1.1">New</chakra.span>
+  );
+}
+
 // One selectable row: rank badge (medal for top three), photo, name + employer, bar, value.
-function RankRow({ i, person, value, max, active, onClick, noAvatar }) {
+function RankRow({ i, person, value, max, active, onClick, noAvatar, isNew }) {
   const medal = i <= 3 ? MEDAL[i - 1] : null;
   return (
     <Flex as="button" type="button" onClick={onClick} align="center" gap="3" w="full" textAlign="left"
@@ -237,7 +245,10 @@ function RankRow({ i, person, value, max, active, onClick, noAvatar }) {
         fontSize="0.8125rem" fontWeight="700" fontVariantNumeric="tabular-nums">{i}</Box>
       {!noAvatar && <Avatar src={person.avatar} color={active ? YELLOW : NAVY} />}
       <Box flex="1" minW="0">
-        <Text color="ui.text" fontSize="0.875rem" fontWeight={active ? '700' : '500'} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.name}</Text>
+        <Flex align="center" gap="1.5" minW="0">
+          <Text color="ui.text" fontSize="0.875rem" fontWeight={active ? '700' : '500'} overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.name}</Text>
+          {isNew && <NewBadge />}
+        </Flex>
         {person.employer && <Text color="ui.muted" fontSize="0.6875rem" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{person.employer}</Text>}
       </Box>
       <Box flex="0 0 3.5rem" h="7px" borderRadius="full" bg="ui.sunk" overflow="hidden">
@@ -463,6 +474,8 @@ export default function Contributors() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [data, setData] = useState(null);
+  const [firstTimers, setFirstTimers] = useState(null); // { loading, count, names:Set } | null
+  const [newOnly, setNewOnly] = useState(false);
   const custom = periodVal === 'custom';
 
   function onPeriod(v) {
@@ -502,15 +515,35 @@ export default function Contributors() {
     setLoading(false);
   }, [since, until, gbBranch, coreBranch]);
 
-  useEffect(() => { setPage(0); setCoPage(0); }, [repoFilter, search, data]);
+  useEffect(() => { setPage(0); setCoPage(0); }, [repoFilter, search, data, newOnly]);
 
   const report = data && data.report;
+
+  // First-timers load progressively (the historical lookback is slow) so the main
+  // report shows immediately. New = in this window, absent from the prior 12 months.
+  useEffect(() => {
+    if (!report) { setFirstTimers(null); setNewOnly(false); return; }
+    let live = true;
+    setFirstTimers({ loading: true, count: 0, names: new Set() });
+    setNewOnly(false);
+    const qs = new URLSearchParams({ since: report.meta.since.slice(0, 10), until: report.meta.until.slice(0, 10), gbBranch: report.meta.gbBranch, coreBranch: report.meta.coreBranch, months: '12' });
+    fetchJSON('/api/contributors/prior?' + qs.toString()).then(({ ok, data: b }) => {
+      if (!live) return;
+      if (!ok) { setFirstTimers({ loading: false, count: 0, names: new Set(), failed: true }); return; }
+      const prior = new Set((b.names || []).map((n) => n.toLowerCase()));
+      const names = new Set(report.byContributor.filter((p) => !prior.has(p.name.toLowerCase())).map((p) => p.name.toLowerCase()));
+      setFirstTimers({ loading: false, count: names.size, names, lookback: b });
+    }).catch(() => { if (live) setFirstTimers({ loading: false, count: 0, names: new Set(), failed: true }); });
+    return () => { live = false; };
+  }, [report]);
+  const isNew = useCallback((name) => !!firstTimers && !firstTimers.loading && firstTimers.names.has(name.toLowerCase()), [firstTimers]);
   const q = search.trim().toLowerCase();
   const valueOf = (p) => (repoFilter === 'core' ? p.core : repoFilter === 'gutenberg' ? p.gutenberg : p.props);
   const people = useMemo(() => (!report ? [] : report.byContributor
     .filter((c) => valueOf(c) > 0)
     .filter((c) => !q || c.name.toLowerCase().includes(q))
-    .sort((a, b) => valueOf(b) - valueOf(a))), [report, q, repoFilter]);
+    .filter((c) => !newOnly || isNew(c.name))
+    .sort((a, b) => valueOf(b) - valueOf(a))), [report, q, repoFilter, newOnly, isNew]);
   const listMax = people.length ? valueOf(people[0]) : 1;
   const list = useMemo(() => people.slice(0, 20).map((p) => ({ name: p.name, value: valueOf(p) })), [people, repoFilter]);
   const slices = useMemo(() => toSlices(list, 8), [list]);
@@ -569,7 +602,14 @@ export default function Contributors() {
             <StatCard n={report.totals.gutenbergCommits} label="Gutenberg changes" />
             <StatCard n={co ? co.byCompany.length : report.totals.coreCommits + report.totals.gutenbergCommits} label={co ? 'Companies' : 'Total changes'} />
           </SimpleGrid>
-          <Text color="ui.muted" fontSize="0.75rem" pt="2" mb="6" lineHeight="1.5">Counts only merged changes (Core changesets, Gutenberg merges). Open PRs, reverts and release plumbing are excluded.</Text>
+          <Text color="ui.muted" fontSize="0.75rem" pt="2" mb="1.5" lineHeight="1.5">Counts only merged changes (Core changesets, Gutenberg merges). Open PRs, reverts and release plumbing are excluded.</Text>
+          {report.tickets ? (
+            <Text color="ui.muted" fontSize="0.75rem" mb="6" lineHeight="1.5">
+              Trac this window: <chakra.b color="ui.heading">{report.tickets.opened}</chakra.b> tickets opened · <chakra.b color="ui.heading">{report.tickets.closed}</chakra.b> closed{report.tickets.closedApprox ? ' (by last change; Trac has no close-date field)' : ''}.
+            </Text>
+          ) : report.tickets === null ? (
+            <Text color="ui.muted" fontSize="0.75rem" mb="6" lineHeight="1.5">Connect WordPress.org in Settings to see Trac ticket activity (opened / closed).</Text>
+          ) : <Box mb="6" />}
 
           {report.timeline && report.timeline.length > 1 && (
             <>
@@ -596,6 +636,15 @@ export default function Contributors() {
                   { value: 'core', label: <><CoreIcon size={14} /> Core</> },
                   { value: 'gutenberg', label: <><GutenbergIcon size={14} /> Gutenberg</> },
                 ]} />
+                {firstTimers && (firstTimers.loading || firstTimers.count > 0) && (
+                  <chakra.button type="button" onClick={() => setNewOnly((v) => !v)} disabled={firstTimers.loading}
+                    display="inline-flex" alignItems="center" gap="1.5" px="3" py="2" borderRadius="forge" fontSize="0.8125rem" fontWeight="600"
+                    cursor={firstTimers.loading ? 'default' : 'pointer'} whiteSpace="nowrap" borderWidth="1px"
+                    bg={newOnly ? 'navy' : 'ui.surface'} color={newOnly ? 'white' : 'ui.text'} borderColor={newOnly ? 'navy' : 'ui.border'}
+                    _hover={firstTimers.loading || newOnly ? {} : { borderColor: 'ui.primary' }} title="First contribution in this window (none in the prior 12 months)">
+                    {firstTimers.loading ? <><Spinner size="xs" borderWidth="1.5px" /> Finding new…</> : <>New only ({firstTimers.count})</>}
+                  </chakra.button>
+                )}
                 <Box w="12rem"><TextInput value={search} placeholder="Filter by name…" onChange={(e) => setSearch(e.target.value)} /></Box>
               </Flex>
               {list.length ? (
@@ -605,7 +654,7 @@ export default function Contributors() {
                     <Stack gap="0">
                       {pageItems.map((p, i) => (
                         <RankRow key={p.name} i={page * PAGE + i + 1} person={p} value={valueOf(p)} max={listMax}
-                          active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} />
+                          active={selPerson?.name === p.name} onClick={() => setSelected(p.name)} isNew={isNew(p.name)} />
                       ))}
                     </Stack>
                     {totalPages > 1 && (

@@ -1,6 +1,10 @@
 import { fetchContributors } from '../../../src/lib/wp-contributors.mjs';
 import { companyBreakdown, enrichCommitters } from '../../../src/lib/wp-profiles.mjs';
+import { ticketActivity } from '../../../src/lib/wp-tickets.mjs';
 import { resolveWindow } from './quarters.mjs';
+
+const shiftMonths = (iso, months) => { const d = new Date(iso); d.setUTCMonth(d.getUTCMonth() - months); return d.toISOString().slice(0, 10); };
+const dayBefore = (iso) => { const d = new Date(iso); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); };
 
 // Orchestrate: resolve the period window, then pull Core + Gutenberg contributors
 // through the shared Core service (src/lib/wp-contributors.mjs) so the counts
@@ -17,6 +21,10 @@ export async function contributorsReport(opts = {}) {
   if (opts.committers && report.committers?.length) {
     report.committers = await enrichCommitters(report.committers);
   }
+  // Trac ticket activity (opened/closed) - cookie-gated; null without a cookie.
+  if (opts.tickets) {
+    report.tickets = await ticketActivity({ since: window.since, until: window.until }).catch(() => null);
+  }
   if (opts.companies) {
     const companies = await companyBreakdown(data.byContributor);
     report.companies = companies;
@@ -29,4 +37,17 @@ export async function contributorsReport(opts = {}) {
     }
   }
   return report;
+}
+
+// First-time contributors, loaded separately so the main report stays fast. Pulls
+// the contributor set for the `months` before the report window; the caller flags
+// anyone in the window who is NOT in that prior set as new. Honest approximation:
+// "no merged contribution in the prior N months", not "first ever".
+export async function priorContributors(opts = {}) {
+  const window = resolveWindow(opts);
+  const months = Number(opts.months) || 12;
+  const since = shiftMonths(window.since, months);
+  const until = dayBefore(window.since);
+  const data = await fetchContributors({ since, until, coreBranch: opts.coreBranch, gbBranch: opts.gbBranch });
+  return { since, until, months, names: data.byContributor.map((p) => p.name) };
 }

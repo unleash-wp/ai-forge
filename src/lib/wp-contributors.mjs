@@ -22,7 +22,10 @@ import { fetchComponentMap, componentBreakdown } from './wp-components.mjs';
 
 const cmp = (a, b) => a.toLowerCase().localeCompare(b.toLowerCase());
 
-export async function fetchContributors({ since, until, coreBranch = 'trunk', gbBranch = 'trunk', components = false } = {}) {
+const shiftMonths = (iso, months) => { const d = new Date(iso); d.setUTCMonth(d.getUTCMonth() - months); return d.toISOString().slice(0, 10); };
+const dayBefore = (iso) => { const d = new Date(iso); d.setUTCDate(d.getUTCDate() - 1); return d.toISOString().slice(0, 10); };
+
+export async function fetchContributors({ since, until, coreBranch = 'trunk', gbBranch = 'trunk', components = false, firstTimersMonths = 0 } = {}) {
   const s = normDate(since, false);
   const u = normDate(until, true);
   if (!s || !u) throw new Error('since and until are required');
@@ -101,6 +104,24 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
     .map((c) => ({ ...c, pct: core.length ? Math.round((c.commits / core.length) * 100) : 0 }))
     .sort((a, b) => b.commits - a.commits || cmp(a.login, b.login));
 
+  // Optional: flag first-time contributors. "New" = a merged contribution in this
+  // window but none in the `firstTimersMonths` months before it. This is an honest
+  // approximation of "first ever" (bounded lookback, not all-time) - the label in
+  // the UI says so. Costs a second commit fetch over the lookback window.
+  let firstTimers = null;
+  if (firstTimersMonths > 0) {
+    const priorSince = shiftMonths(s, firstTimersMonths);
+    const priorUntil = dayBefore(s);
+    const prior = await fetchContributors({ since: priorSince, until: priorUntil, coreBranch, gbBranch });
+    const priorSet = new Set(prior.byContributor.map((p) => p.name.toLowerCase()));
+    let count = 0;
+    for (const p of byContributor) {
+      p.firstTimer = !priorSet.has(p.name.toLowerCase());
+      if (p.firstTimer) count += 1;
+    }
+    firstTimers = { count, lookbackMonths: firstTimersMonths, since: priorSince, until: priorUntil };
+  }
+
   // Optional: break the Core changes down by Trac component (cookie-free, via the
   // active-cycle dev-notes tracker). Opt-in because it costs extra fetches.
   let componentsData = null;
@@ -115,6 +136,7 @@ export async function fetchContributors({ since, until, coreBranch = 'trunk', gb
     gutenberg: { contributors: gbContribs, commits: gb.length },
     components: componentsData,
     committers,
+    firstTimers,
     byContributor,
     timeline,
     totals: {
