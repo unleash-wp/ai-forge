@@ -343,28 +343,43 @@ function RankRow({ i, person, value, max, active, onClick, noAvatar, isNew }) {
   );
 }
 
-function Detail({ person, repoFilter }) {
-  if (!person) return null;
-  const items = (person.items || []).filter((it) => repoFilter === 'all' || it.repo === repoFilter);
-  const count = repoFilter === 'core' ? person.core : repoFilter === 'gutenberg' ? person.gutenberg : person.props;
-  const srcLabel = person.source === 'both' ? 'Core and Gutenberg' : person.source === 'core' ? 'Core' : 'Gutenberg';
-  const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(person.slug || person.name)}/`;
+// A page-number strip (one button per page, current highlighted). Renders nothing
+// for a single page. Extra style props pass through to the wrapper so each list can
+// set its own spacing/border. Shared by every paginated list in this view.
+function Pager({ page, total, onSelect, ...wrap }) {
+  if (total <= 1) return null;
+  return (
+    <Flex align="center" justify="center" gap="1.5" wrap="wrap" {...wrap}>
+      {Array.from({ length: total }, (_, n) => (
+        <chakra.button key={n} type="button" onClick={() => onSelect(n)}
+          minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
+          fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
+          borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
+      ))}
+    </Flex>
+  );
+}
+
+// Shared detail card: linked avatar + name, a headline number with its label, a
+// meta line, and a scrollable list of changesets. The contributor and committer
+// panels below are thin adapters that only differ in how they map their record.
+function EntityDetail({ avatar, name, profileUrl, value, valueLabel, meta, items, emptyText }) {
   return (
     <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
       <Flex align="flex-start" gap="4" mb="4">
-        <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" flex="none" borderRadius="full" _hover={{ opacity: 0.85 }} transition="opacity .12s"><Avatar src={person.avatar} size={56} /></chakra.a>
+        <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" flex="none" borderRadius="full" _hover={{ opacity: 0.85 }} transition="opacity .12s"><Avatar src={avatar} size={56} /></chakra.a>
         <Box flex="1" minW="0">
           <Flex align="baseline" justify="space-between" gap="3">
             <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" fontSize="1.15rem" fontWeight="800" color="ui.heading"
-              overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{person.name}</chakra.a>
+              overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{name}</chakra.a>
             <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer"
               color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" flex="none" _hover={{ textDecoration: 'underline' }}>Visit profile ↗</chakra.a>
           </Flex>
           <Flex align="baseline" gap="2" mt="1">
-            <chakra.b fontSize="2rem" fontWeight="800" color="ui.heading" lineHeight="1" fontVariantNumeric="tabular-nums">{count}</chakra.b>
-            <Text color="ui.muted" fontSize="0.875rem">contributions · {srcLabel}</Text>
+            <chakra.b fontSize="2rem" fontWeight="800" color="ui.heading" lineHeight="1" fontVariantNumeric="tabular-nums">{value}</chakra.b>
+            <Text color="ui.muted" fontSize="0.875rem">{valueLabel}</Text>
           </Flex>
-          <Text color="ui.muted" fontSize="0.8125rem" mt="1.5">{person.employer ? `Works at ${person.employer}` : 'Employer not listed on wp.org'}</Text>
+          <Text color="ui.muted" fontSize="0.8125rem" mt="1.5">{meta}</Text>
         </Box>
       </Flex>
       <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
@@ -378,9 +393,27 @@ function Detail({ person, repoFilter }) {
             <Text color="ui.muted" fontSize="0.75rem" fontVariantNumeric="tabular-nums" whiteSpace="nowrap" flex="none">{it.ref}</Text>
           </chakra.a>
         ))}
-        {!items.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No itemised changes in this window.</Text>}
+        {!items.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">{emptyText}</Text>}
       </Stack>
     </Box>
+  );
+}
+
+function Detail({ person, repoFilter }) {
+  if (!person) return null;
+  const items = (person.items || []).filter((it) => repoFilter === 'all' || it.repo === repoFilter);
+  const count = repoFilter === 'core' ? person.core : repoFilter === 'gutenberg' ? person.gutenberg : person.props;
+  const srcLabel = person.source === 'both' ? 'Core and Gutenberg' : person.source === 'core' ? 'Core' : 'Gutenberg';
+  return (
+    <EntityDetail
+      avatar={person.avatar}
+      name={person.name}
+      profileUrl={`https://profiles.wordpress.org/${encodeURIComponent(person.slug || person.name)}/`}
+      value={count}
+      valueLabel={`contributions · ${srcLabel}`}
+      meta={person.employer ? `Works at ${person.employer}` : 'Employer not listed on wp.org'}
+      items={items}
+      emptyText="No itemised changes in this window." />
   );
 }
 
@@ -435,16 +468,7 @@ function CompanyMembers({ company, members }) {
         ))}
         {!members.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No contributors resolved to this company.</Text>}
       </Stack>
-      {totalPages > 1 && (
-        <Flex align="center" justify="center" gap="1.5" mt="4" pt="3" borderTopWidth="1px" borderColor="ui.border" wrap="wrap" flex="none">
-          {Array.from({ length: totalPages }, (_, n) => (
-            <chakra.button key={n} type="button" onClick={() => setPage(n)}
-              minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
-              fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
-              borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
-          ))}
-        </Flex>
-      )}
+      <Pager page={page} total={totalPages} onSelect={setPage} mt="4" pt="3" borderTopWidth="1px" borderColor="ui.border" flex="none" />
     </Box>
   );
 }
@@ -513,42 +537,17 @@ function Components({ data }) {
 function CommitterDetail({ committer }) {
   if (!committer) return null;
   const c = committer;
-  const items = c.items || [];
-  const profileUrl = `https://profiles.wordpress.org/${encodeURIComponent(c.slug || c.login)}/`;
+  const nameSuffix = c.name && c.name.toLowerCase() !== c.login.toLowerCase() ? ` · ${c.name}` : '';
   return (
-    <Box bg="ui.surface" borderWidth="1px" borderColor="ui.border" borderRadius="forge" boxShadow="sm" p="5" w="full">
-      <Flex align="flex-start" gap="4" mb="4">
-        <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" flex="none" borderRadius="full" _hover={{ opacity: 0.85 }} transition="opacity .12s"><Avatar src={c.avatar} size={56} /></chakra.a>
-        <Box flex="1" minW="0">
-          <Flex align="baseline" justify="space-between" gap="3">
-            <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer" fontSize="1.15rem" fontWeight="800" color="ui.heading"
-              overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" _hover={{ color: 'ui.primary', textDecoration: 'underline' }}>{c.login}</chakra.a>
-            <chakra.a href={profileUrl} target="_blank" rel="noopener noreferrer"
-              color="ui.primary" fontSize="0.8125rem" fontWeight="600" whiteSpace="nowrap" flex="none" _hover={{ textDecoration: 'underline' }}>Visit profile ↗</chakra.a>
-          </Flex>
-          <Flex align="baseline" gap="2" mt="1">
-            <chakra.b fontSize="2rem" fontWeight="800" color="ui.heading" lineHeight="1" fontVariantNumeric="tabular-nums">{c.commits}</chakra.b>
-            <Text color="ui.muted" fontSize="0.875rem">commits landed{c.name && c.name.toLowerCase() !== c.login.toLowerCase() ? ` · ${c.name}` : ''}</Text>
-          </Flex>
-          <Text color="ui.muted" fontSize="0.8125rem" mt="1.5">
-            {c.employer ? `Works at ${c.employer}` : 'Employer not listed'}{c.memberSince ? ` · Member since ${c.memberSince}` : ''}
-          </Text>
-        </Box>
-      </Flex>
-      <Stack gap="0" maxH="34rem" overflowY="auto" pr="1"
-        className="forge-scroll">
-        {items.map((it, i) => (
-          <chakra.a key={i} href={it.url} target="_blank" rel="noopener noreferrer"
-            display="flex" alignItems="center" gap="2.5" py="2" borderTopWidth={i ? '1px' : '0'} borderColor="ui.border"
-            _hover={{ bg: 'ui.sunk' }} borderRadius="sm" px="1" mx="-1">
-            <RepoMark repo={it.repo} />
-            <Text flex="1" color="ui.text" fontSize="0.8125rem" lineHeight="1.4">{it.subject}</Text>
-            <Text color="ui.muted" fontSize="0.75rem" fontVariantNumeric="tabular-nums" whiteSpace="nowrap" flex="none">{it.ref}</Text>
-          </chakra.a>
-        ))}
-        {!items.length && <Text color="ui.muted" fontSize="0.8125rem" py="2">No changesets in this window.</Text>}
-      </Stack>
-    </Box>
+    <EntityDetail
+      avatar={c.avatar}
+      name={c.login}
+      profileUrl={`https://profiles.wordpress.org/${encodeURIComponent(c.slug || c.login)}/`}
+      value={c.commits}
+      valueLabel={`commits landed${nameSuffix}`}
+      meta={`${c.employer ? `Works at ${c.employer}` : 'Employer not listed'}${c.memberSince ? ` · Member since ${c.memberSince}` : ''}`}
+      items={c.items || []}
+      emptyText="No changesets in this window." />
   );
 }
 
@@ -587,16 +586,7 @@ function Committers({ list: rawList, meta, search, setSearch }) {
                   active={selCom?.login === c.login} onClick={() => setSel((s) => (s === c.login ? null : c.login))} />
               ))}
             </Stack>
-            {totalPages > 1 && (
-              <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
-                {Array.from({ length: totalPages }, (_, n) => (
-                  <chakra.button key={n} type="button" onClick={() => setPage(n)}
-                    minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
-                    fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
-                    borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
-                ))}
-              </Flex>
-            )}
+            <Pager page={page} total={totalPages} onSelect={setPage} mt="5" />
           </Box>
           <Box flex="1 1 0" minW="0" w="full">
             {selCom ? <CommitterDetail committer={selCom} /> : <DetailEmpty label="Select a committer to see the changesets they landed." />}
@@ -838,16 +828,7 @@ export default function Contributors() {
                           active={selPerson?.name === p.name} onClick={() => setSelected((s) => (s === p.name ? null : p.name))} isNew={isNew(p.slug || p.name)} />
                       ))}
                     </Stack>
-                    {totalPages > 1 && (
-                      <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
-                        {Array.from({ length: totalPages }, (_, n) => (
-                          <chakra.button key={n} type="button" onClick={() => setPage(n)}
-                            minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === page ? '700' : '500'} cursor="pointer"
-                            fontVariantNumeric="tabular-nums" bg={n === page ? 'navy' : 'ui.sunk'} color={n === page ? 'white' : 'ui.text'}
-                            borderWidth="1px" borderColor={n === page ? 'navy' : 'ui.border'} _hover={n === page ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
-                        ))}
-                      </Flex>
-                    )}
+                    <Pager page={page} total={totalPages} onSelect={setPage} mt="5" />
                   </Box>
                   <Box flex="1 1 0" minW="0" w="full">
                     {selPerson ? <Detail person={selPerson} repoFilter={repoFilter} /> : <DetailEmpty label="Select a contributor to see what they shipped." />}
@@ -877,16 +858,7 @@ export default function Contributors() {
                         active={selCompany === r.name} onClick={() => setSelCompany((s) => (s === r.name ? null : r.name))} />
                     ))}
                   </Stack>
-                  {coTotalPages > 1 && (
-                    <Flex align="center" justify="center" gap="1.5" mt="5" wrap="wrap">
-                      {Array.from({ length: coTotalPages }, (_, n) => (
-                        <chakra.button key={n} type="button" onClick={() => setCoPage(n)}
-                          minW="2rem" px="2" py="1.5" borderRadius="forge" fontSize="0.8125rem" fontWeight={n === coPage ? '700' : '500'} cursor="pointer"
-                          fontVariantNumeric="tabular-nums" bg={n === coPage ? 'navy' : 'ui.sunk'} color={n === coPage ? 'white' : 'ui.text'}
-                          borderWidth="1px" borderColor={n === coPage ? 'navy' : 'ui.border'} _hover={n === coPage ? {} : { borderColor: 'ui.primary' }}>{n + 1}</chakra.button>
-                      ))}
-                    </Flex>
-                  )}
+                  <Pager page={coPage} total={coTotalPages} onSelect={setCoPage} mt="5" />
                 </Box>
                 <Box flex="1 1 0" minW="0" w="full">
                   {selCompany && coList.some((r) => r.name === selCompany) ? <CompanyMembers company={selCompany} members={companyMembers} /> : <DetailEmpty label="Select a company to see its contributors." />}
