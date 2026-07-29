@@ -3,6 +3,7 @@
 // (src/connectors/wporg-cookie.mjs); this module reuses that connector's Trac
 // base/UA/bot-wall check and only issues the changelog-specific queries.
 import { TRAC, UA, tracBlocked } from '../../../src/connectors/wporg-cookie.mjs';
+import { timeoutSignal } from '../../../src/lib/net.mjs';
 
 // One request pulls the whole milestone's closed tickets WITH descriptions.
 // Returns Map<id, { summary, description, component, type, owner, priority }>.
@@ -13,7 +14,7 @@ export async function fetchTicketDetails({ milestone, cookie }) {
   const url = `${TRAC}/query?status=closed&milestone=${encodeURIComponent(milestone)}` +
     '&max=0&order=id&col=id&col=summary&col=component&col=type&col=owner&col=priority&col=description&format=csv';
 
-  const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' } });
+  const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' }, signal: timeoutSignal() });
   const body = await res.text();
   if (tracBlocked(res, body)) {
     throw new Error(`Trac blocked the request (HTTP ${res.status}). Cookie expired, or the bot wall is up.`);
@@ -49,7 +50,7 @@ export async function fetchTicketDetails({ milestone, cookie }) {
 export async function countTracTickets(queryUrl, cookie) {
   if (!cookie) throw new Error('no Trac cookie');
   const url = queryUrl + (queryUrl.includes('?') ? '&' : '?') + 'max=0&format=csv';
-  const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' } });
+  const res = await fetch(url, { headers: { Cookie: cookie, 'User-Agent': UA, Accept: 'text/csv' }, signal: timeoutSignal() });
   const body = await res.text();
   if (tracBlocked(res, body)) {
     throw new Error(`Trac blocked the request (HTTP ${res.status}). Cookie expired, or the bot wall is up.`);

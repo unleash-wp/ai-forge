@@ -3,6 +3,8 @@
 // dev notes carry the tag `dev-notes-<x-y>` (e.g. dev-notes-7-1); we resolve the
 // tag id, then list its posts. Cookie-free and exact (the MCP make search is only
 // keyword-fuzzy, so this is the right tool for dev notes). Cached per milestone.
+import { timeoutSignal } from '../../../src/lib/net.mjs';
+
 const BASE = 'https://make.wordpress.org/core/wp-json/wp/v2';
 const cache = new Map();
 
@@ -16,9 +18,9 @@ export async function fetchDevNotes(milestone) {
   if (!version) return [];
   if (cache.has(version)) return cache.get(version);
   const slug = 'dev-notes-' + version.replace(/\./g, '-');
-  const tags = await (await fetch(`${BASE}/tags?slug=${encodeURIComponent(slug)}`)).json();
+  const tags = await (await fetch(`${BASE}/tags?slug=${encodeURIComponent(slug)}`, { signal: timeoutSignal() })).json();
   if (!Array.isArray(tags) || !tags.length) { cache.set(version, []); return []; }
-  const posts = await (await fetch(`${BASE}/posts?tags=${tags[0].id}&per_page=100&_fields=title,link,date,excerpt`)).json();
+  const posts = await (await fetch(`${BASE}/posts?tags=${tags[0].id}&per_page=100&_fields=title,link,date,excerpt`, { signal: timeoutSignal() })).json();
   const out = (Array.isArray(posts) ? posts : []).map((p) => ({
     title: decode(p.title && p.title.rendered || ''),
     url: p.link,

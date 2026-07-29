@@ -1,4 +1,5 @@
 import { apiJson } from '../../../src/connectors/github-token.mjs';
+import { timeoutSignal } from '../../../src/lib/net.mjs';
 
 // The WordPress docs team triages each release into a per-release folder of
 // component JSON files here - cookie-free, already component + classification
@@ -54,7 +55,7 @@ export async function fetchTracker(milestone) {
 }
 
 async function fetchRaw(url) {
-  const res = await fetch(url, { headers: { 'User-Agent': 'ai-forge' } });
+  const res = await fetch(url, { headers: { 'User-Agent': 'ai-forge' }, signal: timeoutSignal() });
   if (!res.ok) throw new Error(`raw ${res.status} ${url}`);
   return res.json();
 }
