@@ -107,8 +107,37 @@ export function uninstall(id, { toolsDir = TOOLS } = {}) {
   rmSync(dest, { recursive: true, force: true });
 }
 
+// Stage community client.jsx files where webpack can see them. User installs
+// live in the config dir; webpack contexts cannot leave the project, so the
+// registry reads plugins-community/ and this sync fills it before every build.
+// Bundled ids are skipped — a community plugin must not shadow a shipped UI.
+export function syncCommunityUi({ toolsDir = TOOLS } = {}) {
+  const staging = join(ROOT, 'plugins-community');
+  // Clear stale stagings (an uninstalled plugin must lose its panel).
+  if (existsSync(staging)) {
+    for (const entry of readdirSync(staging)) {
+      if (entry === 'README.md') continue;
+      rmSync(join(staging, entry), { recursive: true, force: true });
+    }
+  } else {
+    mkdirSync(staging, { recursive: true });
+  }
+  if (!existsSync(toolsDir)) return [];
+  const staged = [];
+  for (const id of readdirSync(toolsDir)) {
+    if (!ID_RE.test(id) || isBundledPlugin(id)) continue;
+    const client = join(toolsDir, id, 'client.jsx');
+    if (!existsSync(client)) continue;
+    mkdirSync(join(staging, id), { recursive: true });
+    cpSync(client, join(staging, id, 'client.jsx'));
+    staged.push(id);
+  }
+  return staged;
+}
+
 // Rebuild the browser bundle so a newly installed/removed tool shows up.
 export function rebuild() {
+  syncCommunityUi();
   return new Promise((resolve, reject) => {
     const p = spawn('npm', ['run', 'build'], { cwd: ROOT });
     let err = '';
