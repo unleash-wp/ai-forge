@@ -10,3 +10,7 @@ dist/
 .agents/
 skills-lock.json
 .claude/skills/chakra-ui-*
+
+# generated community-UI staging (rebuild() syncs from the user plugin dir)
+plugins-community/*
+!plugins-community/README.md

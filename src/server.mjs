@@ -437,7 +437,9 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
           // Mandatory wordpress.org gate: a tool data route returns counts that are
           // wrong without a logged-in Trac session, so refuse until connected. The
           // setup/connector routes above stay open so the user can connect first.
-          if (!resolveCookie()) { json(res, 403, { error: WPORG_HTTP_MSG }); return; }
+          // Routes marked `open: true` opt out — not every plugin's data comes
+          // from wordpress.org (e.g. Lumo answers from its local snapshot).
+          if (!r.open && !resolveCookie()) { json(res, 403, { error: WPORG_HTTP_MSG }); return; }
           await r.handler(req, res, url, {
             json,
             query: url.searchParams,
