@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { VERSION } from './version.mjs';
+import { readDisabled } from './disabled-tools.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const PLUGINS = join(DIR, '..', 'plugins'); // bundled plugins, shipped inside the package
@@ -52,7 +53,7 @@ export function satisfiesCore(range, core = CORE_VERSION) {
 // Scan one plugins/ root into `byId` (keyed by manifest id). Called for the
 // bundled dir first, then the user dir — so a user plugin with the same id
 // overrides the bundled one (a community fork), and community ids are added.
-async function scanDir(root, byId) {
+async function scanDir(root, byId, disabled = new Set()) {
   let ids;
   // A user plugins dir can be a dangling symlink, a file, or unreadable — one bad
   // dir must never reject loadPlugins() (that would 500 every route, including the
@@ -76,9 +77,14 @@ async function scanDir(root, byId) {
         console.error(`plugin "${id}": needs core ${manifest.coreVersion}, running ${CORE_VERSION} - skipped`);
         continue;
       }
+      // A deactivated tool is not loaded at all. Importing its server.mjs runs
+      // the module body, and the export would go on to register MCP tools with
+      // the AI host — both of which used to happen for tools the user had
+      // switched off, because only the HTTP layer read that flag. The manifest
+      // is still recorded so the plugin stays listed and can be switched back on.
       let mod = null;
       const serverPath = join(dir, 'server.mjs');
-      if (existsSync(serverPath)) {
+      if (existsSync(serverPath) && !disabled.has(manifest.id || id)) {
         try {
           // ?v=mtime busts Node's URL-keyed ESM cache, so a reinstalled/updated
           // plugin's new server.mjs loads without a process restart.
@@ -102,9 +108,16 @@ async function scanDir(root, byId) {
   }
 }
 
-export async function loadPlugins() {
+// The three overrides exist so the deactivation rule can be tested against real
+// directories instead of asserted in prose. Production passes none of them.
+export async function loadPlugins({
+  bundledDir = PLUGINS,
+  userDir = userPluginsDir(),
+  // Read once per load, not per plugin, so one scan cannot see two states.
+  disabled = readDisabled(),
+} = {}) {
   const byId = new Map();
-  await scanDir(PLUGINS, byId);          // bundled (shipped with the package)
-  await scanDir(userPluginsDir(), byId); // community installs (survive updates)
+  await scanDir(bundledDir, byId, disabled); // bundled (shipped with the package)
+  await scanDir(userDir, byId, disabled);    // community installs (survive updates)
   return [...byId.values()];
 }

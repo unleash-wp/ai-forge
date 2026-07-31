@@ -81,8 +81,8 @@ node bin/ai-forge.mjs contributors --month 2025-10 --companies
 AI Forge is the platform; **Lumo** (`github:unleash-wp/lumo`) feeds it curated,
 source-verified WordPress knowledge as a community plugin (installs to
 `~/.config/uwp-ai-forge/plugins/lumo`). Tools it adds to `uwp mcp`:
-`forge_wp_lookup` (topic → wrong-vs-correct pattern + source + verify step, from
-the bundled snapshot) and `forge_wp_check_code` (live catch, delegated to the
+`lumo_lookup` (topic → wrong-vs-correct pattern + source + verify step, from
+the bundled snapshot) and `lumo_check_code` (live catch, delegated to the
 installed `@unleashwp/lumo` engine — never reimplemented; degrades to an
 install hint).
 
