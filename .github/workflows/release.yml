@@ -1,7 +1,7 @@
 # Automated release. Push a version tag (`npm version patch && git push --tags`)
 # and this publishes @unleashwp/ai-forge to npm, attaches the .mcpb to a GitHub
 # Release, and mirrors the same version to GitHub Packages as @unleash-wp/ai-forge
-# — all in one workflow, so no step depends on a token-triggered event.
+# All in one workflow, so no step depends on a token-triggered event.
 #
 # One-time npm auth (pick ONE): (A) Trusted Publishing (tokenless OIDC) configured
 # on the package, or (B) an npm automation token as repo secret NPM_TOKEN. The very
@@ -35,7 +35,7 @@ jobs:
 
       # One version source = package.json. The tag must match it, and every derived
       # file (manifest.json AND every plugins/*/plugin.json) must already be in sync.
-      # Running sync-version must produce no changes — otherwise a derived version
+      # Running sync-version must produce no changes. Otherwise a derived version
       # drifted and would ship (e.g. a bundled plugin.json flagged as "update
       # available" against its own release).
       - name: Check versions are in sync
@@ -61,7 +61,7 @@ jobs:
         run: |
           V="$(node -p "require('./package.json').version")"
           if npm view "@unleashwp/ai-forge@$V" version >/dev/null 2>&1; then
-            echo "@unleashwp/ai-forge@$V already on npm — skipping publish"
+            echo "@unleashwp/ai-forge@$V already on npm, skipping publish"
           else
             npm publish --provenance --access public
           fi
@@ -81,7 +81,7 @@ jobs:
             gh release create "$GITHUB_REF_NAME" unleashwp-ai-forge.mcpb --title "$GITHUB_REF_NAME" --generate-notes
           fi
 
-  # Mirror the same version to GitHub Packages (as @unleash-wp/ai-forge — GitHub
+  # Mirror the same version to GitHub Packages (as @unleash-wp/ai-forge, because GitHub
   # Packages scopes to the org name). Runs in the same workflow so it's automatic.
   mirror:
     needs: publish
@@ -110,7 +110,7 @@ jobs:
         run: |
           V="$(node -p "require('./package.json').version")"
           if npm view "@unleash-wp/ai-forge@$V" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
-            echo "@unleash-wp/ai-forge@$V already on GitHub Packages — skipping"
+            echo "@unleash-wp/ai-forge@$V already on GitHub Packages, skipping"
           else
             npm publish --registry=https://npm.pkg.github.com
           fi
