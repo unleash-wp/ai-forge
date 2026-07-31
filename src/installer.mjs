@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { userPluginsDir, isBundledPlugin } from './plugins.mjs';
+import { readDisabled } from './disabled-tools.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(DIR, '..');
@@ -80,10 +81,28 @@ function readManifest(pluginDir) {
 
 // Extract an archive already on disk and install it. Split out from the download
 // so it is unit-testable without the network. toolsDir override is for tests.
-export function installArchive(archivePath, kind, { toolsDir = TOOLS } = {}) {
+export function installArchive(archivePath, kind, { toolsDir = TOOLS, expectId } = {}) {
   const extracted = extract(archivePath, kind);
   const pluginDir = locatePluginDir(extracted);
   const manifest = readManifest(pluginDir);
+
+  // A community plugin must not take a bundled tool's id. loadPlugins() scans
+  // the user dir after the bundled one and the last writer wins, so the copy
+  // would answer the shipped tool's routes, MCP tools and skills. It would also
+  // be invisible and permanent: syncCommunityUi skips bundled ids, so the real
+  // panel keeps rendering, and uninstall() refuses bundled ids, so the app
+  // cannot remove it again.
+  if (isBundledPlugin(manifest.id)) {
+    throw new Error(`"${manifest.id}" is the id of a tool that ships with the app - a plugin cannot take it`);
+  }
+
+  // Updating pulls from the plugin's own updateSource, so without this an
+  // installed plugin could hand back a package claiming a different id and take
+  // over that tool, with no fresh decision by the user.
+  if (expectId && manifest.id !== expectId) {
+    throw new Error(`update for "${expectId}" declares id "${manifest.id}" - refusing`);
+  }
+
   const dest = join(toolsDir, manifest.id);
   mkdirSync(toolsDir, { recursive: true }); // the user plugins dir may not exist yet
   rmSync(dest, { recursive: true, force: true }); // reinstall / update overwrites
@@ -91,11 +110,11 @@ export function installArchive(archivePath, kind, { toolsDir = TOOLS } = {}) {
   return manifest;
 }
 
-export async function installFromSource(source) {
+export async function installFromSource(source, { expectId } = {}) {
   const parsed = parseSource(source);
   if (!parsed) throw new Error('give a GitHub repo (github:owner/repo or https://github.com/owner/repo)');
   const tarball = await downloadTarball(parsed.owner, parsed.repo);
-  return installArchive(tarball, 'tar');
+  return installArchive(tarball, 'tar', { expectId });
 }
 
 export function uninstall(id, { toolsDir = TOOLS } = {}) {
@@ -111,8 +130,11 @@ export function uninstall(id, { toolsDir = TOOLS } = {}) {
 // live in the config dir; webpack contexts cannot leave the project, so the
 // registry reads plugins-community/ and this sync fills it before every build.
 // Bundled ids are skipped — a community plugin must not shadow a shipped UI.
-export function syncCommunityUi({ toolsDir = TOOLS } = {}) {
-  const staging = join(ROOT, 'plugins-community');
+export function syncCommunityUi({
+  toolsDir = TOOLS,
+  staging = join(ROOT, 'plugins-community'),
+  disabled = readDisabled(),
+} = {}) {
   // Clear stale stagings (an uninstalled plugin must lose its panel).
   if (existsSync(staging)) {
     for (const entry of readdirSync(staging)) {
@@ -124,8 +146,11 @@ export function syncCommunityUi({ toolsDir = TOOLS } = {}) {
   }
   if (!existsSync(toolsDir)) return [];
   const staged = [];
+  // Deactivated tools are not staged. The client registry uses an eager webpack
+  // context, so anything staged has its module body executed in the browser at
+  // every page load, same-origin, whether or not the shell renders it.
   for (const id of readdirSync(toolsDir)) {
-    if (!ID_RE.test(id) || isBundledPlugin(id)) continue;
+    if (!ID_RE.test(id) || isBundledPlugin(id) || disabled.has(id)) continue;
     const client = join(toolsDir, id, 'client.jsx');
     if (!existsSync(client)) continue;
     mkdirSync(join(staging, id), { recursive: true });
