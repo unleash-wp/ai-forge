@@ -8,6 +8,7 @@ import { authenticated, saveToken, deleteToken, checkToken, setDisabled } from '
 import { startDeviceFlow, pollDeviceFlow } from './connectors/github-device.mjs';
 import { resolveCookie, saveCookie, deleteCookie, cookiePath, validateCookie } from './connectors/wporg-cookie.mjs';
 import { listConnectors, registerDesktop, unregisterDesktop, SERVER_ID, NPX_MCP } from './connectors/registry.mjs';
+import { readDisabled, writeDisabled, clearDisabled } from './disabled-tools.mjs';
 import { VERSION } from './version.mjs';
 import { FONT_FACE_CSS } from './fonts.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
