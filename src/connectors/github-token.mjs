@@ -128,6 +128,10 @@ export function nextLink(linkHeader) {
 // Authenticated GET returning { data, link }. Throws on non-2xx with a hint that
 // distinguishes rate limits (403) from missing repos/branches (404).
 export async function githubFetch(url) {
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:' || parsed.hostname !== 'api.github.com') {
+    throw new Error(`githubFetch: rejected non-GitHub URL (${parsed.hostname})`);
+  }
   const res = await fetch(url, { headers: authedHeaders(), signal: timeoutSignal() });
   if (!res.ok) {
     let hint = '';
