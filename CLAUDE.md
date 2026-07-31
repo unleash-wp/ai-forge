@@ -67,9 +67,9 @@ node bin/ai-forge.mjs contributors --month 2025-10 --companies
   Idempotent (re-pushing an existing version is a no-op). No Claude co-author trailer
   in commits on this repo.
 - **Lumo** (`github:unleash-wp/lumo`) is the knowledge extension that feeds the
-  platform: installed as a community plugin it adds `forge_wp_lookup` (curated,
+  platform: installed as a community plugin it adds `lumo_lookup` (curated,
   source-verified WP knowledge — deprecations, block.json/theme.json, security,
-  HPOS) and `forge_wp_check_code` (the live catch, delegated to the installed
+  HPOS) and `lumo_check_code` (the live catch, delegated to the installed
   `@unleashwp/lumo` engine; degrades to an install hint without it).
 - `gh auth login` is optional but raises the GitHub API limit to 5000/h.
 - Full detail for humans: the [Handbook](https://unleash-wp.github.io/ai-forge/)
