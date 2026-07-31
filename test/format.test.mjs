@@ -26,14 +26,34 @@ test('sourceUrls bakes the window + milestone into the links', () => {
   assert.match(s.gutenberg, /commits\/wp\/7\.1\?since=2026-07-15&until=2026-07-22/);
 });
 
-test('sourceUrls encodes reserved milestone characters in the Trac URL', () => {
-  const s = sourceUrls({ ...meta, milestone: '6.9 rc1&a' });
-  assert.match(s.trac, /milestone=6\.9%20rc1%26a/);
+// Split by character class, so a failure names which one broke. And asserted
+// both ways: matching the encoded form does not prove the raw form is gone,
+// because the parameter could contain both. `&` is the one that matters — raw,
+// it ends the parameter and silently starts another.
+//
+// Real milestones make this concrete: WordPress Trac ships "Awaiting Review"
+// and "Future Release". Unencoded, the space terminates the URL inside the
+// Markdown link that sourcesLines() writes, so the "check it yourself" link in
+// every report was broken for those.
+test('sourceUrls encodes a space in the milestone, and leaves none behind', () => {
+  const s = sourceUrls({ ...meta, milestone: 'Awaiting Review' });
+  assert.match(s.trac, /&milestone=Awaiting%20Review&group=component/);
+  assert.doesNotMatch(s.trac, /milestone=Awaiting Review/);
 });
 
-test('sourceUrls leaves an ordinary milestone unchanged in the Trac URL', () => {
+test('sourceUrls encodes an ampersand in the milestone, and leaves none behind', () => {
+  const s = sourceUrls({ ...meta, milestone: 'a&b' });
+  assert.match(s.trac, /&milestone=a%26b&group=component/);
+  assert.doesNotMatch(s.trac, /milestone=a&b/);
+});
+
+// Silence: an ordinary milestone must pass through untouched, delimiter and
+// all. Without the trailing &group= this would also accept 7.1%26anything.
+test('sourceUrls leaves an ordinary milestone byte-identical', () => {
   const s = sourceUrls(meta);
-  assert.match(s.trac, /milestone=7\.1/);
+  assert.match(s.trac, /&milestone=7\.1&group=component/);
+  // The display field stays raw either way — only the URL carries the escaping.
+  assert.equal(s.milestone, '7.1');
 });
 
 test('toMarkdown renders the summary table and both sections', () => {
