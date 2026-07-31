@@ -1,4 +1,4 @@
-// The version is read from package.json — the single source of truth. There is no
+// The version is read from package.json, the single source of truth. There is no
 // hardcoded version literal in the code: package.json ships in every distribution
 // (the npm tarball and the .mcpb bundle both include it), so this always resolves.
 // The '0.0.0' is only a never-maintained sentinel for the theoretical case where

@@ -8,7 +8,7 @@ const ctx = import.meta.webpackContext('../../plugins', {
   regExp: /^\.\/(?!_)[^/]+\/client\.jsx$/, // skip _template etc.
 });
 
-// Community installs live in the user config dir, which webpack cannot reach —
+// Community installs live in the user config dir, which webpack cannot reach.
 // rebuild() stages their client.jsx into plugins-community/ before building.
 // Same shape, second context; bundled plugins win on id collision (a community
 // plugin must not shadow a shipped tool's UI).

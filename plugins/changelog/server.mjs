@@ -137,7 +137,7 @@ const mcpWarn = (m) => process.stderr.write(m + '\n');
 
 // MCP App: an interactive ui:// panel the host (Claude Desktop / Codex) renders
 // in a sandboxed iframe. show_changelog links to it and returns structuredContent
-// that the panel renders — no browser involved.
+// that the panel renders. No browser is involved.
 const APP_HTML = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'app.html'), 'utf8');
 
 export const uiResources = [
@@ -252,10 +252,10 @@ export const skills = [
       'Steps:',
       `1. Call the get_changelog tool (since=${a.since || '<since>'}, until=${a.until || '<until>'}${a.milestone ? `, milestone=${a.milestone}` : ''}, format=json) to get the grounded data: counts, the Core/Gutenberg changes, contributors and the source links.`,
       '2. Write the post: a headline, a 1-2 sentence intro, then highlights grouped by area.',
-      '3. Grounding rule (strict): every prose highlight MUST trace to a real PR or ticket in that data. Never invent features and never estimate counts — use the numbers the tool returns.',
+      '3. Grounding rule (strict): every prose highlight MUST trace to a real PR or ticket in that data. Never invent features and never estimate counts. Use the numbers the tool returns.',
       '4. End with the source links and a props / contributors section.',
       '',
-      'Voice: the WordPress release-post style — clear, factual, community-facing.',
+      'Voice: the WordPress release-post style. Clear, factual, community-facing.',
     ].join('\n'),
   },
 ];

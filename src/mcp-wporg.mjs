@@ -1,4 +1,4 @@
-// Binds the one MCP server Forge talks to today — Automattic's mcp-context-wporg
+// Binds the one MCP server Forge talks to today: Automattic's mcp-context-wporg
 // (authenticated WordPress.org data: Trac tickets/timeline, GitHub issues,
 // dev-note reports). This descriptor owns the two things the generic client must
 // NOT hardcode: the server's locator and its credentialEnv map (which env var
@@ -15,7 +15,7 @@ export { mcpText } from './mcp-client.mjs';
 const WPORG = 'wporg';
 
 // Where the built server lives: FORGE_WPORG_MCP, else the default clone path.
-// (A packaged build has no clone — set FORGE_WPORG_MCP or the deep/MCP features
+// (A packaged build has no clone. Set FORGE_WPORG_MCP or the deep/MCP features
 // degrade; a packaging-safe bundled default is still an open item.)
 function resolvePath() {
   return process.env.FORGE_WPORG_MCP || join(homedir(), 'Documents', 'mcp-context-wporg', 'dist', 'index.js');

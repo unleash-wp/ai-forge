@@ -1,4 +1,4 @@
-// Contributors — a free bundled UnleashWP core plugin. Answers "who contributed
+// Contributors: a free bundled UnleashWP core plugin. It answers "who contributed
 // to Core + Gutenberg in a period, and which company invested most" for the
 // make.wordpress.org "Month in Core"-style analysis. Built on the shared Core
 // services src/lib/wp-contributors.mjs (counts, matching the changelog plugin),

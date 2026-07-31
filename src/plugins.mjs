@@ -23,7 +23,7 @@ export function userPluginsDir() {
 }
 
 // Is `id` a bundled plugin (ships with the package)? Bundled plugins can't be
-// uninstalled — they come back on the next update.
+// uninstalled. They come back on the next update.
 export function isBundledPlugin(id) {
   return existsSync(join(PLUGINS, String(id), 'plugin.json'));
 }
@@ -37,7 +37,7 @@ function cmpVersion(a, b) {
 
 // Does the running core satisfy a manifest's `coreVersion` (e.g. ">=0.1.0")?
 // Supports >=, >, <=, <, = and a bare version (treated as >=). Unknown formats
-// and a missing/"*" range never block — the check only rejects clear mismatches.
+// and a missing/"*" range never block. The check only rejects clear mismatches.
 export function satisfiesCore(range, core = CORE_VERSION) {
   if (!range || range === '*') return true;
   const m = String(range).match(/^\s*(>=|<=|>|<|=)?\s*([0-9]+(?:\.[0-9]+){0,2})\s*$/);
@@ -51,11 +51,11 @@ export function satisfiesCore(range, core = CORE_VERSION) {
 }
 
 // Scan one plugins/ root into `byId` (keyed by manifest id). Called for the
-// bundled dir first, then the user dir — so a user plugin with the same id
+// bundled dir first, then the user dir. So a user plugin with the same id
 // overrides the bundled one (a community fork), and community ids are added.
 async function scanDir(root, byId, disabled = new Set()) {
   let ids;
-  // A user plugins dir can be a dangling symlink, a file, or unreadable — one bad
+  // A user plugins dir can be a dangling symlink, a file, or unreadable. One bad
   // dir must never reject loadPlugins() (that would 500 every route, including the
   // bundled tool). Treat an unlistable root as empty.
   try { ids = readdirSync(root).sort(); } catch { return; }
@@ -63,7 +63,7 @@ async function scanDir(root, byId, disabled = new Set()) {
     if (id.startsWith('_')) continue; // _template etc. are copy-me examples, not live tools
     try {
       const dir = join(root, id);
-      if (!statSync(dir).isDirectory()) continue; // statSync follows symlinks — a dangling one throws, caught here
+      if (!statSync(dir).isDirectory()) continue; // statSync follows symlinks; a dangling one throws, caught here
       const manifestPath = join(dir, 'plugin.json');
       if (!existsSync(manifestPath)) continue;
       let manifest;
@@ -79,7 +79,7 @@ async function scanDir(root, byId, disabled = new Set()) {
       }
       // A deactivated tool is not loaded at all. Importing its server.mjs runs
       // the module body, and the export would go on to register MCP tools with
-      // the AI host — both of which used to happen for tools the user had
+      // the AI host. Both used to happen for tools the user had
       // switched off, because only the HTTP layer read that flag. The manifest
       // is still recorded so the plugin stays listed and can be switched back on.
       let mod = null;

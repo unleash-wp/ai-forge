@@ -1,5 +1,5 @@
 // Branded first-run / no-args screen for the CLI, so `ai-forge` reads as a piece
-// of UnleashWP software the moment it runs — not a bare help dump. Zero-dependency
+// of UnleashWP software the moment it runs, not a bare help dump. Zero-dependency
 // ANSI (truecolor brand navy #203159 + yellow #fcbe00); degrades to plain text
 // when stdout isn't a TTY (pipes, CI, logs).
 import { existsSync } from 'node:fs';
@@ -31,13 +31,13 @@ export function renderWelcome() {
     '  ' + dot(true) + ' ' + white('Node ' + process.version) + '   ' + dot(true) + ' ' + white('uwp-ai-forge ready'),
     '  ' + dot(ghSet) + ' GitHub ' + state(ghSet) + '   ' + dot(wpSet) + ' WordPress.org ' + (wpSet ? green('connected') : yellow('required')),
     '',
-    '  ' + bold('Connect WordPress.org') + dim('  — required first, or contributor + Core ticket counts are inaccurate'),
+    '  ' + bold('Connect WordPress.org') + dim(': required first, or contributor + Core ticket counts are inaccurate'),
     '    ' + cyan('uwp-ai-forge cookie-import <chrome|safari|firefox|edge>'),
     '',
-    '  ' + bold('Open the app') + dim('  — visual setup + plugins, no flags to remember'),
+    '  ' + bold('Open the app') + dim(': visual setup + plugins, no flags to remember'),
     '    ' + cyan('uwp-ai-forge serve') + dim('   → http://localhost:4321'),
     '',
-    '  ' + bold('Use it from your AI') + dim('  — Claude Code / Codex'),
+    '  ' + bold('Use it from your AI') + dim(': Claude Code / Codex'),
     '    ' + cyan('claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp'),
     '',
     '  ' + bold('Make a changelog now'),

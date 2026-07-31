@@ -144,7 +144,7 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
         {shown.map((p) => {
           const up = upFor(p.id);
           const active = p.enabled !== false;
-          // No tool is "core" — every one is a normal plugin. Lock actions only to
+          // No tool is "core". Every one is a normal plugin. Lock actions only to
           // avoid an empty app: can't remove the only tool, can't deactivate the
           // only active one.
           const soleInstalled = plugins.length <= 1;

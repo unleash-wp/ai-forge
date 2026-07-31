@@ -1,15 +1,15 @@
-// Core connector: GitHub OAuth Device Flow — the one-click "Sign in with GitHub"
+// Core connector: GitHub OAuth Device Flow. It powers the one-click "Sign in with GitHub"
 // that replaces pasting a personal access token. It fills the *same* token store
 // as a pasted token (saveToken), so everything downstream (resolveToken /
 // githubFetch / rate limit) is unchanged. Zero-dependency (global fetch).
 //
 // Needs a GitHub OAuth App (org-owned) with **Device Flow enabled**; its client_id
 // is public by design (safe to commit). Set FORGE_GITHUB_CLIENT_ID, or fill
-// CLIENT_ID below. No scope is requested — public repos are readable without one;
+// CLIENT_ID below. No scope is requested. Public repos are readable without one;
 // the token only lifts the API rate limit 60 → 5000/h and stays read-only.
 import { saveToken } from './github-token.mjs';
 
-// The org OAuth App's client_id (public by design — device flow has no secret).
+// The org OAuth App's client_id (public by design; device flow has no secret).
 // FORGE_GITHUB_CLIENT_ID overrides it for forks / self-hosting.
 const CLIENT_ID = (process.env.FORGE_GITHUB_CLIENT_ID || 'Ov23liR8yOFK3rbNkXI4').trim();
 

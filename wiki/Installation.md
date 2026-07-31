@@ -1,6 +1,6 @@
 # Installation
 
-AI Forge runs in four places. Pick whichever fits how you work — they share the same core.
+AI Forge runs in four places. Pick whichever fits how you work. They share the same core.
 
 ## npm (terminal)
 
@@ -25,7 +25,7 @@ Register AI Forge once; the agent then calls its tools live.
 # Claude Code
 claude mcp add uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp
 
-# Codex — add an MCP server:
+# Codex: add an MCP server:
 #   command = "npx", args = ["-y", "@unleashwp/ai-forge@latest", "mcp"]
 ```
 
@@ -33,7 +33,7 @@ The MCP server is named **`forge`**. See **[Using AI Forge from Claude & Codex](
 
 ## Claude Desktop (one-click bundle)
 
-AI Forge ships as an **MCPB** bundle — a single `.mcpb` file you install from Claude Desktop's Extensions screen. Claude Desktop bundles its own Node, so there is no local Node requirement.
+AI Forge ships as an **MCPB** bundle: a single `.mcpb` file you install from Claude Desktop's Extensions screen. Claude Desktop bundles its own Node, so there is no local Node requirement.
 
 ```bash
 git clone https://github.com/unleash-wp/ai-forge
@@ -57,11 +57,11 @@ npm install                 # installs build deps + builds the UI bundle (dist/)
 node bin/ai-forge.mjs -h
 ```
 
-- `npm run build` — rebuild the browser bundle after any client change.
-- `npm run watch` — rebuild on save.
-- `npm test` — the Node test suite.
+- `npm run build`: rebuild the browser bundle after any client change.
+- `npm run watch`: rebuild on save.
+- `npm test`: the Node test suite.
 
-The core CLI (`bin/` + `src/*.mjs`) has **zero runtime dependencies**. React, webpack and Babel are build-time devDependencies that only produce the browser bundle — they never load in the CLI.
+The core CLI (`bin/` + `src/*.mjs`) has **zero runtime dependencies**. React, webpack and Babel are build-time devDependencies that only produce the browser bundle. They never load in the CLI.
 
 ## Requirements
 

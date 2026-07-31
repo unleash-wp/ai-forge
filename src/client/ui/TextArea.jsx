@@ -1,4 +1,4 @@
-// TextArea — Chakra Textarea, monospace, vertical resize.
+// TextArea: Chakra Textarea, monospace, vertical resize.
 import { Textarea } from '@chakra-ui/react';
 
 export function TextArea(props) {

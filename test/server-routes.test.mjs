@@ -8,7 +8,7 @@
  * ReferenceError waited for the first person to open the plugin list.
  *
  * These tests hit the routes that read the disabled-tools state. They are
- * deliberately shallow — a route that answers at all is what was missing.
+ * deliberately shallow. A route that answers at all is what was missing.
  */
 
 import { test, after } from 'node:test';

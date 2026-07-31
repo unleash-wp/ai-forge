@@ -8,7 +8,7 @@ import { resolveCookie } from './connectors/wporg-cookie.mjs';
 function requireWporg() {
   if (resolveCookie()) return;
   throw new Error(
-    'wordpress.org connection required — AI Forge needs it or contributor and Core ticket counts are inaccurate.\n' +
+    'wordpress.org connection required. AI Forge needs it or contributor and Core ticket counts are inaccurate.\n' +
     'Connect once, then re-run your command:\n' +
     '  uwp-ai-forge cookie-import <chrome|safari|firefox|edge>\n' +
     'or open the app and sign in to WordPress.org:\n' +
@@ -17,7 +17,7 @@ function requireWporg() {
   );
 }
 
-const HELP = `uwp-ai-forge — a hub for WordPress release and dev tooling. Each plugin adds a feature.
+const HELP = `uwp-ai-forge: a hub for WordPress release and dev tooling. Each plugin adds a feature.
 (short alias: uwp)
 
 Usage:
@@ -48,7 +48,7 @@ export async function run(argv) {
     return startMcpServer();
   }
 
-  // `uwp-ai-forge update` — self-update the whole app (wp-cli style). Runs the
+  // `uwp-ai-forge update`: self-update the whole app (wp-cli style). Runs the
   // right command for how this copy was installed; see self-update.mjs.
   if (args._[0] === 'update') {
     const { runSelfUpdate } = await import('./self-update.mjs');

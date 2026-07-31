@@ -1,6 +1,6 @@
 // Generic, zero-dependency MCP client: JSON-RPC 2.0 over the stdio transport
 // (newline-delimited). It knows how to spawn a registered MCP server, run a
-// session and shape results — but nothing about which credentials or paths any
+// session and shape results, but nothing about which credentials or paths any
 // particular server needs. Servers register themselves with a locator + a
 // credentialEnv map of resolvers, so the transport never hardcodes provider
 // specifics (see src/mcp-wporg.mjs for the one server we bind today).

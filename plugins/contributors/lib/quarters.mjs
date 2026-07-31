@@ -1,6 +1,6 @@
 // Resolve a human period to a { since, until, label } date window (YYYY-MM-DD).
-// Accepts a quarter ("2025-Q4"), a month ("2025-10"), or an explicit range —
-// the period vocabulary the "Month in Core" / quarterly contributor posts use.
+// Accepts a quarter ("2025-Q4"), a month ("2025-10"), or an explicit range.
+// It matches the period vocabulary the "Month in Core" / quarterly contributor posts use.
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];

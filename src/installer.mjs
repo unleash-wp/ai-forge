@@ -15,7 +15,7 @@ import { readDisabled } from './disabled-tools.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(DIR, '..');
-// Community plugins install into the user's config dir, NOT the package — so an
+// Community plugins install into the user's config dir, NOT the package. So an
 // app update (npm i -g / npx replaces the install dir) never deletes them.
 const TOOLS = userPluginsDir();
 const ID_RE = /^[a-z0-9][a-z0-9-]*$/; // no dots/slashes/underscores -> no path traversal
@@ -68,10 +68,10 @@ function readManifest(pluginDir) {
   catch (err) { throw new Error('invalid plugin.json: ' + err.message); }
   if (!manifest.id || !ID_RE.test(manifest.id)) throw new Error('manifest id missing or invalid (lowercase letters, digits, hyphens)');
   if (!manifest.name) throw new Error('manifest is missing "name"');
-  // A plugin needs at least one of: a server.mjs (MCP tools / routes / skills —
+  // A plugin needs at least one of: a server.mjs (MCP tools / routes / skills;
   // works on every install method) or a client.jsx (browser UI). client.jsx alone
   // is NOT required: community plugins install into the user config dir, whose UIs
-  // aren't bundled at build time, so a UI-only plugin can't render there anyway —
+  // aren't bundled at build time, so a UI-only plugin can't render there anyway.
   // requiring it would reject the very MCP-only plugins that do work.
   if (!existsSync(join(pluginDir, 'server.mjs')) && !existsSync(join(pluginDir, 'client.jsx'))) {
     throw new Error('a plugin needs a server.mjs (MCP tools/routes/skills) or a client.jsx (browser UI)');
@@ -119,7 +119,7 @@ export async function installFromSource(source, { expectId } = {}) {
 
 export function uninstall(id, { toolsDir = TOOLS } = {}) {
   if (!ID_RE.test(String(id || ''))) throw new Error('invalid tool id');
-  // Bundled tools ship with the app and would return on the next update — refuse.
+  // Bundled tools ship with the app and would return on the next update. Refuse.
   if (isBundledPlugin(id)) throw new Error('bundled tools ship with the app and can\'t be removed');
   const dest = join(toolsDir, id);
   if (!existsSync(dest) || !statSync(dest).isDirectory()) throw new Error('tool not installed');
@@ -129,7 +129,7 @@ export function uninstall(id, { toolsDir = TOOLS } = {}) {
 // Stage community client.jsx files where webpack can see them. User installs
 // live in the config dir; webpack contexts cannot leave the project, so the
 // registry reads plugins-community/ and this sync fills it before every build.
-// Bundled ids are skipped — a community plugin must not shadow a shipped UI.
+// Bundled ids are skipped. A community plugin must not shadow a shipped UI.
 export function syncCommunityUi({
   toolsDir = TOOLS,
   staging = join(ROOT, 'plugins-community'),

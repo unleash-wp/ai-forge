@@ -136,7 +136,7 @@ export default function App() {
                 // A community plugin loaded server-side (MCP/CLI) with no bundled browser UI.
                 <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" px="6" py="10" textAlign="center" maxW="36rem" mx="auto" mt="4">
                   <Heading as="h3" fontSize="1rem" fontWeight="700" color="ui.heading" mb="2">{t(active.name)}</Heading>
-                  <Text fontSize="0.875rem" color="ui.muted" lineHeight="1.55">{t('This plugin works through your AI and the terminal — it has no browser screen. Use it from Claude Code, Claude Desktop or Codex.')}</Text>
+                  <Text fontSize="0.875rem" color="ui.muted" lineHeight="1.55">{t('This plugin works through your AI and the terminal. It has no browser screen. Use it from Claude Code, Claude Desktop or Codex.')}</Text>
                 </Box>
               )}
             </Box>

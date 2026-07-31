@@ -1,6 +1,6 @@
 // Text / Markdown renderers for a contributors report.
 
-// The honesty note shown with any company breakdown — partial coverage, and no geo.
+// The honesty note shown with any company breakdown: partial coverage, and no geo.
 function companyNote(coverage) {
   return `Employer known for ${coverage.peopleKnown}/${coverage.peopleTotal} (${coverage.pct}%); the rest are grouped as "Unknown / not listed". Location/geography is not published on wp.org profiles, so it is not included.`;
 }
@@ -10,7 +10,7 @@ function companyNote(coverage) {
 // plain report renderer and the Month-in-Core post scaffold.
 function tableSections(report, top) {
   const lines = [];
-  const more = (arr, shown, unit) => (arr.length > shown ? ['', `_…and ${arr.length - shown} more ${unit} — raise \`top\` or use \`format=json\` for the full set._`] : []);
+  const more = (arr, shown, unit) => (arr.length > shown ? ['', `_…and ${arr.length - shown} more ${unit}. Raise \`top\` or use \`format=json\` for the full set._`] : []);
   lines.push('| # | Contributor | Contributions | Source |', '|--:|-------------|--------------:|--------|');
   report.byContributor.slice(0, top).forEach((c, i) => lines.push(`| ${i + 1} | ${c.name} | ${c.props} | ${c.source} |`));
   lines.push(...more(report.byContributor, top, 'contributors'));
@@ -36,7 +36,7 @@ function tableSections(report, top) {
   if (report.committers?.length) {
     lines.push('', '### Core committers', '', '_Who landed the changesets (distinct from Props). Country is not published on wp.org profiles._', '',
       '| # | Account | Name | Company | Since | Commits | % |', '|--:|---------|------|---------|------:|--------:|--:|');
-    report.committers.slice(0, top).forEach((c, i) => lines.push(`| ${i + 1} | ${c.login} | ${c.name || ''} | ${c.employer || '—'} | ${c.memberSince || '—'} | ${c.commits} | ${c.pct}% |`));
+    report.committers.slice(0, top).forEach((c, i) => lines.push(`| ${i + 1} | ${c.login} | ${c.name || ''} | ${c.employer || 'Unknown / not listed'} | ${c.memberSince || 'n/a'} | ${c.commits} | ${c.pct}% |`));
     lines.push(...more(report.committers, top, 'committers'));
   }
   return lines;
@@ -62,7 +62,7 @@ export function monthInCorePost(report, { top = 100 } = {}) {
   const w = report.window;
   const t = report.totals;
   const head = [
-    `# A Month in Core — ${w.label}`, '',
+    `# A Month in Core: ${w.label}`, '',
     `_Draft scaffold. Replace the prose with highlights you have verified against real changesets/PRs; do not invent features. Window: ${w.since} to ${w.until} (Core + Gutenberg)._`, '',
     '## Highlights', '',
     '- _TODO: 3–5 verified highlights, each linked to a real changeset/PR._', '',

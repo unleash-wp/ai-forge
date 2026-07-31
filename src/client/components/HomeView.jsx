@@ -1,5 +1,5 @@
 // The app's landing: a plain "Welcome", then the installed tools as a compact
-// grid of cards (3 per row) — icon, name, short description, click to open. Same
+// grid of cards (3 per row): icon, name, short description, and click to open. Same
 // bundle, so it also shows inside the Claude Desktop window. Kept plain: no border
 // (soft shadow only), no invented decoration. (No "add a tool" card yet.)
 import { Box, Flex, Heading, SimpleGrid, Text, chakra } from '@chakra-ui/react';
