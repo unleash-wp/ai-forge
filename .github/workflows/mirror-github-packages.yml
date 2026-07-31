@@ -1,5 +1,5 @@
 # Manual re-mirror to GitHub Packages (@unleash-wp/ai-forge). The normal path is
-# automatic — the Release workflow mirrors every version in its own `mirror` job.
+# automatic: the Release workflow mirrors every version in its own `mirror` job.
 # This exists only to re-push the current version by hand if that ever fails.
 # (A `release: published` trigger can't work here: releases created by the
 # workflow's GITHUB_TOKEN don't trigger other workflows.)
@@ -36,7 +36,7 @@ jobs:
         run: |
           V="$(node -p "require('./package.json').version")"
           if npm view "@unleash-wp/ai-forge@$V" version --registry=https://npm.pkg.github.com >/dev/null 2>&1; then
-            echo "@unleash-wp/ai-forge@$V already on GitHub Packages — skipping"
+            echo "@unleash-wp/ai-forge@$V already on GitHub Packages, skipping"
           else
             npm publish --registry=https://npm.pkg.github.com
           fi

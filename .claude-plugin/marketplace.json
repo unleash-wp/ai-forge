@@ -1,12 +1,12 @@
 {
   "name": "unleashwp-ai-forge",
   "owner": { "name": "UnleashWP" },
-  "description": "UnleashWP AI Forge — WordPress release tooling for Claude Code and Codex.",
+  "description": "UnleashWP AI Forge: WordPress release tooling for Claude Code and Codex.",
   "plugins": [
     {
       "name": "uwp-ai-forge",
       "source": "./",
-      "description": "AI Forge's MCP tools + skills: WordPress Core/Gutenberg release changelogs, milestones and branches — queryable live from your AI coding agent.",
+      "description": "AI Forge's MCP tools + skills: WordPress Core/Gutenberg release changelogs, milestones and branches, queryable live from your AI coding agent.",
       "author": { "name": "UnleashWP" },
       "icon": "src/brand/icon.png"
     }

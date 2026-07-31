@@ -56,7 +56,7 @@ Use Claude Code or Codex? Paste this and send it:
 ```text
 Install "UnleashWP AI Forge" (npm package @unleashwp/ai-forge, command
 "uwp-ai-forge"). First ask me whether I want to use its browser app or do
-everything here in chat, then do the setup yourself — install it, connect it to
+everything here in chat, then do the setup yourself: install it, connect it to
 you as an MCP server, and connect WordPress.org (required, or the counts are
 wrong). Run the commands, and after each step tell me in one sentence what
 happened. Stop and ask me only when something truly needs my decision.

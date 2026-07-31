@@ -1,9 +1,9 @@
 // package.json is the single source of truth for the version. Other manifests are
 // static JSON that can't read it, so this copies the number in: manifest.json (MCPB)
 // and every bundled tool plugin.json (they ship with the app, so their version
-// tracks it — otherwise the update-check flags a bundled plugin against the app
+// tracks it. Otherwise the update-check flags a bundled plugin against the app
 // release). Wired as the npm `version` lifecycle script (runs on `npm version …`)
-// and prepended to mcpb:pack — so the version is never typed anywhere but package.json.
+// and prepended to mcpb:pack, so the version is never typed anywhere but package.json.
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';

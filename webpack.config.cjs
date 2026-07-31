@@ -1,7 +1,7 @@
 const path = require('path');
 
 // Bundles the browser UI: src/client/index.jsx -> dist/main.js, served from
-// /assets/. Styles are Chakra UI (Emotion), injected at runtime — no CSS file.
+// /assets/. Styles are Chakra UI (Emotion), injected at runtime, with no CSS file.
 // The core CLI (bin/ + src/*.mjs) stays zero-dep vanilla Node; React + Chakra
 // live only in this bundle.
 module.exports = {
