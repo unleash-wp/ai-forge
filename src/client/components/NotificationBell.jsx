@@ -1,6 +1,6 @@
 // Header notification center: a bell with a dot when a tool has an update, and a
-// dropdown listing them. Replaces the old full-width update bar. Self-contained —
-// fetches /api/updates itself; the Updates tab in Settings stays the full view.
+// dropdown listing them. Replaces the old full-width update bar. Self-contained.
+// It fetches /api/updates itself; the Updates tab in Settings stays the full view.
 import { useState, useEffect, useRef } from 'react';
 import { Box, Link, Stack, Text, chakra } from '@chakra-ui/react';
 import { apiFetch } from '../core.jsx';

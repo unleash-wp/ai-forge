@@ -13,7 +13,7 @@
 //
 // Credit model (identical to the changelog report): Core credit is the "Props"
 // line (SVN commits are all authored by the committer, so the real credit lives
-// in Props — these are wp.org usernames); Gutenberg credit is the commit author
+// in Props (these are wp.org usernames); Gutenberg credit is the commit author
 // login (a GitHub handle). `props` is the count of credited contributions:
 // Core props received + Gutenberg commits authored.
 import { commits, normDate, GB_REPO, CORE_REPO } from './wp-commits.mjs';

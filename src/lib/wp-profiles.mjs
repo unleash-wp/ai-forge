@@ -1,14 +1,14 @@
 // WordPress.org contributor profiles (Core-shared, plugin-facing API).
 //
-// Resolves a contributor to their CURRENT EMPLOYER — for "which company invested
-// most" analysis — and maps Gutenberg GitHub logins to wp.org usernames.
+// Resolves a contributor to their CURRENT EMPLOYER for "which company invested
+// most" analysis. It also maps Gutenberg GitHub logins to wp.org usernames.
 //
 // Honest limits (verified against live profiles, not assumed):
 //   - Employer comes from the profile's job-history entry marked "Present".
 //     Coverage is partial: ~83% of top contributors list one, less on the long
 //     tail. Contributors without one fall into an "Unknown / not listed" bucket.
 //   - LOCATION / country is NOT reliably present on wp.org profiles and is NOT
-//     resolved here. Don't fabricate it — a geography feature needs another source.
+//     resolved here. Don't fabricate it. A geography feature needs another source.
 //   - Employer is the person's job, a good but imperfect proxy for the Five for
 //     the Future *sponsor* (which is not exposed in the static profile HTML).
 import { rmSync } from 'node:fs';
@@ -88,7 +88,7 @@ export function parseEmployer(html) {
   const entries = [...html.matchAll(/<div class="dates">([\s\S]*?)<\/div>[\s\S]*?<div class="company">([\s\S]*?)<\/div>/g)];
   for (const [, dates, company] of entries) {
     if (/present/i.test(dates)) {
-      // The company div also carries a "· Full-time" employment-type span — drop
+      // The company div also carries a "· Full-time" employment-type span. Drop
       // it and keep just the employer name.
       const name = company
         .replace(/<span class="employment-type">[\s\S]*?<\/span>/gi, '')

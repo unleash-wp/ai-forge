@@ -1,10 +1,10 @@
-// `uwp mcp` — a zero-dependency MCP server (JSON-RPC over stdio, the MCP stdio
+// `uwp mcp`: a zero-dependency MCP server (JSON-RPC over stdio, the MCP stdio
 // transport). Claude Code and Codex register it once and then call the MCP
 // tools that tool plugins declare via `mcpTools` in their server.mjs. This is
 // the "Funkstelle": agents pull Forge's data live and keep working with it.
 //
 // Register it (server id "uwp-ai-forge"), the same command the app's one-click
-// buttons run — see NPX_MCP in connectors/registry.mjs:
+// buttons run. See NPX_MCP in connectors/registry.mjs:
 //   claude mcp add --scope user uwp-ai-forge -- npx -y @unleashwp/ai-forge@latest mcp
 import { loadPlugins } from './plugins.mjs';
 import { startInternalServer, forgeAppHtml, appAvailable } from './mcp-app.mjs';
@@ -59,7 +59,7 @@ export async function startMcpServer() {
       visibility: ['app'],
       inputSchema: { type: 'object', properties: { method: { type: 'string' }, path: { type: 'string' }, body: {} } },
       run: async (a) => {
-        // Resolve the path against the loopback origin and assert it can't escape —
+        // Resolve the path against the loopback origin and assert it can't escape.
         // `new URL` + an origin check is robust against every authority-injection
         // form (`//evil`, `@evil`, `http://evil`, encoded/backslash) that a
         // hand-rolled string check would have to enumerate. No SSRF off-host.
@@ -85,7 +85,7 @@ export async function startMcpServer() {
       run: async () => ({ text: 'Opening UnleashWP AI Forge… (no window here? run `uwp-ai-forge serve` for the browser app at http://localhost:4321).', structured: {} }),
     });
     uiResources.set('ui://forge/app', {
-      uri: 'ui://forge/app', name: 'uwp-ai-forge', description: 'UnleashWP AI Forge — the full app.',
+      uri: 'ui://forge/app', name: 'uwp-ai-forge', description: 'UnleashWP AI Forge: the full app.',
       html: forgeAppHtml(), permissions: { clipboardWrite: {} },
     });
   }
@@ -155,7 +155,7 @@ export async function startMcpServer() {
       if (!tool) return fail(id, -32602, `unknown tool: ${params && params.name}`);
       try {
         const out = await tool.run((params && params.arguments) || {});
-        // A tool may return a string, or { text, structured } — the latter also
+        // A tool may return a string, or { text, structured }. The latter also
         // sends structuredContent, which the host pushes to the ui:// app.
         if (out && typeof out === 'object' && ('text' in out || 'structured' in out)) {
           const res = { content: [{ type: 'text', text: out.text != null ? String(out.text) : '' }] };

@@ -1,5 +1,5 @@
 // The primary nav, living inside the app-shell sidebar column (that column owns
-// the surface + divider, so the items sit flush in the frame — not floating).
+// the surface + divider, so the items sit flush in the frame, not floating).
 // Collapsible from the header burger: expanded = icon + label side by side;
 // collapsed = icons only (label as tooltip). On mobile the column becomes a top
 // bar and this lays the tiles out in a row with labels.

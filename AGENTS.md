@@ -1,9 +1,9 @@
-# UnleashWP AI Forge — instructions for coding agents (Codex & others)
+# UnleashWP AI Forge: instructions for coding agents (Codex & others)
 
 AI Forge is a **plugin platform for WordPress tooling** that bridges to your AI
 over MCP. **Zero runtime dependencies, plain Node ≥18.** Every capability is a
 plugin under `plugins/<id>`; the bundled plugins are the **Changelog Generator**
-and **Contributors** (who contributed to Core + Gutenberg in a period — the
+and **Contributors** (who contributed to Core + Gutenberg in a period, the
 make.wordpress.org "Month in Core" analysis), both built on shared, plugin-facing
 Core services in `src/lib/`.
 
@@ -31,7 +31,7 @@ working *in* the repo.
    No cookie → descriptions can't be read; ground the prose in the summaries +
    full Core changeset commit messages, and say descriptions were not read.
 4. **Every highlight sentence must trace to a real PR or Trac ticket you read.**
-   Link inline. Never invent features or estimate counts — the tool's numbers and
+   Link inline. Never invent features or estimate counts. The tool's numbers and
    links are the source of truth.
 
 ## Task: who contributed / a "Month in Core" post
@@ -47,7 +47,7 @@ node bin/ai-forge.mjs contributors --month 2025-10 --companies
   budget) and `draft_month_in_core` (full post scaffold; highlights left as TODOs).
 - **Identity:** Gutenberg GitHub logins and Core wp.org usernames are merged to one
   wp.org identity (GitHub `t-hamano` = wp.org `wildworks`) so counts don't
-  double-count. Country/geography is not on wp.org profiles — never fabricated.
+  double-count. Country/geography is not on wp.org profiles. Never fabricate it.
 
 ## Optional
 
@@ -57,33 +57,33 @@ node bin/ai-forge.mjs contributors --month 2025-10 --companies
 
 ## Where things are
 
-- `bin/ai-forge.mjs` — CLI entry (dispatches `serve`, `mcp`, `update`, `changelog`, …).
-- `src/` — the core platform: `server.mjs` (the `serve` shell), `mcp-server.mjs`
+- `bin/ai-forge.mjs`: CLI entry (dispatches `serve`, `mcp`, `update`, `changelog`, …).
+- `src/`: the core platform: `server.mjs` (the `serve` shell), `mcp-server.mjs`
   (the `mcp` stdio server), `plugins.mjs` (the plugin loader), `connectors/` (GitHub +
   wordpress.org credential stores and the connector registry).
-- `plugins/<id>/` — a plugin: `plugin.json` (manifest) + `server.mjs` (exports
+- `plugins/<id>/`: a plugin: `plugin.json` (manifest) + `server.mjs` (exports
   `routes` / `mcpTools` / `skills` / `commands`) + `client.jsx` (the React UI).
   Bundled plugins ship here; community installs land in `~/.config/uwp-ai-forge/plugins`.
-- `src/lib/` — **shared, plugin-facing Core services** (import via `../../src/lib/…`):
+- `src/lib/`: **shared, plugin-facing Core services** (import via `../../src/lib/…`):
   `wp-contributors` (rank + tally), `wp-commits` (cached GitHub commit fetch),
   `wp-profiles` (employer + GitHub→wp.org identity resolution), `wp-components`,
   `wp-tickets`, `wp-branches`, plus `cache-store` (disk cache: `UWP_CACHE_DIR`,
   `UWP_OFFLINE`) and `net` (fetch `timeoutSignal` + a bounded concurrency `pool`).
-- `plugins/changelog/lib/report.mjs` — fetch + aggregate pipeline (now on `src/lib`);
-  `plugins/changelog/lib/format.mjs` — Markdown report + post template.
-- `plugins/contributors/lib/` — `report.mjs` (build + identity dedup + company fold),
+- `plugins/changelog/lib/report.mjs`: fetch + aggregate pipeline (now on `src/lib`);
+  `plugins/changelog/lib/format.mjs`: Markdown report + post template.
+- `plugins/contributors/lib/`: `report.mjs` (build + identity dedup + company fold),
   `format.mjs` (Markdown / `capReport` context-cap / `monthInCorePost`), `charts.mjs`.
 - Sources: Gutenberg = `WordPress/gutenberg`; Core = `WordPress/wordpress-develop`
   mirror; Core grouping = `WordPress/Documentation-Issue-Tracker` dev-notes tracker.
 
-## Lumo — the knowledge extension
+## Lumo: the knowledge extension
 
 AI Forge is the platform; **Lumo** (`github:unleash-wp/lumo`) feeds it curated,
 source-verified WordPress knowledge as a community plugin (installs to
 `~/.config/uwp-ai-forge/plugins/lumo`). Tools it adds to `uwp mcp`:
 `lumo_lookup` (topic → wrong-vs-correct pattern + source + verify step, from
 the bundled snapshot) and `lumo_check_code` (live catch, delegated to the
-installed `@unleashwp/lumo` engine — never reimplemented; degrades to an
+installed `@unleashwp/lumo` engine. It is never reimplemented and degrades to an
 install hint).
 
 ## Hosting-safe caching + release

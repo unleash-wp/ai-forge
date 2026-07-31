@@ -1,12 +1,12 @@
 // One-click self-update for the whole app, driven from the Updates tab. How we
 // update depends on how AI Forge was installed:
-//   • git checkout (a cloned repo, `.git` present) — `git pull` + `npm install`
+//   • git checkout (a cloned repo, `.git` present): `git pull` + `npm install`
 //     + `npm run build`.
-//   • global npm install (`npm i -g @unleashwp/ai-forge`) — `npm i -g …@latest`;
+//   • global npm install (`npm i -g @unleashwp/ai-forge`): `npm i -g …@latest`;
 //     the published package already ships a built `dist/`, so no rebuild.
-//   • npx (`npx @unleashwp/ai-forge@latest`) — already the latest each run;
+//   • npx (`npx @unleashwp/ai-forge@latest`): already the latest each run;
 //     nothing to update.
-// Commands are fixed (no user input), so there is nothing to inject — the same
+// Commands are fixed (no user input), so there is nothing to inject. It follows the same
 // trust model as the existing "Register in Claude Code" button. The client
 // bundle (dist/main.js) is served no-store, so a page reload picks up UI and
 // tool changes immediately; only server-side code needs an AI Forge restart.
@@ -36,19 +36,19 @@ export function detectInstall() {
 const execFileP = promisify(execFile);
 const run = (cmd, args, opts = {}) => execFileP(cmd, args, { cwd: ROOT, timeout: 180000, maxBuffer: 8 * 1024 * 1024, ...opts });
 
-// Update in place. Returns { ok, method, restart, message } — restart flags that
+// Update in place. Returns { ok, method, restart, message }. `restart` flags that
 // server-side changes only apply after AI Forge is restarted (the client reloads
 // on its own). On failure: { ok:false, method, error }.
 export async function runSelfUpdate() {
   const method = detectInstall();
   try {
     if (method === 'npx') {
-      return { ok: true, method, restart: false, message: 'npx always runs the latest — nothing to update.' };
+      return { ok: true, method, restart: false, message: 'npx always runs the latest. Nothing to update.' };
     }
     if (method === 'local') {
       // A project dependency: updating the global copy wouldn't touch it, so don't
-      // silently mutate the user's environment — tell them where to update.
-      return { ok: true, method, restart: false, message: 'AI Forge is installed as a project dependency — update it with `npm update @unleashwp/ai-forge` in that project.' };
+      // silently mutate the user's environment. Tell them where to update.
+      return { ok: true, method, restart: false, message: 'AI Forge is installed as a project dependency. Update it with `npm update @unleashwp/ai-forge` in that project.' };
     }
     if (method === 'git') {
       await run('git', ['pull', '--ff-only']);
@@ -58,13 +58,13 @@ export async function runSelfUpdate() {
       await run('npm', ['run', 'build']);
       return { ok: true, method, restart: true };
     }
-    // global npm install — the published package ships a built dist/.
+    // global npm install: the published package ships a built dist/.
     await run('npm', ['install', '-g', '@unleashwp/ai-forge@latest', '--no-audit', '--no-fund']);
     return { ok: true, method, restart: true };
   } catch (err) {
     const stderr = String(err.stderr || '').trim();
     return { ok: false, method, error: err.code === 'ENOENT'
-      ? `The ${method === 'git' ? 'git' : 'npm'} command isn't on your PATH — update from a terminal instead.`
+      ? `The ${method === 'git' ? 'git' : 'npm'} command isn't on your PATH. Update from a terminal instead.`
       : stderr.slice(-500) || err.message };
   }
 }

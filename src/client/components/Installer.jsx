@@ -42,7 +42,7 @@ export default function Installer({ status, onDone }) {
       return;
     }
     const c = cookie.trim();
-    if (!c) { finish(); return; } // optional — the tool runs cookie-free
+    if (!c) { finish(); return; } // optional: the tool runs cookie-free
     setCkMsg({ text: t('saving and testing…'), kind: '' });
     fetchJSON('/api/cookie', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cookie: c }) })
       .then(({ ok, data }) => {
@@ -98,7 +98,7 @@ export default function Installer({ status, onDone }) {
             <Box>
               <Text fontSize="0.75rem" fontWeight="600" color="ui.muted">{t('Step 2 of 2')}</Text>
               <Heading as="h2" mt="0" mb="2" fontSize="1.1875rem" fontWeight="700" color="ui.heading" letterSpacing="-.01em">{t('Connect WordPress.org')} <chakra.span fontWeight="500" color="ui.muted" fontSize="0.875rem">({t('optional')})</chakra.span></Heading>
-              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">{t('Only for')} <b>{t('deep')}</b> {t('mode: full Trac ticket descriptions. The changelog runs cookie-free — click Finish to skip, or add it here / later in Settings.')}</Text>
+              <Text fontSize="0.875rem" color="ui.muted" mb="4" lineHeight="1.55">{t('Only for')} <b>{t('deep')}</b> {t('mode: full Trac ticket descriptions. The changelog runs cookie-free. Click Finish to skip, or add it here / later in Settings.')}</Text>
               {browser && (
                 <Box mb="3">
                   <chakra.span display="block" fontSize="0.7813rem" fontWeight="600" color="ui.text" mb="2">{t('Quick import from your browser')} <chakra.span fontWeight="400" color="ui.muted">{t('(you must be logged in there)')}</chakra.span></chakra.span>

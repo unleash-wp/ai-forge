@@ -2,8 +2,8 @@
 // KIND each is, whether it's required, and (for credentials) its live status.
 // The setup UI, the first-run installer and /api/config/status all derive from
 // this instead of hardcoding four cards + a hand-maintained status shape. A
-// second tool can add connectors by exporting `connectors` from its server.mjs —
-// read at runtime via loadPlugins(), never a static plugins/* import (cycle guard).
+// second tool can add connectors by exporting `connectors` from its server.mjs.
+// They are read at runtime via loadPlugins(), never a static plugins/* import (cycle guard).
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
@@ -12,20 +12,20 @@ import { tokenStatus } from './github-token.mjs';
 import { deviceFlowConfigured } from './github-device.mjs';
 import { resolveCookie, cookiePath } from './wporg-cookie.mjs';
 
-// The MCP server id — the key each agent registers Forge under (claude mcp add
+// The MCP server id: the key each agent registers Forge under (claude mcp add
 // <id>, the mcpServers.<id> config key, the MCPB manifest name). One constant so
 // the register command, the config probe and the Desktop merge never drift. It
 // mirrors the product ("UnleashWP AI Forge") and the npm package (@unleashwp/
-// ai-forge). Changing it orphans existing registrations — pick it once.
+// ai-forge). Changing it orphans existing registrations. Pick it once.
 export const SERVER_ID = 'uwp-ai-forge';
 
-// The command every agent runs Forge with — one source for the register argv,
+// The command every agent runs Forge with: one source for the register argv,
 // the copy-paste line and the Desktop config, so the exec path and the paste
 // path can never diverge.
 export const NPX_MCP = ['npx', '-y', '@unleashwp/ai-forge@latest', 'mcp'];
 
 // Is Forge already registered as an MCP server in this agent? Read the agent's own
-// config file directly — instant, no subprocess (the `mcp get` CLI actually
+// config file directly. It is instant, with no subprocess (the `mcp get` CLI actually
 // *connects* to the server, ~3s). Reflects external add/remove on the next
 // refresh. Unreadable / missing config → not registered.
 function agentHasForge(agent) {
@@ -35,7 +35,7 @@ function agentHasForge(agent) {
       return { registered: !!(d.mcpServers && d.mcpServers[SERVER_ID]) };
     }
     if (agent === 'codex') {
-      // TOML table header: bare hyphenated key, or quoted — match both. Built from
+      // TOML table header: bare hyphenated key, or quoted. Match both. Built from
       // SERVER_ID so it can't drift from the id the register command writes.
       const rx = new RegExp('\\[mcp_servers\\.["\']?' + SERVER_ID + '["\']?\\]');
       return { registered: rx.test(readFileSync(join(homedir(), '.codex', 'config.toml'), 'utf8')) };
@@ -48,7 +48,7 @@ function agentHasForge(agent) {
   return { registered: false };
 }
 
-// Claude Desktop has no CLI — it reads a JSON config at launch. So the one-click
+// Claude Desktop has no CLI. It reads a JSON config at launch. So the one-click
 // "Connect" merges Forge in (and out) of that file directly; the user restarts
 // the app to apply. Same server command the CLI agents register.
 const DESKTOP_ENTRY = { command: NPX_MCP[0], args: NPX_MCP.slice(1) };
@@ -62,7 +62,7 @@ export function desktopConfigPath() {
 function readDesktopConfig() {
   let raw;
   try { raw = readFileSync(desktopConfigPath(), 'utf8'); }
-  catch { return {}; } // no config file yet — starting fresh is fine
+  catch { return {}; } // no config file yet. Starting fresh is fine.
   // File exists but doesn't parse: refuse rather than overwrite, or a one-click
   // Connect would silently wipe the user's other MCP servers.
   try { return JSON.parse(raw); }
@@ -121,7 +121,7 @@ const coreConnectors = [
 // ready for JSON. Order: Core first, then whatever plugins add.
 export async function listConnectors() {
   const fromPlugins = (await loadPlugins()).flatMap((p) => p.connectors || []);
-  // `status` may be sync (credential) or async (agent CLI probe) — await handles both.
+  // `status` may be sync (credential) or async (agent CLI probe). await handles both.
   return Promise.all([...coreConnectors, ...fromPlugins].map(async (c) => ({
     id: c.id,
     kind: c.kind,

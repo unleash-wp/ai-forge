@@ -236,7 +236,7 @@ function CmdPanel({ id, cmd, copiedId, onCopy, onRegister, registerLabel, regist
         <chakra.code flex="1" minW="0" alignSelf="center" px="3" py="2.5" fontSize="0.75rem" color="ui.text" fontFamily="mono" overflowX="auto" whiteSpace="nowrap">{cmd}</chakra.code>
         <CopyIconBtn copied={copiedId === id} onCopy={onCopy} label={__('Copy command')} />
       </Flex>
-      {onRegister && <Text fontSize="0.75rem" color="ui.muted">{__('One click if the CLI is installed — or copy and run it yourself.')}</Text>}
+      {onRegister && <Text fontSize="0.75rem" color="ui.muted">{__('One click if the CLI is installed, or copy and run it yourself.')}</Text>}
     </Stack>
   );
 }
@@ -270,7 +270,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
   // Contribute: live "good first issue" list from the public repo. Intentionally a
   // direct external fetch (GitHub, not a Forge /api route), so it must NOT go
-  // through apiFetch/apiBase — it has no auth and no origin dependence.
+  // through apiFetch/apiBase. It has no auth and no origin dependence.
   const [issues, setIssues] = useState([]);
   useEffect(() => {
     if (!open) return;
@@ -284,8 +284,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
   const trac = connectorStatus(status, 'wporg-cookie');
   const version = (status && status.version) || '';
   const install = (status && status.install) || 'git'; // git | global | npx | local
-  // The self-updater has its own branded command (wp-cli style) — same for every
-  // install method, no raw git/npm chain to show.
+  // The self-updater has its own branded command (wp-cli style). It is the same
+  // for every install method, with no raw git/npm chain to show.
   const manualCmd = 'uwp-ai-forge update';
   const browser = currentBrowser();
   const toggle = (id) => setOpenId((o) => (o === id ? null : id));
@@ -305,14 +305,14 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .then((d) => {
         if (!d.ok) { core.toast(d.error || t('Update failed.')); setSelfUpdating(false); return; }
         // npx / project-dependency installs don't self-update in place (nothing to
-        // reload) — just tell the user, keyed off the honest restart flag.
+        // reload). Just tell the user, keyed off the honest restart flag.
         if (!d.restart) {
           core.toast(d.method === 'local'
             ? t('AI Forge is installed as a project dependency. Update it with npm update @unleashwp/ai-forge in that project.')
             : t('npx already runs the latest version.'), 'success');
           setSelfUpdating(false); return;
         }
-        core.toast(t('Updated — reloading…'), 'success');
+        core.toast(t('Updated. Reloading…'), 'success');
         setTimeout(() => window.location.reload(), 1200);
       })
       .catch(() => { core.toast(t('Update failed.')); setSelfUpdating(false); });
@@ -357,11 +357,11 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
       .then(({ data }) => {
         if (data && data.ok) {
           setRegistered((r) => ({ ...r, [agent]: true }));
-          core.toast(agent === 'claude-desktop' ? t('Registered — restart Claude Desktop to finish.') : t('Registered in %s', name), 'success');
+          core.toast(agent === 'claude-desktop' ? t('Registered. Restart Claude Desktop to finish.') : t('Registered in %s', name), 'success');
           refreshStatus();
-        } else core.toast((data && data.error) || t('Could not register automatically — copy the command.'));
+        } else core.toast((data && data.error) || t('Could not register automatically. Copy the command.'));
       })
-      .catch(() => core.toast(t('Could not register automatically — copy the command.')))
+      .catch(() => core.toast(t('Could not register automatically. Copy the command.')))
       .finally(() => setRegistering(''));
   }
   function unregisterAgent(agent) {
@@ -508,7 +508,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
           </HStack>
         );
       }
-      // No CLI to copy — one click writes the config, then the user restarts the app.
+      // No CLI to copy. One click writes the config, then the user restarts the app.
       return (
         <Stack gap="2.5">
           <BusyBtn variant="primary" busy={registering === c.id} onClick={() => registerAgent(c.id, name)} alignSelf="flex-start">{t('Connect %s', name)}</BusyBtn>
@@ -606,7 +606,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                       {((status && status.connectors) || []).map((c) => {
                         const p = PRESENT[c.id];
                         if (!p) return null;
-                        // The title carries a green check when connected — for the MCP
+                        // The title carries a green check when connected. For the MCP
                         // agents (Claude Code/Desktop, Codex) too, with a just-done
                         // register/unregister winning over the config probe.
                         const local = registered[c.id];
@@ -623,7 +623,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
 
                   <Tabs.Content value="updates" mt="0">
                     <TabTitle>{t('Updates')}</TabTitle>
-                    <TabIntro>{t('Updates come from the public GitHub repo. Nothing installs by itself — check when you want, then install with one click.')}</TabIntro>
+                    <TabIntro>{t('Updates come from the public GitHub repo. Nothing installs by itself. Check when you want, then install with one click.')}</TabIntro>
                     <Box borderWidth="1px" borderColor="ui.border" borderRadius="forge" bg="ui.surface" p="4">
                       <Flex align="center" justify="space-between" gap="3" flexWrap="wrap">
                         <Box>
@@ -649,7 +649,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                       )}
                     </Box>
                     {install === 'npx' ? (
-                      <Text fontSize="0.8125rem" color="ui.muted" mt="4">{t('You started AI Forge with npx — it already runs the latest version each time.')}</Text>
+                      <Text fontSize="0.8125rem" color="ui.muted" mt="4">{t('You started AI Forge with npx. It already runs the latest version each time.')}</Text>
                     ) : install === 'local' ? (
                       <Text fontSize="0.8125rem" color="ui.muted" mt="4">{t('AI Forge is installed as a project dependency. Update it with npm update @unleashwp/ai-forge in that project.')}</Text>
                     ) : (

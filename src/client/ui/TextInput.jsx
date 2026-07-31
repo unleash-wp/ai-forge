@@ -1,4 +1,4 @@
-// TextInput — Chakra Input on the Forge surface tokens.
+// TextInput: Chakra Input on the Forge surface tokens.
 import { Input } from '@chakra-ui/react';
 
 export function TextInput({ type = 'text', ...rest }) {

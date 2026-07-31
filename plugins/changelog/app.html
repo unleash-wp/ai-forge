@@ -135,7 +135,7 @@
   rpc("ui/initialize", {
     protocolVersion: "2026-01-26",
     capabilities: { appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] } },
-    clientInfo: { name: "UnleashWP AI Forge — Changelog", version: "1.0.0" }
+    clientInfo: { name: "UnleashWP AI Forge: Changelog", version: "1.0.0" }
   }, true).then(function (res) {
     var vars = res && res.hostContext && res.hostContext.styles && res.hostContext.styles.variables;
     if (vars) for (var k in vars) document.documentElement.style.setProperty(k, vars[k]);

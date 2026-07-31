@@ -1,4 +1,4 @@
-// Button — Chakra Button with the Forge variants. Keeps the wrapper API
+// Button: Chakra Button with the Forge variants. Keeps the wrapper API
 // (variant primary|ghost, size sm, danger) so call sites don't change.
 import { Button as CButton } from '@chakra-ui/react';
 

@@ -1,4 +1,4 @@
-// Date-range picker — a calendar popover that returns a { since, until } pair as
+// Date-range picker: a calendar popover that returns a { since, until } pair as
 // YYYY-MM-DD strings. Extracted from the Changelog tool so any plugin reuses the
 // same control (the shell's date input). Self-contained: it carries the small
 // date/locale helpers it needs.
