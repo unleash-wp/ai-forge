@@ -107,7 +107,9 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
       json(res, 200, { plugins: (await pluginsReady).map((p) => ({ ...p.manifest, enabled: !disabled.has(p.manifest.id) })) });
       return;
     }
-    // Activate / deactivate a tool. Instant - just toggles a flag, no rebuild.
+    // Activate / deactivate a tool. Rebuilds: deactivating now also unstages the
+    // tool's client.jsx, and leaving it in the bundle would keep its module body
+    // running in the browser on every page load while the shell calls it off.
     if (url.pathname === '/api/plugins/toggle' && req.method === 'POST') {
       try {
         const body = JSON.parse(await readBody(req) || '{}');
@@ -122,6 +124,8 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         }
         if (body.enabled) set.delete(id); else set.add(id);
         writeDisabled(set);
+        await rebuild();
+        await reloadPlugins();
         json(res, 200, { ok: true });
       } catch (err) {
         json(res, 200, { ok: false, error: err.message });
@@ -145,15 +149,15 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
           try {
             if (action === 'deactivate') {
               if (active.has(id) && active.size <= 1) { errors.push(id + ': only active plugin, skipped'); continue; }
-              const set = readDisabled(); set.add(id); writeDisabled(set); active.delete(id);
+              const set = readDisabled(); set.add(id); writeDisabled(set); active.delete(id); needBuild = true;
             } else if (action === 'activate') {
-              const set = readDisabled(); set.delete(id); writeDisabled(set); active.add(id);
+              const set = readDisabled(); set.delete(id); writeDisabled(set); active.add(id); needBuild = true;
             } else if (action === 'remove') {
               if (installed.size <= 1) { errors.push(id + ': only installed plugin, skipped'); continue; }
               uninstall(id); clearDisabled(id); installed.delete(id); active.delete(id); needBuild = true;
             } else if (action === 'update') {
               const p = plugins.find((x) => x.manifest.id === id);
-              if (p && p.manifest.updateSource) { await installFromSource(p.manifest.updateSource); needBuild = true; }
+              if (p && p.manifest.updateSource) { await installFromSource(p.manifest.updateSource, { expectId: id }); needBuild = true; }
               else errors.push(id + ': no updateSource');
             } else throw new Error('unknown action');
           } catch (e) { errors.push(id + ': ' + e.message); }
@@ -523,19 +527,6 @@ function markInstalled() {
   writeFileSync(p, '1\n', { mode: 0o600 });
 }
 
-// Deactivated tools: their id is listed here; they stay installed but the shell
-// hides them and their server routes are skipped. Toggling is instant (no build).
-function disabledPath() { return join(dirname(cookiePath()), 'disabled-tools.json'); }
-function readDisabled() {
-  try { return new Set(JSON.parse(readFileSync(disabledPath(), 'utf8')).disabled || []); }
-  catch { return new Set(); }
-}
-function writeDisabled(set) {
-  const p = disabledPath();
-  mkdirSync(dirname(p), { recursive: true });
-  writeFileSync(p, JSON.stringify({ disabled: [...set] }), { mode: 0o600 });
-}
-function clearDisabled(id) { const s = readDisabled(); if (s.delete(id)) writeDisabled(s); }
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
