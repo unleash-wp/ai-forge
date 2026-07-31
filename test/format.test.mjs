@@ -41,3 +41,20 @@ test('toPost renders the fill-in release-post template', () => {
   assert.match(post, /What's in WordPress 7\.1/);
   assert.match(post, /changes that landed/);
 });
+
+test('sourceUrls percent-encodes a milestone that contains special characters', () => {
+  const s = sourceUrls({ ...meta, milestone: '6.9 rc1' });
+  assert.match(s.trac, /milestone=6\.9%20rc1/);
+  assert.doesNotMatch(s.trac, /milestone=6\.9 rc1/);
+});
+
+test('sourceUrls percent-encodes a milestone containing an ampersand', () => {
+  const s = sourceUrls({ ...meta, milestone: 'a&b' });
+  assert.match(s.trac, /milestone=a%26b/);
+  assert.doesNotMatch(s.trac, /milestone=a&b/);
+});
+
+test('sourceUrls leaves a plain milestone like 7.1 unchanged', () => {
+  const s = sourceUrls(meta);
+  assert.match(s.trac, /milestone=7\.1/);
+});
