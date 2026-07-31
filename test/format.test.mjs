@@ -26,6 +26,16 @@ test('sourceUrls bakes the window + milestone into the links', () => {
   assert.match(s.gutenberg, /commits\/wp\/7\.1\?since=2026-07-15&until=2026-07-22/);
 });
 
+test('sourceUrls encodes reserved milestone characters in the Trac URL', () => {
+  const s = sourceUrls({ ...meta, milestone: '6.9 rc1&a' });
+  assert.match(s.trac, /milestone=6\.9%20rc1%26a/);
+});
+
+test('sourceUrls leaves an ordinary milestone unchanged in the Trac URL', () => {
+  const s = sourceUrls(meta);
+  assert.match(s.trac, /milestone=7\.1/);
+});
+
 test('toMarkdown renders the summary table and both sections', () => {
   const md = toMarkdown(report, meta);
   assert.match(md, /# WordPress 7\.1 release changes/);

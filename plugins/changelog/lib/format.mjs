@@ -67,7 +67,7 @@ export function sourceUrls(meta) {
   const d1 = since.slice(0, 10);
   const d2 = until.slice(0, 10);
   const trac = `${TRAC}/query?status=closed&changetime=${tracDate(d1)}..${tracDate(d2)}` +
-    (milestone ? `&milestone=${milestone}` : '') +
+    (milestone ? `&milestone=${encodeURIComponent(milestone)}` : '') +
     '&group=component&col=id&col=summary&col=component&col=owner&col=type&col=priority&order=id';
   const gutenberg = `${GB}/commits/${gbBranch}?since=${d1}&until=${d2}`;
   return { trac, gutenberg, since: d1, until: d2, milestone, gbBranch };
