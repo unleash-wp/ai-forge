@@ -28,7 +28,7 @@ test('sourceUrls bakes the window + milestone into the links', () => {
 
 // Split by character class, so a failure names which one broke. And asserted
 // both ways: matching the encoded form does not prove the raw form is gone,
-// because the parameter could contain both. `&` is the one that matters — raw,
+// because the parameter could contain both. `&` is the one that matters. Raw,
 // it ends the parameter and silently starts another.
 //
 // Real milestones make this concrete: WordPress Trac ships "Awaiting Review"
@@ -52,7 +52,7 @@ test('sourceUrls encodes an ampersand in the milestone, and leaves none behind',
 test('sourceUrls leaves an ordinary milestone byte-identical', () => {
   const s = sourceUrls(meta);
   assert.match(s.trac, /&milestone=7\.1&group=component/);
-  // The display field stays raw either way — only the URL carries the escaping.
+  // The display field stays raw either way. Only the URL carries the escaping.
   assert.equal(s.milestone, '7.1');
 });
 

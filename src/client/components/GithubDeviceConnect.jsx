@@ -1,6 +1,6 @@
 // One-click "Sign in with GitHub" via OAuth Device Flow. Starts the flow, shows
 // the short user code + opens github.com, then polls until the server has
-// exchanged and stored the token. The token never touches the client — this only
+// exchanged and stored the token. The token never touches the client. This only
 // sees a status. Calls onConnected() when done. Used by the first-run Installer
 // and the Settings connector card, so the flow lives in one place.
 import { useState, useRef, useEffect } from 'react';
@@ -29,7 +29,7 @@ export default function GithubDeviceConnect({ onConnected }) {
         if (!mounted.current) return;
         if (data.status === 'connected') { setBusy(false); setFlow(null); setMsg(''); onConnected && onConnected(); return; }
         if (data.status === 'pending') { poll((data.interval || ms / 1000) * 1000); return; }
-        fail(data.status === 'expired' ? t('The code expired — try again.')
+        fail(data.status === 'expired' ? t('The code expired. Try again.')
           : data.status === 'denied' ? t('Access was denied.')
           : (data.message || t('Sign-in failed.')));
       }).catch(() => { if (mounted.current) fail(t('Sign-in failed.')); });
@@ -39,7 +39,7 @@ export default function GithubDeviceConnect({ onConnected }) {
   function start() {
     // Open the popup synchronously inside the click (so the blocker allows it),
     // then point it at GitHub once the code is back. A sized popup keeps this app
-    // — which shows the code — visible behind it. Falls back to a tab if blocked.
+    // (which shows the code) visible behind it. Falls back to a tab if blocked.
     const win = window.open('', 'forge-github-auth', 'popup,width=540,height=720');
     setBusy(true); setMsg('');
     fetchJSON('/api/github-token/device/start', { method: 'POST' }).then(({ data }) => {

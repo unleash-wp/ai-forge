@@ -1,6 +1,6 @@
-# Quick Start — UnleashWP AI Forge
+# Quick Start: UnleashWP AI Forge
 
-AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress. It ships with one plugin today — the **Changelog Generator** — so this guide installs AI Forge and uses that first plugin. No account or password needed — but connecting your WordPress.org login is **required**, or the counts come back inaccurate.
+AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress. It ships with one plugin today: the **Changelog Generator**. This guide installs AI Forge and uses that first plugin. No account or password is needed, but connecting your WordPress.org login is **required** or the counts come back inaccurate.
 
 Below: from nothing to a WordPress release changelog in about a minute.
 
@@ -21,7 +21,7 @@ npx @unleashwp/ai-forge@latest changelog --since 2026-07-15 --until 2026-07-22 -
 ## 2. Connect WordPress.org (required)
 
 AI Forge counts changes and contributors from WordPress.org Trac, which blocks
-logged-out scripts — so a session cookie is required or the counts are inaccurate.
+logged-out scripts, so a session cookie is required or the counts are inaccurate.
 Import it from a browser you're already signed in to:
 
 ```bash

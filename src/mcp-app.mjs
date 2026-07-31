@@ -1,5 +1,5 @@
 // MCP App: serve the full Forge React app as a ui:// resource that renders in a
-// sandboxed iframe (Claude Desktop / Codex) — no browser. The app is unchanged:
+// sandboxed iframe (Claude Desktop / Codex). No browser is involved. The app is unchanged:
 // `uwp mcp` starts the existing HTTP server internally on a loopback port, and
 // the iframe routes its /api calls through the `forge_api` tool over postMessage.
 import { readFileSync, existsSync } from 'node:fs';
@@ -15,7 +15,7 @@ const BUNDLE = join(DIR, '..', 'dist', 'main.js');
 // Start the existing HTTP server on an ephemeral loopback port, quietly (stdout
 // is reserved for JSON-RPC). Resolves the chosen port.
 export async function startInternalServer() {
-  // internal:true blocks the credential/install/self-update routes — this server
+  // internal:true blocks the credential/install/self-update routes. This server
   // is reachable only through the forge_api proxy, which the model can reach on
   // hosts that don't enforce the tool's app-only visibility.
   const server = startServer({ port: 0, quiet: true, internal: true });

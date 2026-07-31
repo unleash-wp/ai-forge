@@ -1,6 +1,6 @@
 // WordPress repo branch lists (Core-shared, plugin-facing). Branch names for a
-// GitHub repo — trunk first, then wp/x.y and version branches ahead of the long
-// tail — via git ls-remote (not subject to the REST rate limit) with a REST
+// GitHub repo: trunk first, then wp/x.y and version branches ahead of the long
+// tail, via git ls-remote (not subject to the REST rate limit) with a REST
 // fallback. Extracted from the changelog plugin so any plugin can offer a branch
 // picker. Auth for the REST fallback lives in the Core connector.
 import { execFileSync } from 'node:child_process';

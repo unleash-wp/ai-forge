@@ -9,13 +9,13 @@ const config = defineConfig({
     'html, body': { fontFamily: 'body', background: 'ui.bg', color: 'ui.text' },
     // Make navy the default colour palette, so every Chakra component that
     // resolves `colorPalette.*` (tab indicators, badges, focus rings, …) is
-    // navy unless a call site overrides it — instead of Chakra's grey default.
+    // navy unless a call site overrides it, instead of Chakra's grey default.
     html: { colorPalette: 'brand' },
     // Accessibility: one consistent navy keyboard-focus ring for everything the
     // user can Tab to (buttons, links, inputs, tabs, icon buttons, …), so the
     // focus is always visible and on-brand instead of the browser's default.
     '*:focus-visible': { outline: '2px solid', outlineColor: 'ui.primary', outlineOffset: '2px' },
-    // One shared thin scrollbar for the plugin scroll panels — a neutral
+    // One shared thin scrollbar for the plugin scroll panels uses a neutral
     // translucent grey that reads correctly on both the light and dark surface,
     // so it needs no colour-mode variant. Defined once here (the theme layer,
     // where colour literals belong) so components carry no colour hex and every
@@ -40,7 +40,7 @@ const config = defineConfig({
         yellow: { value: '#fcbe00' },
         slate: { value: '#727f9f' },
         slate2: { value: '#35415b' },
-        // Brand palette (navy) — powers colorPalette="brand" on Chakra components.
+        // Brand palette (navy): powers colorPalette="brand" on Chakra components.
         brand: {
           50: { value: '#eef1f6' },
           100: { value: '#d7dded' },
@@ -66,7 +66,7 @@ const config = defineConfig({
     semanticTokens: {
       colors: {
         // brand colorPalette sub-tokens (what Chakra's recipes resolve). These
-        // MUST be nested under `brand` — flat 'brand.solid' keys collide with
+        // MUST be nested under `brand`. Flat 'brand.solid' keys collide with
         // the `brand` token scale above and never emit their CSS vars, which
         // makes colorPalette="brand" fall back to Chakra's grey default.
         brand: {

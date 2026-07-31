@@ -1,8 +1,8 @@
 # Contributing to UnleashWP AI Forge
 
 AI Forge is UnleashWP's self-hosted **plugin platform** for WordPress (and an AI
-bridge over MCP). The **core is the platform** — a plain Node server plus a React
-browser UI (the shell). **Every feature is a plugin** — a folder under `plugins/`,
+bridge over MCP). The **core is the platform**: a plain Node server plus a React
+browser UI (the shell). **Every feature is a plugin**: a folder under `plugins/`,
 including the changelog. Nothing in the shell is a built-in feature; adding a plugin
 needs no changes to the shell.
 
@@ -88,7 +88,7 @@ import { ToolIcon } from '../../src/client/icons.jsx';
   for long lists, `block` for full width. Keyboard + screen-reader accessible.
 
 Style with Chakra props + the shared design tokens (`bg="ui.surface"`,
-`color="ui.heading"`, `colorPalette="brand"`) — see **Frontend & styles** below.
+`color="ui.heading"`, `colorPalette="brand"`). See **Frontend & styles** below.
 The shell owns the header, rail, setup wizard and toast; don't re-render those.
 `plugins/_template/client.jsx` is a working example that uses these.
 
@@ -116,7 +116,7 @@ Import shared logic from `../../src/`. Credential/setup routes stay in the core
 shell because every plugin shares them.
 
 **Terminal commands.** Export `commands` and your plugin is runnable from the CLI
-as `uwp <name> …` — handy for scripting or feeding data to Claude Code / Codex.
+as `uwp <name> …`. It is handy for scripting or feeding data to Claude Code / Codex.
 Each command gets `(args, ctx)`: `args` is the parsed flags (`args._` holds
 positionals), `ctx` is `{ log, error }`. They show up under `uwp -h`.
 
@@ -146,11 +146,11 @@ export const mcpTools = [
 
 Register the server (named `forge`; the command it runs is `uwp mcp`): Claude
 Code `claude mcp add uwp-ai-forge -- uwp mcp`; Codex adds an MCP server with
-`command = "uwp"`, `args = ["mcp"]`. Keep `stdout` for JSON-RPC only — send any
+`command = "uwp"`, `args = ["mcp"]`. Keep `stdout` for JSON-RPC only. Send any
 logging to `stderr`. The Changelog plugin ships `get_changelog`, `list_milestones`
 and `list_branches` tools plus a `write_release_post` skill (MCP prompt).
 
-**Skills.** Export `skills` — reusable AI instructions your plugin provides. They
+**Skills.** Export `skills`, reusable AI instructions your plugin provides. They
 are served as MCP prompts over `uwp mcp` (so Claude Code / Codex can pull them)
 and printed by `uwp skills [<name>]`. `build(args)` returns the prompt text.
 
@@ -162,10 +162,10 @@ export const skills = [
 ];
 ```
 
-**MCP Apps (interactive panels).** Export `uiResources` — self-contained HTML
+**MCP Apps (interactive panels).** Export `uiResources`, self-contained HTML
 panels that Claude Desktop / Codex render in a sandboxed iframe *inside the
 conversation* (no browser). Link a tool to one with a `ui` field, and return
-`{ text, structured }` from its `run` — the host pushes `structured` to the
+`{ text, structured }` from its `run`. The host pushes `structured` to the
 panel, which renders it and can call your tools back via postMessage.
 
 ```js
@@ -200,18 +200,18 @@ starting with `_` (like `_template`) are skipped, and a plugin whose manifest
 Styling is **Chakra UI v3** (Emotion under the hood). There is no CSS/SCSS file:
 styles are injected at runtime from the theme + the props you write on
 components. There is nothing to import, no cascade to fight, no class names to
-keep unique. `npm run build` emits `dist/main.js` only — no `main.css`.
+keep unique. `npm run build` emits `dist/main.js` only. There is no `main.css`.
 
 **One design system, in `src/client/theme.js`.** It maps the UnleashWP brand
 (navy, yellow) and the light/dark surface/text palette to Chakra tokens via
 `createSystem` + `defineConfig`. Two token families you'll use constantly:
 
-- **`ui.*` semantic tokens** — colour-mode-aware, so you never hard-code a hex or
+- **`ui.*` semantic tokens**: colour-mode-aware, so you never hard-code a hex or
   write a dark-mode branch. `ui.surface`, `ui.sunk`, `ui.border`, `ui.heading`,
   `ui.text`, `ui.muted`, `ui.primary`, `ui.accent`, `ui.good`, `ui.bad`, plus the
   `sm`/`md`/`lg` shadow tokens. Each already resolves to the right value in light
   and dark.
-- **`colorPalette="brand"`** — hand it to any interactive Chakra component
+- **`colorPalette="brand"`**: hand it to any interactive Chakra component
   (`Button`, `Checkbox`, `Tabs`, `Badge`) to theme it in brand navy.
 
 ```jsx
@@ -226,12 +226,12 @@ import { Box, Heading, Text, Button } from '@chakra-ui/react';
 
 **Reach for the right primitive** instead of nesting `Box`es: `Stack`/`HStack`
 for flow, `Grid`/`SimpleGrid` for columns, `Flex` for explicit layout. Responsive
-props are mobile-first objects — `columns={{ base: 1, md: 2 }}`,
+props are mobile-first objects: `columns={{ base: 1, md: 2 }}`,
 `direction={{ base: 'column', md: 'row' }}`. The theme defines custom breakpoints
 `sm 560 / md 640 / lg 780` to match the old layout.
 
 **Shared primitives live in `src/client/ui/`** (`Button`, `Select`, `TextInput`,
-`TextArea`, `Checkbox`) — thin wrappers over Chakra that fix the app's API and
+`TextArea`, `Checkbox`): thin wrappers over Chakra that fix the app's API and
 defaults. Import those rather than raw Chakra inputs so every plugin matches. The
 shell components (`Header`, `Rail`, `Footer`, `SetupWizard`, `Installer`,
 `PluginsManager`) are plain Chakra components under `src/client/components/`.
@@ -244,7 +244,7 @@ it.
 **Adding a token or a variant:** extend `theme.js` (`tokens` for a raw value,
 `semanticTokens` for a light/dark pair). For a reusable styled component with
 variants, prefer a Chakra recipe over ad-hoc props. Keep raw hex out of
-components — if you need a new colour, name it in the theme first.
+components. If you need a new colour, name it in the theme first.
 
 Only the browser bundle depends on Chakra/Emotion (they're `devDependencies`,
 bundled into `dist/main.js`). The core CLI stays zero-dependency vanilla Node and

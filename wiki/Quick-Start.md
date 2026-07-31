@@ -1,6 +1,6 @@
 # Quick Start
 
-AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress; it ships with one plugin today, the **Changelog Generator**. This guide installs AI Forge and uses that first plugin — from nothing to a WordPress release changelog in about a minute.
+AI Forge is UnleashWP's AI tool + **plugin platform** for WordPress; it ships with one plugin today, the **Changelog Generator**. This guide installs AI Forge and uses that first plugin. It takes you from nothing to a WordPress release changelog in about a minute.
 
 ## 1. Install
 
@@ -22,7 +22,7 @@ That prints a ready-to-edit **release-post template**: a headline, a count line,
 - Add `--json` for structured data.
 - Run `uwp-ai-forge -h` for every command.
 
-That's it — no account, no token, no cookie required. AI Forge reads everything it needs from public GitHub data. A GitHub token and a wordpress.org cookie are **optional** and only unlock higher rate limits and deep mode — see **[Connectors](Connectors)**.
+That's it. No account, no token, and no cookie are required. AI Forge reads everything it needs from public GitHub data. A GitHub token and a wordpress.org cookie are **optional** and only unlock higher rate limits and deep mode. See **[Connectors](Connectors)**.
 
 ## Prefer clicking?
 
@@ -46,6 +46,6 @@ The agent calls AI Forge's tools and drafts the post grounded in the real PRs an
 
 ## Next steps
 
-- **[Connectors](Connectors)** — raise the GitHub limit to 5,000/h and turn on deep mode.
-- **[The Changelog Plugin](The-Changelog-Tool)** — all the flags and how the counts are derived.
-- **[Installation](Installation)** — the Claude Desktop one-click bundle and the dev setup.
+- **[Connectors](Connectors)**: raise the GitHub limit to 5,000/h and turn on deep mode.
+- **[The Changelog Plugin](The-Changelog-Tool)**: all the flags and how the counts are derived.
+- **[Installation](Installation)**: the Claude Desktop one-click bundle and the dev setup.

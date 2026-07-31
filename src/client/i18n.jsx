@@ -1,6 +1,6 @@
 // Translations for the browser UI. Works like WordPress language files: every
 // languages/<code>.json is loaded automatically, so a contributor adds a new
-// language by dropping in one JSON file — no code change. The key is the English
+// language by dropping in one JSON file. No code change is needed. The key is the English
 // source string; the value is the translation. Missing keys fall back to English.
 //
 //   const t = useT();  <Text>{t('No changelog yet')}</Text>

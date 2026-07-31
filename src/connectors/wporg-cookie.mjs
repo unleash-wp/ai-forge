@@ -1,6 +1,6 @@
 // Core connector: the WordPress.org session cookie. Owns the credential store
 // (path/save/delete/resolve) and the cookie's own validity check. Trac *queries*
-// (ticket details, counts) live in the changelog plugin — this module only knows
+// (ticket details, counts) live in the changelog plugin. This module only knows
 // how to hold and verify the credential, so the Core shell can drive setup
 // without importing any tool. The low-level Trac base/UA/bot-wall check are
 // exported so the plugin's queries reuse them instead of re-declaring them.
@@ -58,7 +58,7 @@ export function resolveCookie({ cookieFile } = {}) {
 }
 
 // Cheap reachability check: one closed-ticket row. false if the bot wall or an
-// auth failure comes back. This is the connector's own `validate(cred)` — it
+// auth failure comes back. This is the connector's own `validate(cred)`. It
 // knows the provider-specific CSV URL + bot wall.
 export async function validateCookie(cookie) {
   const res = await fetch(`${TRAC}/query?status=closed&max=1&col=id&format=csv`, {

@@ -1,10 +1,10 @@
-# UnleashWP AI Forge — instructions for Claude Code
+# UnleashWP AI Forge: instructions for Claude Code
 
 AI Forge is a **plugin platform for WordPress tooling** that bridges to your AI
 over MCP. Zero runtime dependencies, plain Node ≥18. Every capability is a plugin
 under `plugins/<id>`; the bundled ones are the **Changelog Generator** (a date
 window → a release-post changelog for Core + Gutenberg) and **Contributors** (who
-contributed in a period — the make.wordpress.org "Month in Core" analysis). Both
+contributed in a period, the make.wordpress.org "Month in Core" analysis). Both
 build on shared, plugin-facing Core services in `src/lib/` (any plugin imports them
 via `../../src/lib/…`).
 
@@ -41,10 +41,10 @@ node bin/ai-forge.mjs contributors --month 2025-10 --companies
 - In chat, the MCP tools are **`get_contributors`** (toggle `companies` /
   `committers` / `components` / `tickets`; `format=json`; `top=N` caps table rows to
   protect context) and **`draft_month_in_core`** (assembles the whole post scaffold;
-  prose highlights are left as TODOs to ground in real changesets — never invented).
+  prose highlights are left as TODOs to ground in real changesets, never invented).
 - **Identity:** Gutenberg GitHub logins and Core wp.org usernames are merged to one
   wp.org identity (e.g. GitHub `t-hamano` = wp.org `wildworks`) so counts don't
-  double-count. Country/geography is NOT published on wp.org profiles — never faked.
+  double-count. Country/geography is NOT published on wp.org profiles. Never fake it.
 
 ## Good to know
 
@@ -61,14 +61,14 @@ node bin/ai-forge.mjs contributors --month 2025-10 --companies
   `UWP_FETCH_RPS`) to warm the shared cache, then run the app with `UWP_OFFLINE=1`
   so it only reads the cache (never fetches profiles/Trac). Timeouts:
   `UWP_FETCH_TIMEOUT_MS` (default 20s).
-- Cutting a release: bump `package.json` and push a `vX.Y.Z` tag —
+- Cutting a release: bump `package.json` and push a `vX.Y.Z` tag.
   `.github/workflows/release.yml` runs the version-sync check + build + tests, then
   publishes to npm (provenance) + a GitHub Release (`.mcpb`) + GitHub Packages.
   Idempotent (re-pushing an existing version is a no-op). No Claude co-author trailer
   in commits on this repo.
 - **Lumo** (`github:unleash-wp/lumo`) is the knowledge extension that feeds the
   platform: installed as a community plugin it adds `lumo_lookup` (curated,
-  source-verified WP knowledge — deprecations, block.json/theme.json, security,
+  source-verified WP knowledge: deprecations, block.json/theme.json, security,
   HPOS) and `lumo_check_code` (the live catch, delegated to the installed
   `@unleashwp/lumo` engine; degrades to an install hint without it).
 - `gh auth login` is optional but raises the GitHub API limit to 5000/h.

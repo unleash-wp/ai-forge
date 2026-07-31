@@ -14,7 +14,7 @@ import { FONT_FACE_CSS } from './fonts.mjs';
 import { importWporgCookie } from './cookie-import.mjs';
 import { loadPlugins } from './plugins.mjs';
 
-// Fixed argv for the one-click "Register in …" button — the same `mcp add` command
+// Fixed argv for the one-click "Register in …" button. It is the same `mcp add` command
 // the copy card shows. Whitelisted (no user input), so nothing to inject; falls
 // back to copy when the CLI isn't on PATH. Claude uses --scope user.
 const REGISTER_CMDS = {
@@ -43,7 +43,7 @@ const DIR = dirname(fileURLToPath(import.meta.url));
 const BULB_FILE = readFileSync(join(DIR, 'brand/bulb-full.svg'), 'utf8');
 
 // Shown by the mandatory wordpress.org gate on tool data routes (see below).
-const WPORG_HTTP_MSG = 'wordpress.org connection required — open Setup and sign in to WordPress.org, ' +
+const WPORG_HTTP_MSG = 'wordpress.org connection required. Open Setup and sign in to WordPress.org, ' +
   'or run `uwp-ai-forge cookie-import <chrome|safari|firefox|edge>`. ' +
   'AI Forge needs it or contributor and Core ticket counts are inaccurate.';
 
@@ -65,7 +65,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
     // Cross-site guard: reject a state-changing request that a browser makes from
     // another origin, so a malicious web page can't POST a wordpress.org session
     // cookie (or a GitHub token, or a plugin install) to this local server. The
-    // CLI, the MCP app's loopback proxy and tests are not browsers — they send no
+    // CLI, the MCP app's loopback proxy and tests are not browsers. They send no
     // Sec-Fetch-Site/Origin and pass. Reads (GET/HEAD) return only public data.
     if (req.method !== 'GET' && req.method !== 'HEAD' && isCrossSite(req)) {
       json(res, 403, { error: 'cross-site request refused' });
@@ -74,8 +74,8 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
 
     // App-window backstop: the MCP-app internal server is reached only through the
     // forge_api proxy, which a prompt-injected model can call on hosts that don't
-    // honor the tool's app-only visibility hint. Make it strictly read-only — deny
-    // every state-changing method — so neither a core route nor any third-party
+    // honor the tool's app-only visibility hint. Make it strictly read-only. Deny
+    // every state-changing method, so neither a core route nor any third-party
     // plugin route can mutate through it. Setup happens in `serve` (a real browser)
     // or via the MCPB user_config env; the tool's read/data routes stay open.
     if (internal && req.method !== 'GET' && req.method !== 'HEAD') {
@@ -89,7 +89,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
       return;
     }
     // Webpack bundle (client JS), served from dist/. Styles are Chakra UI
-    // (Emotion), injected at runtime — there is no CSS file.
+    // (Emotion), injected at runtime. There is no CSS file.
     if (url.pathname === '/assets/main.js') {
       try {
         const body = readFileSync(join(DIR, '..', 'dist', 'main.js'), 'utf8');
@@ -117,7 +117,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         const id = (body.id || '').trim();
         if (!id) throw new Error('missing id');
         const set = readDisabled();
-        // Every tool is a normal plugin — no tool is "core". The only guard is a
+        // Every tool is a normal plugin. No tool is "core". The only guard is a
         // footgun one: you can't deactivate your last active tool (an empty app).
         if (!body.enabled) {
           const active = (await pluginsReady).filter((p) => !set.has(p.manifest.id));
@@ -247,7 +247,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
       json(res, 200, {
         version: VERSION,
         installed: isInstalled(),
-        install: detectInstall(), // git | global | npx | local — drives the self-updater UI
+        install: detectInstall(), // git | global | npx | local, drives the self-updater UI
         connectors: await listConnectors(),
         mcp: { available: wporgAvailable() },
       });
@@ -336,7 +336,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
     // isn't installed we say so and the copy line is the fallback.
     if (url.pathname === '/api/connectors/register' && req.method === 'POST') {
       const agent = (JSON.parse(await readBody(req) || '{}').agent || '').trim();
-      // Claude Desktop has no CLI — merge Forge into its JSON config file instead.
+      // Claude Desktop has no CLI. Merge Forge into its JSON config file instead.
       if (agent === 'claude-desktop') {
         try { registerDesktop(); json(res, 200, { ok: true }); }
         catch (err) { json(res, 200, { ok: false, error: err.message }); }
@@ -352,7 +352,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         // Re-clicking after it's already registered is a success, not an error.
         if (/already\s+(exists|configured|registered)/i.test(stderr)) { json(res, 200, { ok: true }); return; }
         json(res, 200, { ok: false, error: err.code === 'ENOENT'
-          ? `The ${agent} CLI isn't on your PATH — copy the command and run it in a terminal instead.`
+          ? `The ${agent} CLI isn't on your PATH. Copy the command and run it in a terminal instead.`
           : stderr.trim() || err.message });
       }
       return;
@@ -442,7 +442,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
           // Mandatory wordpress.org gate: a tool data route returns counts that are
           // wrong without a logged-in Trac session, so refuse until connected. The
           // setup/connector routes above stay open so the user can connect first.
-          // Routes marked `open: true` opt out — not every plugin's data comes
+          // Routes marked `open: true` opt out. Not every plugin's data comes
           // from wordpress.org (e.g. Lumo answers from its local snapshot).
           if (!r.open && !resolveCookie()) { json(res, 403, { error: WPORG_HTTP_MSG }); return; }
           await r.handler(req, res, url, {
@@ -474,7 +474,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
     throw err;
   });
   server.listen(port, '127.0.0.1', () => {
-    if (quiet) return; // internal server for `uwp mcp` — stdout is reserved for JSON-RPC
+    if (quiet) return; // internal server for `uwp mcp`. stdout is reserved for JSON-RPC
     console.log(`uwp browser UI  ->  http://localhost:${port}`);
     if (!authenticated()) console.log('uwp: no gh token. GitHub API limited to 60 req/h (add one in Setup).');
     console.log('Press Ctrl+C to stop.');
@@ -508,7 +508,7 @@ function isCrossSite(req) {
     try { return new URL(origin).host !== req.headers.host; } catch { return true; }
   }
   // Legacy browsers that send neither Sec-Fetch-Site nor Origin still send a
-  // Referer on a cross-site form POST — reject when it points at another host. A
+  // Referer on a cross-site form POST. Reject when it points at another host. A
   // caller with no Referer at all is the CLI / loopback proxy / tests (not a
   // browser), so it passes.
   const referer = req.headers.referer;

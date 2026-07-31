@@ -54,7 +54,7 @@ function fmtRange(a, b) {
   catch { return fmtDate(a) + ' – ' + fmtDate(b); }
 }
 
-// Render a formatted sentence with its date portion bold — language-agnostic,
+// Render a formatted sentence with its date portion bold. It is language-agnostic,
 // since we split on the exact formatted date string wherever it lands.
 function withBoldDate(sentence, dateStr) {
   const parts = sentence.split(dateStr);
@@ -181,7 +181,7 @@ function Segmented({ options, value, onChange }) {
 }
 
 // Download only: pick a file format (CSV + separator, or PHP array) and save it.
-// The @ toggle is NOT here — it's a shared control in the Props toolbar, so copy
+// The @ toggle is NOT here. It's a shared control in the Props toolbar, so copy
 // and download stay in sync. No "copy" button here (copy has its own button).
 function DownloadPopover({ all, at }) {
   const core = useCore();

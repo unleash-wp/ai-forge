@@ -28,7 +28,7 @@ export async function fetchTracker(milestone) {
   const map = new Map();
   await pool(files, 8, async (f) => {
     // One flaky component file (transient raw.githubusercontent.com 5xx / non-JSON)
-    // must not fail the whole changelog — skip it, keep the rest of the map.
+    // must not fail the whole changelog. Skip it and keep the rest of the map.
     let data;
     try { data = await fetchRaw(f.download_url); } catch { return; }
     for (const t of data.tickets || []) {

@@ -1,4 +1,4 @@
-// Checkbox — Chakra Checkbox. Adapts onCheckedChange back to the classic
+// Checkbox: Chakra Checkbox. Adapts onCheckedChange back to the classic
 // onChange(e.target.checked) so existing call sites keep working.
 import { Checkbox as CChk } from '@chakra-ui/react';
 

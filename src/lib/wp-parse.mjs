@@ -1,6 +1,6 @@
 // WordPress commit parsing (Core-shared). Extracted from the changelog plugin so
 // any plugin can turn a GitHub commit into the fields a release cares about, and
-// tell a real change from release plumbing — with one implementation, so every
+// tell a real change from release plumbing. With one implementation, every
 // plugin counts contributors/changes the same way.
 //
 // Gutenberg commit messages end their subject with the PR number: "... (#80287)".
@@ -32,7 +32,7 @@ export function parseCommit(c) {
   const changeset = csMatch ? Number(csMatch[1]) : null;
 
   // Capture the whole Props line (a name with a dot no longer truncates it, and
-  // `.` here can't span newlines — no `s` flag); strip an optional trailing period.
+  // `.` here can't span newlines (no `s` flag). Strip an optional trailing period.
   const propsMatch = msg.match(/^Props[:\s]+(.+?)\.?\s*$/im);
   const props = propsMatch
     ? propsMatch[1].split(',').map((s) => s.trim()).filter(Boolean)
@@ -66,8 +66,8 @@ export function parseCommit(c) {
 
 // Release plumbing = the versioning / packaging commits both repos land (version
 // bumps, changelog-file updates, the "chore(release)" publish, the "WordPress 7.1
-// Beta 3." bundle tags, and reverts of those). An explicit deny-list — rather than
-// "no PR number" — so no real change is ever silently dropped; an unrecognised
+// Beta 3." bundle tags, and reverts of those). An explicit deny-list, rather than
+// "no PR number", means no real change is ever silently dropped; an unrecognised
 // commit shows up in the list to be seen.
 export function isPlumbing(c) {
   const s = c.subject;

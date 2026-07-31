@@ -1,24 +1,24 @@
 # UnleashWP AI Forge
 
-> 📖 **The complete guide lives in the [Handbook](https://unleash-wp.github.io/ai-forge/)** — the single source of truth (what it is, install, example prompts, connectors, building a plugin). These wiki pages are quick references.
+> 📖 **The complete guide lives in the [Handbook](https://unleash-wp.github.io/ai-forge/)**. It is the single source of truth for what it is, install, example prompts, connectors, and building a plugin. These wiki pages are quick references.
 
-**UnleashWP's AI tool for WordPress** — a self-hosted **plugin platform** that also **bridges to your AI** (Claude Code, Claude Desktop, Codex), by [UnleashWP](https://unleash-wp.com).
+**UnleashWP's AI tool for WordPress**: a self-hosted **plugin platform** that also **bridges to your AI** (Claude Code, Claude Desktop, Codex), by [UnleashWP](https://unleash-wp.com).
 
 AI Forge is the platform: a shell that hosts **plugins** and connects them to your AI assistant over MCP. Every plugin is a folder under `plugins/`, so the community can add more without touching the core. The CLI has **zero runtime dependencies** (plain Node ≥ 18).
 
-It ships with **one plugin to start — the Changelog Generator**: give it a start date, an end date and a milestone, and it counts and lists everything that landed in Core and Gutenberg, ready to drop into a release post. It's the first plugin, not the whole of AI Forge — more will follow.
+It ships with **one plugin to start: the Changelog Generator**. Give it a start date, an end date and a milestone, and it counts and lists everything that landed in Core and Gutenberg, ready to drop into a release post. It's the first plugin, not the whole of AI Forge. More will follow.
 
 ---
 
 ## Start here
 
-- **[Quick Start](Quick-Start)** — from nothing to a changelog in two commands.
-- **[Installation](Installation)** — npm, development clone, Claude Desktop bundle.
-- **[Connectors](Connectors)** — the optional GitHub token + wordpress.org cookie, and what "deep mode" adds.
-- **[Using AI Forge from Claude & Codex](Using-AI Forge-from-Claude-and-Codex)** — register it once as an MCP server, then ask in plain language.
-- **[The Changelog Plugin](The-Changelog-Tool)** — flags, output modes, where the numbers come from.
-- **[Building a Plugin](Building-a-Tool)** — add your own plugin.
-- **[FAQ](FAQ)** — accounts, storage, privacy, updates.
+- **[Quick Start](Quick-Start)**: from nothing to a changelog in two commands.
+- **[Installation](Installation)**: npm, development clone, Claude Desktop bundle.
+- **[Connectors](Connectors)**: the optional GitHub token + wordpress.org cookie, and what "deep mode" adds.
+- **[Using AI Forge from Claude & Codex](Using-AI Forge-from-Claude-and-Codex)**: register it once as an MCP server, then ask in plain language.
+- **[The Changelog Plugin](The-Changelog-Tool)**: flags, output modes, where the numbers come from.
+- **[Building a Plugin](Building-a-Tool)**: add your own plugin.
+- **[FAQ](FAQ)**: accounts, storage, privacy, updates.
 
 ---
 
@@ -30,7 +30,7 @@ Three surfaces, one tool:
 | --- | --- | --- |
 | **Terminal** | `uwp-ai-forge changelog --since … --until … --milestone …` | `npm i -g @unleashwp/ai-forge` |
 | **Claude Code / Codex** | register the MCP server, then ask in plain language | `npx @unleashwp/ai-forge@latest mcp` |
-| **Claude Desktop** | one-click `.mcpb` bundle, opens a window — no browser | build with `npm run mcpb:pack` |
+| **Claude Desktop** | one-click `.mcpb` bundle that opens a window, with no browser | build with `npm run mcpb:pack` |
 | **Browser UI** | `uwp-ai-forge serve` → a date-range picker at `http://localhost:4321` | ships pre-built in the package |
 
 ## Ground rule

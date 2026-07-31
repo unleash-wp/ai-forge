@@ -1,4 +1,4 @@
-// Contributors — client side of the bundled UnleashWP core plugin. An analytics
+// Contributors: client side of the bundled UnleashWP core plugin. It is an analytics
 // view of who contributed to WordPress Core + Gutenberg in a period: activity
 // over time, a donut of the top people, a selectable ranked list (with photo and
 // employer), what each person shipped, and which company invested most.
