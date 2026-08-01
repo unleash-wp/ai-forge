@@ -19,15 +19,14 @@ English is the default product language across UnleashWP. Know which name is whi
 
 | Product | What it is | Language |
 | --- | --- | --- |
-| **Lumo Free** | Hosted WordPress code watcher (Community: one account opportunity) | English |
-| **Lumo Pro** | Same account: full knowledge + CI gate | English |
-| **AI Forge** | Tool shelf for WordPress AI plugins (Changelog & more) | English default; **German (DE)** optional in the local app UI (`languages/de.json`) |
-| **AI Forge Hosted** | Not live. Planned managed shelf with one login for Lumo Pro / Agency. | English |
+| **AI Forge** | **Host / plugin runtime:** local WordPress tooling (changelog, Trac, GitHub, plugin shelf). Not a knowledge substitute. | English default; **German (DE)** optional in the local app UI (`languages/de.json`) |
+| **Lumo Free** | **AI Forge plugin** (`github:unleash-wp/lumo`): Free snapshot knowledge + catch on `uwp mcp`. The `@unleashwp/lumo` npm package supplies the live catch engine. **Not** Pro. | English |
+| **Lumo Pro** | **Separate hosted MCP** at `mcp.unleash-wp.com` (Mittwald): licensed live catalogue, catch, evidence. Connect from Cursor/Claude **alongside** Forge, not instead of it. | English |
+| **AI Forge Hosted** | Planned managed Forge for paid Lumo seats. **Not live yet.** | English |
 
-Lumo connects at `https://mcp.unleash-wp.com/connect`. AI Forge local install remains below for OSS / self-host.
+**How Forge and Lumo work together:** AI Forge is the host. Install **Lumo Free as a Forge plugin** (Plugins → paste `github:unleash-wp/lumo`) for the Free tier: `lumo_lookup` and `lumo_check_code` on `uwp mcp`, backed by the bundled snapshot. **Lumo Pro** is a separate hosted MCP you add in your editor when you have a paid license; it does not replace Forge, and Free-on-Forge must not pretend to be Pro. Use Forge for wp.org release tooling and scaffolding; use Lumo (Free plugin or Pro MCP) for curated wrong→correct patterns and catch. Forge does not proxy wp.org through the Pro server.
 
-**Go-live gates (honest):** AI Forge Hosted has no production deploy yet. On `npm install -g @unleashwp/ai-forge`, installing any extra plugin fails at rebuild because `webpack` ships only in devDependencies (GitHub issue #20). Clone the repo and run a full `npm install` if you need plugin install locally.
-
+AI Forge runs on your machine (`npm install -g @unleashwp/ai-forge` ships a prebuilt browser bundle; plugin install works without webpack). Lumo Pro connects at `https://mcp.unleash-wp.com/mcp`.
 
 ---
 

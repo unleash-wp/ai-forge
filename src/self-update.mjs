@@ -29,7 +29,7 @@ export function detectInstall() {
   if (/[\\/]node_modules[\\/]@unleashwp[\\/]ai-forge$/.test(ROOT)) {
     return existsSync(join(ROOT, '..', '..', '..', 'package.json')) ? 'local' : 'global';
   }
-  return 'global';
+  return 'unknown';
 }
 
 // execFile as a promise; rejects with an Error carrying .stdout/.stderr.
@@ -44,6 +44,9 @@ export async function runSelfUpdate() {
   try {
     if (method === 'npx') {
       return { ok: true, method, restart: false, message: 'npx always runs the latest. Nothing to update.' };
+    }
+    if (method === 'unknown') {
+      return { ok: false, method, error: 'Cannot detect how this copy was installed. Update manually with git pull or npm install -g @unleashwp/ai-forge@latest.' };
     }
     if (method === 'local') {
       // A project dependency: updating the global copy wouldn't touch it, so don't

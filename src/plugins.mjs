@@ -13,6 +13,7 @@ import { readDisabled } from './disabled-tools.mjs';
 const DIR = dirname(fileURLToPath(import.meta.url));
 const PLUGINS = join(DIR, '..', 'plugins'); // bundled plugins, shipped inside the package
 const CORE_VERSION = VERSION;
+const ID_RE = /^[a-z0-9][a-z0-9-]*$/;
 
 // Community plugins live OUTSIDE the package, in the user's config dir, so a
 // package update that replaces the install directory (npm i -g / npx) never
@@ -53,7 +54,7 @@ export function satisfiesCore(range, core = CORE_VERSION) {
 // Scan one plugins/ root into `byId` (keyed by manifest id). Called for the
 // bundled dir first, then the user dir. So a user plugin with the same id
 // overrides the bundled one (a community fork), and community ids are added.
-async function scanDir(root, byId, disabled = new Set()) {
+async function scanDir(root, byId, disabled = new Set(), { userDir = false } = {}) {
   let ids;
   // A user plugins dir can be a dangling symlink, a file, or unreadable. One bad
   // dir must never reject loadPlugins() (that would 500 every route, including the
@@ -71,6 +72,14 @@ async function scanDir(root, byId, disabled = new Set()) {
         manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
       } catch (err) {
         console.error(`plugin "${id}": ignored, bad plugin.json (${err.message})`);
+        continue;
+      }
+      if (!manifest.id || !ID_RE.test(manifest.id)) {
+        console.error(`plugin "${id}": ignored, bad manifest id`);
+        continue;
+      }
+      if (userDir && isBundledPlugin(manifest.id)) {
+        console.error(`plugin "${manifest.id}": ignored, id reserved for a bundled tool`);
         continue;
       }
       if (!satisfiesCore(manifest.coreVersion)) {
@@ -118,6 +127,6 @@ export async function loadPlugins({
 } = {}) {
   const byId = new Map();
   await scanDir(bundledDir, byId, disabled); // bundled (shipped with the package)
-  await scanDir(userDir, byId, disabled);    // community installs (survive updates)
+  await scanDir(userDir, byId, disabled, { userDir: true });    // community installs (survive updates)
   return [...byId.values()];
 }

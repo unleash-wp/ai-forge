@@ -32,6 +32,7 @@ const execCmd = (argv) => execFileP(argv[0], argv.slice(1), { timeout: 30000 });
 import { checkUpdates } from './update.mjs';
 import { runSelfUpdate, detectInstall } from './self-update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
+import { getServerToken, requiresServerAuth, verifyServerAuth } from './server-auth.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
 import { clearCaches } from './lib/wp-profiles.mjs';
 import { clearCommitsCache } from './lib/wp-commits.mjs';
@@ -63,12 +64,19 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
     if (!isLocalHost(req)) { json(res, 403, { error: 'invalid host' }); return; }
 
     // Cross-site guard: reject a state-changing request that a browser makes from
-    // another origin, so a malicious web page can't POST a wordpress.org session
-    // cookie (or a GitHub token, or a plugin install) to this local server. The
-    // CLI, the MCP app's loopback proxy and tests are not browsers. They send no
-    // Sec-Fetch-Site/Origin and pass. Reads (GET/HEAD) return only public data.
+    // another origin. Mutating routes also require the loopback server token
+    // (see server-auth.mjs). Reads (GET/HEAD) return only public data.
     if (req.method !== 'GET' && req.method !== 'HEAD' && isCrossSite(req)) {
       json(res, 403, { error: 'cross-site request refused' });
+      return;
+    }
+
+    // Loopback credential: every mutating route needs the server token. Browsers
+    // get it from window.__FORGE_TOKEN__; other local processes must read
+    // ~/.config/uwp-ai-forge/server-token. Without this, curl with no Origin can
+    // install arbitrary code into the Forge process.
+    if (requiresServerAuth(req) && !verifyServerAuth(req)) {
+      json(res, 403, { error: 'missing or invalid forge token' });
       return;
     }
 
@@ -85,7 +93,7 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
 
     if (url.pathname === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-      res.end(PAGE);
+      res.end(pageHtml());
       return;
     }
     // Webpack bundle (client JS), served from dist/. Styles are Chakra UI
@@ -125,9 +133,9 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         }
         if (body.enabled) set.delete(id); else set.add(id);
         writeDisabled(set);
-        await rebuild();
+        const rb = await rebuild();
         await reloadPlugins();
-        json(res, 200, { ok: true });
+        json(res, 200, { ok: true, rebuilt: !!rb.rebuilt, warning: rb.warning || null });
       } catch (err) {
         json(res, 200, { ok: false, error: err.message });
       }
@@ -163,7 +171,11 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
             } else throw new Error('unknown action');
           } catch (e) { errors.push(id + ': ' + e.message); }
         }
-        if (needBuild) await rebuild();
+        if (needBuild) {
+          const rb = await rebuild();
+          needBuild = !!rb.rebuilt;
+          if (rb.warning) errors.push('rebuild: ' + rb.warning);
+        }
         await reloadPlugins();
         json(res, 200, { ok: true, rebuilt: needBuild, errors });
       } catch (err) {
@@ -195,9 +207,15 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
       try {
         const source = (JSON.parse(await readBody(req) || '{}').source || '').trim();
         const manifest = await installFromSource(source);
-        await rebuild();
+        const rb = await rebuild();
         await reloadPlugins();
-        json(res, 200, { ok: true, id: manifest.id, name: manifest.name });
+        json(res, 200, {
+          ok: true,
+          id: manifest.id,
+          name: manifest.name,
+          rebuilt: !!rb.rebuilt,
+          warning: rb.warning || null,
+        });
       } catch (err) {
         json(res, 200, { ok: false, error: err.message });
       }
@@ -212,9 +230,15 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         const zip = join(mkdtempSync(join(tmpdir(), 'forge-up-')), 'upload.zip');
         writeFileSync(zip, buf);
         const manifest = installArchive(zip, 'zip');
-        await rebuild();
+        const rb = await rebuild();
         await reloadPlugins();
-        json(res, 200, { ok: true, id: manifest.id, name: manifest.name });
+        json(res, 200, {
+          ok: true,
+          id: manifest.id,
+          name: manifest.name,
+          rebuilt: !!rb.rebuilt,
+          warning: rb.warning || null,
+        });
       } catch (err) {
         json(res, 200, { ok: false, error: err.message });
       }
@@ -227,9 +251,9 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
         if ((await pluginsReady).length <= 1) throw new Error('cannot remove your only installed plugin');
         uninstall(id);
         clearDisabled(id); // a fresh reinstall should come back active
-        await rebuild();
+        const rb = await rebuild();
         await reloadPlugins();
-        json(res, 200, { ok: true });
+        json(res, 200, { ok: true, rebuilt: !!rb.rebuilt, warning: rb.warning || null });
       } catch (err) {
         json(res, 200, { ok: false, error: err.message });
       }
@@ -550,8 +574,11 @@ function readBodyBuffer(req) {
 }
 
 // Minimal HTML shell: the React bundle (dist/main.js) renders everything into
-// #root. Brand SVGs + all UI live in the bundle, not injected here.
-const PAGE = `<!doctype html>
+// #root. Brand SVGs + all UI live in the bundle, not injected here. The server
+// token is injected once so the bundle can authenticate mutating /api calls.
+function pageHtml() {
+  const token = getServerToken();
+  return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -562,6 +589,8 @@ const PAGE = `<!doctype html>
 </head>
 <body>
 <div id="root"></div>
+<script>window.__FORGE_TOKEN__=${JSON.stringify(token)};</script>
 <script src="/assets/main.js" defer></script>
 </body>
 </html>`;
+}

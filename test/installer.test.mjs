@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { installArchive, uninstall, parseSource, syncCommunityUi } from '../src/installer.mjs';
+import { installArchive, uninstall, parseSource, syncCommunityUi, rebuild, webpackAvailable } from '../src/installer.mjs';
 
 test('parseSource accepts github: and https github URLs', () => {
   assert.deepEqual(parseSource('github:you/my-tool'), { owner: 'you', repo: 'my-tool' });
@@ -152,4 +152,11 @@ test('SILENCE: with nothing deactivated, both are staged', () => {
   assert.deepEqual(staged.sort(), ['keep-me', 'switched-off']);
 
   rmSync(work, { recursive: true, force: true });
+});
+
+test('rebuild skips webpack when it is not installed (published npm layout)', async () => {
+  if (webpackAvailable()) return; // dev checkout with node_modules: covered by webpack build CI job
+  const rb = await rebuild();
+  assert.equal(rb.skipped, true);
+  assert.equal(rb.rebuilt, false);
 });
