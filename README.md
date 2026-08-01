@@ -13,6 +13,25 @@ You can use it three ways: type one command, click buttons in your browser, or j
 
 ---
 
+## Product family (UnleashWP)
+
+English is the default product language across UnleashWP. Know which name is which:
+
+| Product | What it is | Language |
+| --- | --- | --- |
+| **Lumo Free** | Hosted WordPress code watcher (Community: one account opportunity) | English |
+| **Lumo Pro** | Same account: full knowledge + CI gate | English |
+| **AI Forge** | Tool shelf for WordPress AI plugins (Changelog & more) | English default; **German (DE)** optional in the local app UI (`languages/de.json`) |
+| **AI Forge Hosted** | Not live. Planned managed shelf with one login for Lumo Pro / Agency. | English |
+
+Lumo connects at `https://mcp.unleash-wp.com/connect`. AI Forge local install remains below for OSS / self-host.
+
+**Go-live gates (honest):** AI Forge Hosted has no production deploy yet. On `npm install -g @unleashwp/ai-forge`, installing any extra plugin fails at rebuild because `webpack` ships only in devDependencies (GitHub issue #20). Clone the repo and run a full `npm install` if you need plugin install locally.
+
+
+---
+
+
 ## Install in about a minute
 
 **Using Claude Code?** Add it as a plugin: two lines, then restart:
