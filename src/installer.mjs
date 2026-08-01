@@ -12,6 +12,8 @@ import { tmpdir } from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { userPluginsDir, isBundledPlugin } from './plugins.mjs';
 import { readDisabled } from './disabled-tools.mjs';
+import { latestRelease } from './update.mjs';
+import { resolveToken } from './connectors/github-token.mjs';
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(DIR, '..');
@@ -29,17 +31,34 @@ export function parseSource(source) {
   return null;
 }
 
-async function downloadTarball(owner, repo) {
+async function downloadTarball(owner, repo, ref) {
   const tmp = mkdtempSync(join(tmpdir(), 'forge-dl-'));
   const out = join(tmp, 'src.tar.gz');
-  for (const ref of ['main', 'master']) {
-    const r = await fetch(`https://codeload.github.com/${owner}/${repo}/tar.gz/refs/heads/${ref}`);
-    if (r.ok) {
-      writeFileSync(out, Buffer.from(await r.arrayBuffer()));
-      return out;
-    }
+  const r = await fetch(`https://codeload.github.com/${owner}/${repo}/tar.gz/${ref}`);
+  if (r.ok) {
+    writeFileSync(out, Buffer.from(await r.arrayBuffer()));
+    return out;
+  }
+  throw new Error(`could not download ${owner}/${repo} at ${ref}`);
+}
+
+async function downloadBranchTip(owner, repo) {
+  for (const ref of ['refs/heads/main', 'refs/heads/master']) {
+    try {
+      return await downloadTarball(owner, repo, ref);
+    } catch { /* try next */ }
   }
   throw new Error(`could not download ${owner}/${repo} (no main/master branch, or repo is private)`);
+}
+
+async function downloadReleaseTag(owner, repo, tag) {
+  const bare = String(tag).replace(/^v/, '');
+  for (const t of [tag, `v${bare}`, bare]) {
+    try {
+      return await downloadTarball(owner, repo, `refs/tags/${t}`);
+    } catch { /* try next */ }
+  }
+  throw new Error(`could not download release ${tag} of ${owner}/${repo}`);
 }
 
 function extract(archivePath, kind) {
@@ -110,10 +129,21 @@ export function installArchive(archivePath, kind, { toolsDir = TOOLS, expectId }
   return manifest;
 }
 
-export async function installFromSource(source, { expectId } = {}) {
+export async function installFromSource(source, { expectId, releaseTag } = {}) {
   const parsed = parseSource(source);
   if (!parsed) throw new Error('give a GitHub repo (github:owner/repo or https://github.com/owner/repo)');
-  const tarball = await downloadTarball(parsed.owner, parsed.repo);
+  let tarball;
+  if (releaseTag) {
+    tarball = await downloadReleaseTag(parsed.owner, parsed.repo, releaseTag);
+  } else if (expectId) {
+    // Update path: download the latest GitHub Release tag, never the branch tip.
+    const { token } = resolveToken();
+    const rel = await latestRelease(parsed.owner, parsed.repo, token);
+    if (!rel || !rel.tag) throw new Error(`no GitHub release found for ${parsed.owner}/${parsed.repo}`);
+    tarball = await downloadReleaseTag(parsed.owner, parsed.repo, rel.tag);
+  } else {
+    tarball = await downloadBranchTip(parsed.owner, parsed.repo);
+  }
   return installArchive(tarball, 'tar', { expectId });
 }
 
@@ -160,14 +190,35 @@ export function syncCommunityUi({
   return staged;
 }
 
-// Rebuild the browser bundle so a newly installed/removed tool shows up.
+// True when webpack is available (dev/git checkout). Published npm installs ship
+// a prebuilt dist/ and do not include webpack in dependencies.
+export function webpackAvailable() {
+  return existsSync(join(ROOT, 'node_modules', 'webpack', 'bin', 'webpack.js'));
+}
+
+// Rebuild the browser bundle so a newly installed/removed tool shows up. Resolves
+// with { rebuilt, skipped?, warning? }. MCP-only plugins need no webpack; a UI
+// plugin on a published install returns skipped with a warning instead of failing
+// the whole install.
 export function rebuild() {
-  syncCommunityUi();
+  const staged = syncCommunityUi();
+  if (!webpackAvailable()) {
+    if (staged.length === 0) {
+      return Promise.resolve({ rebuilt: false, skipped: true, warning: null });
+    }
+    return Promise.resolve({
+      rebuilt: false,
+      skipped: true,
+      warning: 'Plugin installed; MCP tools are live. Rebuilding the browser UI needs a dev checkout (webpack is not shipped on npm install). Reload to pick up server-side tools.',
+    });
+  }
   return new Promise((resolve, reject) => {
     const p = spawn('npm', ['run', 'build'], { cwd: ROOT });
     let err = '';
     p.stderr.on('data', (c) => { err += c; });
-    p.on('close', (code) => code === 0 ? resolve() : reject(new Error('build failed: ' + err.slice(-300))));
+    p.on('close', (code) => (code === 0
+      ? resolve({ rebuilt: true, skipped: false, warning: null })
+      : reject(new Error('build failed: ' + err.slice(-300)))));
     p.on('error', reject);
   });
 }

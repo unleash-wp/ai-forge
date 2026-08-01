@@ -1,6 +1,6 @@
 {
   "name": "@unleashwp/ai-forge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "author": "UnleashWP (https://unleash-wp.com)",
   "description": "UnleashWP AI Forge: a hub for WordPress release tooling. Runs a browser UI, a zero-dependency CLI, and an MCP server (`uwp mcp`) so Claude Code and Codex can query its tools and skills live.",
   "type": "module",
@@ -31,7 +31,6 @@
     "wiki:publish": "bash scripts/publish-wiki.sh",
     "version": "node scripts/sync-version.mjs",
     "test": "node --test",
-    "prepare": "webpack --mode production",
     "prepublishOnly": "npm run build && node --test"
   },
   "devDependencies": {

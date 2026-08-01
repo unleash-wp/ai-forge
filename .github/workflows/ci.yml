@@ -47,3 +47,9 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Build the browser UI bundle
         run: npm run build
+      - name: Published tarball ships dist/main.js
+        run: |
+          npm pack --ignore-scripts --dry-run 2>&1 | grep -q 'dist/main.js' || {
+            echo "npm pack must include dist/main.js (run npm run build first)" >&2
+            exit 1
+          }
