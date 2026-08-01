@@ -4,8 +4,6 @@
 // NOT hardcode: the server's locator and its credentialEnv map (which env var
 // each Core connector feeds). Both credentials are Core connectors, and the Core
 // shell's /api/mcp/* routes proxy this server, so the binding lives in Core.
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { registerMcpServer, mcpAvailable, mcpSession, mcpListTools, mcpExecute } from './mcp-client.mjs';
 import { resolveCookie } from './connectors/wporg-cookie.mjs';
 import { resolveToken } from './connectors/github-token.mjs';
@@ -14,11 +12,11 @@ export { mcpText } from './mcp-client.mjs';
 
 const WPORG = 'wporg';
 
-// Where the built server lives: FORGE_WPORG_MCP, else the default clone path.
-// (A packaged build has no clone. Set FORGE_WPORG_MCP or the deep/MCP features
-// degrade; a packaging-safe bundled default is still an open item.)
+// Where the built server lives. Set FORGE_WPORG_MCP to the entry file you trust.
+// There is no default path: a writable ~/Documents default let any local process
+// that could drop a file there inherit WPORG_TRAC_COOKIE and GITHUB_TOKEN on spawn.
 function resolvePath() {
-  return process.env.FORGE_WPORG_MCP || join(homedir(), 'Documents', 'mcp-context-wporg', 'dist', 'index.js');
+  return process.env.FORGE_WPORG_MCP || null;
 }
 
 // Pass the tool's credentials through so the MCP's providers are not rate-limited:

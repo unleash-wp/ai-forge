@@ -13,11 +13,17 @@ import { Box, Portal } from '@chakra-ui/react';
 let apiBase = '';
 export function setApiBase(base) { apiBase = base || ''; }
 
+function forgeAuthHeaders() {
+  const t = typeof window !== 'undefined' && window.__FORGE_TOKEN__;
+  return t ? { 'X-Forge-Token': t } : {};
+}
+
 // fetch a Forge path. Absolute URLs (external APIs) pass through untouched; a
 // relative /api path is resolved against apiBase.
-export function apiFetch(path, opts) {
+export function apiFetch(path, opts = {}) {
   const url = /^https?:\/\//.test(path) ? path : apiBase + path;
-  return fetch(url, opts);
+  const headers = { ...forgeAuthHeaders(), ...(opts.headers || {}) };
+  return fetch(url, { ...opts, headers });
 }
 
 // apiFetch + parse JSON, returning { ok, data } so callers branch on HTTP status.
