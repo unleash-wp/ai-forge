@@ -21,7 +21,7 @@ function cmp(a, b) {
   return 0;
 }
 
-async function latestRelease(owner, repo, token) {
+export async function latestRelease(owner, repo, token) {
   const headers = { 'User-Agent': 'ai-forge', Accept: 'application/vnd.github+json' };
   if (token) headers.Authorization = 'Bearer ' + token;
   const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/releases/latest`, { headers });

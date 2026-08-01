@@ -44,7 +44,13 @@ export default function PluginsManager({ plugins, onOpen, onChanged }) {
     setErr(''); setBusy(label);
     promise
       .then((r) => r.json())
-      .then((d) => { if (d.ok) { setBusy(t('Done. Reloading…')); window.location.reload(); } else { setBusy(''); setErr(d.error || t('failed')); } })
+      .then((d) => {
+        if (d.ok) {
+          if (d.warning) setErr(d.warning);
+          setBusy(t('Done. Reloading…'));
+          window.location.reload();
+        } else { setBusy(''); setErr(d.error || t('failed')); }
+      })
       .catch(() => { setBusy(''); setErr(t('request failed')); });
   }
   function installUrl() {
