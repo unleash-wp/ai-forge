@@ -40,7 +40,8 @@ export async function run(argv) {
 
   if (args._[0] === 'serve') {
     const { startServer } = await import('./server.mjs');
-    return startServer({ port: Number(args.port) || 4321 });
+    const { resolveListen } = await import('./server-bind.mjs');
+    return startServer({ bind: resolveListen({ port: Number(args.port) || undefined }) });
   }
 
   if (args._[0] === 'mcp') {

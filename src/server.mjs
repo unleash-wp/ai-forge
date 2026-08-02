@@ -33,6 +33,7 @@ import { checkUpdates } from './update.mjs';
 import { runSelfUpdate, detectInstall } from './self-update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
 import { getServerToken, requiresServerAuth, verifyServerAuth } from './server-auth.mjs';
+import { resolveListen, assertPublicBindSafe, isAllowedHost, isPublicBind } from './server-bind.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
 import { clearCaches } from './lib/wp-profiles.mjs';
 import { clearCommitsCache } from './lib/wp-commits.mjs';
@@ -49,19 +50,28 @@ const WPORG_HTTP_MSG = 'wordpress.org connection required. Open Setup and sign i
   'AI Forge needs it or contributor and Core ticket counts are inaccurate.';
 
 
-export function startServer({ port = 4321, quiet = false, internal = false } = {}) {
+export function startServer({ port, quiet = false, internal = false, bind } = {}) {
+  const listen = bind || resolveListen({ port });
+  assertPublicBindSafe(listen);
   // Load tool plugins; reloadable so install/uninstall picks up changes without
   // a server restart (the client rebuild + reload picks up the new bundle).
   let pluginsReady = loadPlugins();
   const reloadPlugins = () => { pluginsReady = loadPlugins(); return pluginsReady; };
   const server = createServer(async (req, res) => {
    try {
-    const url = new URL(req.url, `http://localhost:${port}`);
+    const url = new URL(req.url, `http://localhost:${listen.port}`);
 
-    // Anti-DNS-rebinding: only serve requests addressed to a local host. A rebound
-    // attacker domain (resolving to 127.0.0.1) still carries its own Host header,
-    // so this rejects it before any handler runs.
-    if (!isLocalHost(req)) { json(res, 403, { error: 'invalid host' }); return; }
+    // Platform health probe: no auth, no secrets, bypasses the Host guard so
+    // Cloud Run / Mittwald can hit the process address directly.
+    if (url.pathname === '/healthz' && (req.method === 'GET' || req.method === 'HEAD')) {
+      if (req.method === 'HEAD') { res.writeHead(200, { 'Cache-Control': 'no-store' }); res.end(); return; }
+      json(res, 200, { ok: true });
+      return;
+    }
+
+    // Anti-DNS-rebinding: loopback Host always passes; deployed names need
+    // UWP_ALLOWED_HOSTS when UWP_BIND is public (see server-bind.mjs).
+    if (!isAllowedHost(req)) { json(res, 403, { error: 'invalid host' }); return; }
 
     // Cross-site guard: reject a state-changing request that a browser makes from
     // another origin. Mutating routes also require the loopback server token
@@ -492,14 +502,15 @@ export function startServer({ port = 4321, quiet = false, internal = false } = {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`uwp: port ${port} is already in use. Try \`uwp serve --port ${port + 1}\`.`);
+      console.error(`uwp: port ${listen.port} is already in use. Try \`uwp serve --port ${listen.port + 1}\`.`);
       process.exit(1);
     }
     throw err;
   });
-  server.listen(port, '127.0.0.1', () => {
+  server.listen(listen.port, listen.host, () => {
     if (quiet) return; // internal server for `uwp mcp`. stdout is reserved for JSON-RPC
-    console.log(`uwp browser UI  ->  http://localhost:${port}`);
+    const where = isPublicBind(listen.host) ? `0.0.0.0:${listen.port}` : `http://localhost:${listen.port}`;
+    console.log(`uwp browser UI  ->  ${where}`);
     if (!authenticated()) console.log('uwp: no gh token. GitHub API limited to 60 req/h (add one in Setup).');
     console.log('Press Ctrl+C to stop.');
   });
@@ -515,15 +526,6 @@ function json(res, code, obj) {
 // Fetch Metadata header (every modern browser sends Sec-Fetch-Site); fall back to
 // an Origin/Host comparison for older ones. A request with neither header is not
 // a browser (CLI, loopback proxy, tests) and is treated as same-origin.
-// True when the request's Host is a local address (localhost / 127.0.0.1 / ::1 /
-// *.localhost), or absent (non-browser callers). Anything else is a rebind attempt.
-function isLocalHost(req) {
-  let host = (req.headers.host || '').toLowerCase();
-  if (!host) return true;
-  host = host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.split(':')[0];
-  return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.endsWith('.localhost');
-}
-
 function isCrossSite(req) {
   const sfs = req.headers['sec-fetch-site'];
   if (sfs) return sfs !== 'same-origin' && sfs !== 'none';

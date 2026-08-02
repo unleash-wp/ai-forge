@@ -19,7 +19,7 @@ import { getServerToken } from '../src/server-auth.mjs';
 
 // Port 0 lets the OS pick a free one, so a developer running the app on 4321
 // does not fail this suite.
-const server = startServer({ port: 0, quiet: true });
+const server = startServer({ bind: { host: '127.0.0.1', port: 0 }, quiet: true });
 const base = await new Promise((resolve) => {
   server.on('listening', () => resolve(`http://127.0.0.1:${server.address().port}`));
 });
@@ -59,6 +59,42 @@ test('mutating requests without the forge token are refused', async () => {
   });
   assert.equal(res.status, 403);
   assert.match((await res.json()).error, /forge token/);
+});
+
+test('mutating requests with a valid forge token are accepted', async () => {
+  const res = await fetch(`${base}/api/github-token/test`, {
+    method: 'POST',
+    headers: { ...auth },
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(typeof body.ok, 'boolean');
+});
+
+test('GET /healthz is open and returns no secrets', async () => {
+  const res = await fetch(`${base}/healthz`);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.ok, true);
+  assert.equal(Object.keys(body).length, 1);
+});
+
+test('GET /healthz bypasses the Host guard', async () => {
+  const { port } = server.address();
+  const { statusCode, body } = await new Promise((resolve, reject) => {
+    const req = httpRequest(
+      { host: '127.0.0.1', port, path: '/healthz', headers: { Host: 'rebound.example' } },
+      (res) => {
+        let data = '';
+        res.on('data', (c) => { data += c; });
+        res.on('end', () => resolve({ statusCode: res.statusCode, body: data }));
+      },
+    );
+    req.on('error', reject);
+    req.end();
+  });
+  assert.equal(statusCode, 200);
+  assert.deepEqual(JSON.parse(body), { ok: true });
 });
 
 // Raw http, not fetch: undici derives Host from the URL and ignores an override,
