@@ -109,6 +109,21 @@ AI Forge can't work correctly without.)
 
 ---
 
+## Hosted deploy (Forge Pro seats)
+
+Local `uwp serve` stays on `127.0.0.1` by default. To expose the browser UI behind a platform proxy (Cloud Run, Mittwald/mittnite, or similar), set all three:
+
+| Variable | Purpose |
+| --- | --- |
+| `UWP_BIND` | Listen address, usually `0.0.0.0` (the platform forwards TLS to `$PORT`). |
+| `PORT` | Port the platform assigns (Cloud Run and Mittwald both inject this). |
+| `UWP_FORGE_TOKEN` | Long random secret; required before a non-loopback bind. Every mutating `/api` route checks `X-Forge-Token` or `Authorization: Bearer`. |
+| `UWP_ALLOWED_HOSTS` | Comma-separated public hostnames the proxy sends in `Host` (e.g. `forge.example.com,service-abc.run.app`). |
+
+Health checks hit `GET /healthz` (returns `{"ok":true}`, no secrets, bypasses the Host guard). The ingest worker (`uwp contributors ingest-profiles`) stays headless and does not need these variables.
+
+---
+
 ## Want more?
 
 - 📖 **[Handbook](https://unleash-wp.github.io/ai-forge/)**: the complete guide to what it is, all install paths, example prompts, connectors, the changelog generator, and how to build a plugin.
