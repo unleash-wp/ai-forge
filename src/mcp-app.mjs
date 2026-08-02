@@ -18,7 +18,7 @@ export async function startInternalServer() {
   // internal:true blocks the credential/install/self-update routes. This server
   // is reachable only through the forge_api proxy, which the model can reach on
   // hosts that don't enforce the tool's app-only visibility.
-  const server = startServer({ port: 0, quiet: true, internal: true });
+  const server = startServer({ bind: { host: '127.0.0.1', port: 0 }, quiet: true, internal: true });
   await once(server, 'listening');
   return { port: server.address().port, server };
 }
