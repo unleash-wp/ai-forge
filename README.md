@@ -15,18 +15,18 @@ You can use it three ways: type one command, click buttons in your browser, or j
 
 ## Product family (UnleashWP)
 
-English is the default product language across UnleashWP. Know which name is which:
+| Product | What it is |
+| --- | --- |
+| **AI Forge** | Local host for WordPress tooling (changelog, Trac, GitHub, plugin shelf). English default; German optional in the app UI. |
+| **Lumo Free** | Forge plugin (`github:unleash-wp/lumo`) plus `@unleashwp/lumo` for local catch on `uwp mcp`. |
+| **Lumo Pro** | Hosted MCP at `mcp.unleash-wp.com` for paid licenses. Add it in your editor alongside Forge. |
+| **Forge Hosted** | Included on paid Lumo hosted seats. Install not available yet. |
 
-| Product | What it is | Language |
-| --- | --- | --- |
-| **AI Forge** | **Host / plugin runtime:** local WordPress tooling (changelog, Trac, GitHub, plugin shelf). Not a knowledge substitute. | English default; **German (DE)** optional in the local app UI (`languages/de.json`) |
-| **Lumo Free** | **AI Forge plugin** (`github:unleash-wp/lumo`): Free snapshot knowledge + catch on `uwp mcp`. The `@unleashwp/lumo` npm package supplies the live catch engine. **Not** Pro. | English |
-| **Lumo Pro** | **Separate hosted MCP** at `mcp.unleash-wp.com` (Mittwald): licensed live catalogue, catch, evidence. Connect from Cursor/Claude **alongside** Forge, not instead of it. | English |
-| **AI Forge Hosted** | Planned managed Forge for paid Lumo seats. **Not live yet.** | English |
+**Free:** install Lumo as a Forge plugin for the local snapshot watcher.
 
-**How Forge and Lumo work together:** AI Forge is the host. Install **Lumo Free as a Forge plugin** (Plugins → paste `github:unleash-wp/lumo`) for the Free tier: `lumo_lookup` and `lumo_check_code` on `uwp mcp`, backed by the bundled snapshot. **Lumo Pro** is a separate hosted MCP you add in your editor when you have a paid license; it does not replace Forge, and Free-on-Forge must not pretend to be Pro. Use Forge for wp.org release tooling and scaffolding; use Lumo (Free plugin or Pro MCP) for curated wrong→correct patterns and catch. Forge does not proxy wp.org through the Pro server.
+**Paid:** hosted done for you on `mcp.unleash-wp.com` (live catalogue, Agent Pack, MCP link, CI on Pro/Team 20).
 
-AI Forge runs on your machine (`npm install -g @unleashwp/ai-forge` ships a prebuilt browser bundle; plugin install works without webpack). Lumo Pro connects at `https://mcp.unleash-wp.com/mcp`.
+Forge handles wp.org release work. Lumo handles curated wrong→correct patterns and catch. They are separate layers.
 
 ---
 
