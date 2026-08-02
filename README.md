@@ -21,6 +21,7 @@ You can use it three ways: type one command, click buttons in your browser, or j
 | **Lumo Free** | Forge plugin (`github:unleash-wp/lumo`) plus `@unleashwp/lumo` for local catch on `uwp mcp`. |
 | **Lumo Pro** | Hosted MCP at `mcp.unleash-wp.com` for paid licenses. Add it in your editor alongside Forge. |
 | **Forge Hosted** | Included on paid Lumo hosted seats. Install not available yet. |
+| **WP Forge Mirror** | Private hosted cache for Changelog + Contributors ([repo](https://github.com/unleash-wp/wp-forge-mirror)). AI Forge will read this instead of live wp.org on the user path. Sync scaffold only until [#24](https://github.com/unleash-wp/ai-forge/issues/24) switchover. |
 
 **Free:** install Lumo as a Forge plugin for the local snapshot watcher.
 
