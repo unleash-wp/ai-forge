@@ -6,6 +6,10 @@ dist/
 .claude/settings.local.json
 .impeccable/
 
+# Agent tooling cache (never ship)
+.agent-transcripts/
+.cursor/projects/
+
 # Chakra UI agent skills (installed via `npx skills add`)
 .agents/
 skills-lock.json
