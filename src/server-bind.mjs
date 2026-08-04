@@ -1,8 +1,15 @@
-// Listen address and Host-header policy for `uwp serve`. Local default stays
-// 127.0.0.1 with the loopback-only guard. Public bind (0.0.0.0 / ::) is allowed
-// only when UWP_FORGE_TOKEN and UWP_ALLOWED_HOSTS are set — see assertPublicBindSafe.
+// Listen address and Host-header policy for `uwp serve`. The browser UI has no
+// user-authentication layer, so it must stay on loopback until hosted auth exists.
 
-const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
+function isLoopbackHost(host) {
+  const h = (host || '').toLowerCase();
+  const ipv4 = /^127\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+  return h === 'localhost'
+    || h.endsWith('.localhost')
+    || h === '::1'
+    || h === '0:0:0:0:0:0:0:1'
+    || Boolean(ipv4 && ipv4.slice(1).every((part) => Number(part) <= 255));
+}
 
 export function resolveListen({ port: cliPort } = {}) {
   const port = Number(process.env.PORT) || Number(cliPort) || 4321;
@@ -12,8 +19,8 @@ export function resolveListen({ port: cliPort } = {}) {
 
 export function isPublicBind(host) {
   const h = (host || '').toLowerCase();
-  if (!h || h === '127.0.0.1' || h === 'localhost' || h === '::1') return false;
-  return h === '0.0.0.0' || h === '::' || !LOCAL_HOSTS.has(h);
+  if (!h || isLoopbackHost(h)) return false;
+  return true;
 }
 
 export function parseAllowedHosts() {
@@ -28,23 +35,15 @@ export function isAllowedHost(req, allowedHosts = parseAllowedHosts()) {
   let host = (req.headers.host || '').toLowerCase();
   if (!host) return true;
   host = host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.split(':')[0];
-  if (LOCAL_HOSTS.has(host) || host.endsWith('.localhost')) return true;
+  if (isLoopbackHost(host)) return true;
   return allowedHosts.includes(host);
 }
 
-/** Refuse to listen on a public address without explicit hosted auth config. */
+/** Refuse to expose the browser UI until it has real hosted-user authentication. */
 export function assertPublicBindSafe(listen) {
   if (!isPublicBind(listen.host)) return;
-  if (!(process.env.UWP_FORGE_TOKEN || '').trim()) {
-    throw new Error(
-      'uwp: UWP_BIND is not loopback but UWP_FORGE_TOKEN is unset. ' +
-      'Set UWP_FORGE_TOKEN to a long random secret before binding publicly.',
-    );
-  }
-  if (!parseAllowedHosts().length) {
-    throw new Error(
-      'uwp: public bind requires UWP_ALLOWED_HOSTS (comma-separated hostnames the proxy sends). ' +
-      'Example: UWP_ALLOWED_HOSTS=forge.example.com',
-    );
-  }
+  throw new Error(
+    'uwp: public browser hosting is not supported. Keep UWP_BIND on loopback; ' +
+    'a hosted deployment requires user authentication that AI Forge does not yet provide.',
+  );
 }
