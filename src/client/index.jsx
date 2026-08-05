@@ -2,9 +2,15 @@
 // bundled by webpack into dist/main.js and served from /assets/.
 import { createRoot } from 'react-dom/client';
 import { Provider } from './ui/Provider.jsx';
-import { ToastProvider } from './core.jsx';
+import { ToastProvider, setApiBase } from './core.jsx';
 import { I18nProvider } from './i18n.jsx';
 import App from './App.jsx';
+
+// Mounted behind a path prefix (hosted under lumo-pro at /forge/) the shell is
+// served with that prefix in its asset URLs, and every /api call has to carry
+// it too. Empty for a local `uwp serve`, which owns its own root. This is the
+// one value the surface sets, exactly as core.jsx describes.
+setApiBase(typeof window !== 'undefined' ? window.__FORGE_BASE__ || '' : '');
 
 // Smoothly cross-fade colours on a light/dark switch. Scoped to a class that the
 // theme toggle adds only for the duration of the switch, so it never slows hovers

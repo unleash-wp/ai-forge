@@ -1,0 +1,224 @@
+name: Deploy hosted Forge (Mittwald)
+
+# The public browser UI at mcp.unleash-wp.com/forge.
+#
+# AI Forge is free for everyone, so this deploys the SAME package users run
+# locally -- no hosted fork, no second codebase. What differs is only the
+# environment: UWP_PUBLIC_READONLY=1 withholds the server token from the shell
+# and disables every mutating route, UWP_BASE_PATH tells the shell it is mounted
+# under /forge, and UWP_OFFLINE=1 keeps customer traffic from fanning out to
+# wp.org and GitHub.
+#
+# Runs after CI on main, never racing a red build, exactly like the lumo-pro
+# deploy it sits beside on the same server.
+
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-forge
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  deploy:
+    name: Deploy hosted Forge
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      # The build toolchain needs Node >=22; the shipped runtime floor is 18.
+      # This leg builds, so it takes the higher one.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install and build the browser bundle
+        run: npm ci && npm run build
+
+      - name: Fail early if the bundle is missing
+        # webpack exiting 0 without an artifact would otherwise rsync an empty
+        # dist and the hosted UI would serve a shell that loads nothing.
+        run: test -s dist/main.js
+
+      - name: Fetch the hosted plugin set
+        # The hosted instance cannot install plugins through its own UI -- that
+        # route is code execution and is refused under UWP_PUBLIC_READONLY=1.
+        # So the plugin set is deployed from a manifest instead: same result
+        # after every deploy, reviewable in a diff, and never drifting with
+        # whatever someone once installed by hand.
+        #
+        # From GitHub, the same source Forge's own installer accepts, so the
+        # hosted instance runs what a user installing it themselves would get.
+        # HOSTED_PLUGINS_TOKEN is only needed while a listed repo is private.
+        env:
+          GH_TOKEN: ${{ secrets.HOSTED_PLUGINS_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p hosted-plugins
+          node -e '
+            const { plugins } = require("./deploy/hosted-plugins.json");
+            for (const p of plugins) console.log(`${p.id}\t${p.repo}\t${p.ref}`);
+          ' > /tmp/plugin-list
+          while IFS=$'\t' read -r id repo ref; do
+            echo "==> $id from github:$repo@$ref"
+            if ! git clone --depth 1 --branch "$ref" \
+                 "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" \
+                 "hosted-plugins/$id" 2>/dev/null; then
+              echo "!! cannot read $repo. It is private and HOSTED_PLUGINS_TOKEN"
+              echo "!! is unset or lacks access. Note that while it is private,"
+              echo "!! no user can install this plugin either -- its own"
+              echo "!! updateSource points at exactly this repo."
+              exit 1
+            fi
+            rm -rf "hosted-plugins/$id/.git"
+            # A plugin is a directory with a manifest. Without one the loader
+            # skips it with a log line and carries on, so the hosted UI would be
+            # quietly missing a tool while every check still passed.
+            test -s "hosted-plugins/$id/plugin.json" || {
+              echo "!! $repo has no plugin.json at its root; it is not a Forge plugin"; exit 1; }
+          done < /tmp/plugin-list
+
+      - name: Configure SSH
+        env:
+          MITTWALD_SSH_KEY: ${{ secrets.MITTWALD_SSH_KEY }}
+          SSH_TARGET: ${{ secrets.MITTWALD_SSH_TARGET }}
+        run: |
+          install -m 700 -d ~/.ssh
+          # A key pasted into a GitHub secret can arrive with literal \n instead
+          # of newlines, or with CRLF. Try the plain form, fall back to
+          # interpreting escapes only if the plain one is not a usable key.
+          printf '%s\n' "$MITTWALD_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
+            printf '%b\n' "$MITTWALD_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          fi
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null
+          # Mittwald targets look like user@user@app@host: take host after last @
+          SSH_HOST="${SSH_TARGET##*@}"
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+              -o StrictHostKeyChecking=accept-new -o ConnectTimeout=25 \
+              "${SSH_TARGET}" 'echo SSH_OK'
+
+      - name: Sync to the server
+        env:
+          SSH_TARGET: ${{ secrets.MITTWALD_SSH_TARGET }}
+        run: |
+          # rsync parses user@host on the FIRST @, and a Mittwald username
+          # contains two. Split it by hand and pass the user with -l.
+          SSH_HOST="${SSH_TARGET##*@}"
+          SSH_USER="${SSH_TARGET%@*}"
+          E="ssh -i ~/.ssh/deploy_key -l ${SSH_USER} -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=25"
+          # rsync creates only the LAST path segment, so pre-create the tree.
+          # The user plugin dir is where loadPlugins() looks for anything not
+          # bundled with the package: XDG_CONFIG_HOME/uwp-ai-forge/plugins.
+          $E "${SSH_HOST}" 'mkdir -p ~/forge/dist.incoming ~/forge/src ~/forge/bin ~/forge/plugins ~/.config/uwp-ai-forge/plugins'
+          rsync -az --delete -e "$E" dist/    "${SSH_HOST}:forge/dist.incoming/"
+          rsync -az --delete -e "$E" src/     "${SSH_HOST}:forge/src/"
+          rsync -az --delete -e "$E" bin/     "${SSH_HOST}:forge/bin/"
+          # Bundled plugins are the free product. --delete so a plugin removed
+          # upstream stops being served rather than lingering forever.
+          rsync -az --delete -e "$E" plugins/ "${SSH_HOST}:forge/plugins/"
+          rsync -az           -e "$E" package.json package-lock.json "${SSH_HOST}:forge/"
+          # Hosted plugin set. --delete so removing an entry from
+          # deploy/hosted-plugins.json actually removes it from the instance,
+          # rather than leaving a tool nobody meant to still be serving.
+          rsync -az --delete  -e "$E" hosted-plugins/ "${SSH_HOST}:.config/uwp-ai-forge/plugins/"
+
+      - name: Install, swap the bundle, restart, verify
+        env:
+          GIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o IdentitiesOnly=yes \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=accept-new \
+              -o ConnectTimeout=25 \
+              "${{ secrets.MITTWALD_SSH_TARGET }}" \
+              "set -euo pipefail
+               cd ~/forge
+
+               # NOTE: everything between these quotes is ONE argument to ssh.
+               # An unescaped double quote ends it, the runner reads what
+               # follows as its own words, and the rest never reaches the
+               # server -- while the step still exits 0. That exact bug ran
+               # green for a day in the lumo-pro deploy while deploying
+               # nothing. Use plain words in comments, or escape the quote.
+
+               echo '==> Installing production deps'
+               npm install --omit=dev --prefer-offline --ignore-scripts
+
+               echo '==> Swapping the bundle'
+               rm -rf dist.old
+               [ -d dist ] && mv dist dist.old
+               mv dist.incoming dist
+
+               if ! command -v mittnitectl >/dev/null 2>&1; then
+                 echo 'mittnitectl not on PATH; cannot restart the forge job'
+                 exit 1
+               fi
+
+               echo '==> Restarting'
+               mittnitectl job restart forge
+               sleep 5
+
+               echo '==> Health check through the public mount'
+               # Probed the way a visitor reaches it, not the way the process
+               # describes itself: through lumo-pro at /forge. A Forge that is
+               # up while the proxy is misconfigured is still a broken product.
+               HEALTH_PORT=\"\${PORT:-3000}\"
+               BODY=\$(curl -fsS -m 15 \"http://127.0.0.1:\${HEALTH_PORT}/forge/\")
+               echo \"\$BODY\" | grep -q 'id=\"root\"'
+               # The single line that would make hosting unsafe. If the shell
+               # ever ships the server token again, every visitor can install a
+               # plugin, which is code execution in this process.
+               if echo \"\$BODY\" | grep -q '__FORGE_TOKEN__'; then
+                 echo '!! the hosted shell contains the server token; refusing to call this a success'
+                 exit 1
+               fi
+
+               echo '==> Every deployed plugin is actually being served'
+               # loadPlugins skips an unreadable or unparseable plugin with a
+               # log line and carries on, so a broken install looks exactly like
+               # a healthy instance from outside -- only quieter. Ask the server
+               # which plugins it has, and compare against what was deployed.
+               PLUGINS=\$(curl -fsS -m 15 \"http://127.0.0.1:\${HEALTH_PORT}/forge/api/plugins\")
+               for id in \$(ls ~/.config/uwp-ai-forge/plugins); do
+                 echo \"\$PLUGINS\" | grep -q \"\\\"\$id\\\"\" || {
+                   echo \"!! plugin '\$id' was deployed but the server is not serving it\"; exit 1; }
+                 echo \"   ok: \$id\"
+               done
+               echo '===== FORGE DEPLOY OK ====='"
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Hosted Forge deploy failed (${context.sha.slice(0, 7)})`,
+              body: [
+                'The hosted Forge deploy failed.',
+                '',
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                '',
+                'The previous bundle is in ~/forge/dist.old on the server.',
+              ].join('\n'),
+            });

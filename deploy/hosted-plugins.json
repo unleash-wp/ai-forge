@@ -1,0 +1,34 @@
+{
+  "$comment": [
+    "Plugins the HOSTED Forge serves, beyond the ones bundled in plugins/.",
+    "",
+    "The hosted instance cannot install plugins through its own UI: that route is",
+    "code execution in the Forge process and is refused outright under",
+    "UWP_PUBLIC_READONLY=1. So the plugin set is deployed, not clicked -- which",
+    "also means it is reviewable, versioned, and identical after every deploy",
+    "instead of drifting with whatever someone once installed by hand.",
+    "",
+    "Versions are pinned, never 'latest'. The hosted free tier is what visitors",
+    "judge the product by; it should change when someone decides it changes.",
+    "",
+    "Source is the GitHub repo, the same one Forge's own installer accepts and",
+    "the same one the plugin's updateSource names -- so the hosted instance runs",
+    "what a user installing it themselves would get, not a different build.",
+    "",
+    "NOT npm: @unleashwp/lumo is the MCP server distribution and its `files`",
+    "field omits plugin.json and server.mjs, so the tarball is not a Forge",
+    "plugin at all. Verified by unpacking 0.4.1.",
+    "",
+    "unleash-wp/lumo is private today, which also means no user can install Lumo",
+    "as its own manifest advertises. Making it public fixes both at once; until",
+    "then the deploy needs HOSTED_PLUGINS_TOKEN with read access."
+  ],
+  "plugins": [
+    {
+      "id": "lumo",
+      "repo": "unleash-wp/lumo",
+      "ref": "main",
+      "why": "Lumo Free: curated, source-verified WordPress entries from a bundled snapshot. The free tier of the paid knowledge base, and the reason a visitor has a reason to come back."
+    }
+  ]
+}
