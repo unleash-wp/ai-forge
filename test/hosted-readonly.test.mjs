@@ -83,3 +83,14 @@ test('BELL: mounted under a prefix, the shell points every URL at it', async () 
     delete process.env.UWP_BASE_PATH;
   }
 });
+
+test('BELL: the shell tells the client it is read-only, so it can hide what cannot work', async () => {
+  // Every action in the connector setup is a POST or DELETE the server refuses,
+  // and the credentials it asks for -- a GitHub token, a wp.org cookie --
+  // belong to the operator's warm-up job, not to a visitor. A hosted instance
+  // reads from its own cache. Offering that form is offering something that
+  // cannot submit, which reads as a broken product rather than a deliberate one.
+  const res = await fetch(`${base}/`);
+  const html = await res.text();
+  assert.ok(html.includes('window.__FORGE_READONLY__=true'), 'the flag reaches the client');
+});

@@ -13,6 +13,20 @@ import { Box, Portal } from '@chakra-ui/react';
 let apiBase = '';
 export function setApiBase(base) { apiBase = base || ''; }
 
+/**
+ * True on a public read-only instance.
+ *
+ * Everything that writes is refused there, by the proxy in front and by the
+ * server itself, so offering it in the UI shows a visitor buttons that cannot
+ * work. The connector setup is the sharpest case: it asks for a GitHub token
+ * and a wp.org cookie that a hosted instance neither stores nor needs. It reads
+ * from its own cache, and those credentials belong to the operator's warm-up
+ * job rather than to whoever happens to be visiting.
+ */
+export function isReadOnly() {
+  return typeof window !== 'undefined' && window.__FORGE_READONLY__ === true;
+}
+
 function forgeAuthHeaders() {
   const t = typeof window !== 'undefined' && window.__FORGE_TOKEN__;
   return t ? { 'X-Forge-Token': t } : {};
