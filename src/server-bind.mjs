@@ -39,11 +39,42 @@ export function isAllowedHost(req, allowedHosts = parseAllowedHosts()) {
   return allowedHosts.includes(host);
 }
 
+/**
+ * Public read-only hosting: the one shape in which exposing the browser UI is safe.
+ *
+ * AI Forge still has no per-user authentication, so a hosted instance cannot
+ * tell one visitor from another. What it CAN do is make that irrelevant, by
+ * serving nothing but reads. Under this mode:
+ *
+ *   - the server token is never injected into the HTML shell (see pageHtml in
+ *     server.mjs), so no visitor ever holds the credential for a mutating route;
+ *   - every non-GET/HEAD request is refused outright, token or not, so even a
+ *     leaked credential cannot install a plugin -- which is code execution on
+ *     the server, and the reason the blanket refusal existed in the first place.
+ *
+ * Managing a hosted instance is therefore an operator job over SSH against the
+ * loopback listener, not something done through the public address.
+ *
+ * Deliberately requires THREE independent signals. UWP_FORGE_TOKEN and
+ * UWP_ALLOWED_HOSTS together are NOT enough, and a test pins that: both get set
+ * by anyone wiring up a deployment, without that person having decided the
+ * instance should face the public. UWP_PUBLIC_READONLY=1 is that decision,
+ * stated once, in a name that says what it costs.
+ */
+export function isHostedReadOnly() {
+  if ((process.env.UWP_PUBLIC_READONLY || '').trim() !== '1') return false;
+  if (!(process.env.UWP_FORGE_TOKEN || '').trim()) return false;
+  return parseAllowedHosts().length > 0;
+}
+
 /** Refuse to expose the browser UI until it has real hosted-user authentication. */
 export function assertPublicBindSafe(listen) {
   if (!isPublicBind(listen.host)) return;
+  if (isHostedReadOnly()) return;
   throw new Error(
     'uwp: public browser hosting is not supported. Keep UWP_BIND on loopback; ' +
-    'a hosted deployment requires user authentication that AI Forge does not yet provide.',
+    'a hosted deployment requires user authentication that AI Forge does not yet provide. ' +
+    'For a read-only public instance set UWP_PUBLIC_READONLY=1 together with ' +
+    'UWP_FORGE_TOKEN and UWP_ALLOWED_HOSTS; mutating routes are then refused outright.',
   );
 }

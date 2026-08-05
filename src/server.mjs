@@ -33,7 +33,13 @@ import { checkUpdates } from './update.mjs';
 import { runSelfUpdate, detectInstall } from './self-update.mjs';
 import { installFromSource, installArchive, uninstall, rebuild } from './installer.mjs';
 import { getServerToken, requiresServerAuth, verifyServerAuth } from './server-auth.mjs';
-import { resolveListen, assertPublicBindSafe, isAllowedHost, isPublicBind } from './server-bind.mjs';
+import {
+  resolveListen,
+  assertPublicBindSafe,
+  isAllowedHost,
+  isPublicBind,
+  isHostedReadOnly,
+} from './server-bind.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
 import { clearCaches } from './lib/wp-profiles.mjs';
 import { clearCommitsCache } from './lib/wp-commits.mjs';
@@ -78,6 +84,16 @@ export function startServer({ port, quiet = false, internal = false, bind } = {}
     // (see server-auth.mjs). Reads (GET/HEAD) return only public data.
     if (req.method !== 'GET' && req.method !== 'HEAD' && isCrossSite(req)) {
       json(res, 403, { error: 'cross-site request refused' });
+      return;
+    }
+
+    // Public read-only instance: no mutating route exists, token or not. The
+    // shell withholds the credential from visitors, but "the secret did not
+    // leak" is a hope, and /api/plugins/install is code execution inside this
+    // process. Refusing the whole method class is a property instead. Operator
+    // work happens over SSH against the loopback listener, where this is off.
+    if (isHostedReadOnly() && requiresServerAuth(req)) {
+      json(res, 403, { error: 'read-only instance: mutating routes are disabled' });
       return;
     }
 
@@ -578,8 +594,15 @@ function readBodyBuffer(req) {
 // Minimal HTML shell: the React bundle (dist/main.js) renders everything into
 // #root. Brand SVGs + all UI live in the bundle, not injected here. The server
 // token is injected once so the bundle can authenticate mutating /api calls.
+//
+// NOT on a public read-only instance. Injecting it there would hand the
+// credential for /api/plugins/install -- code execution inside the Forge
+// process -- to every visitor who views source. This is the single line that
+// made hosting unsafe, so the mode that permits hosting is also the mode that
+// withholds it, and the request guard refuses mutating routes outright rather
+// than trusting this alone.
 function pageHtml() {
-  const token = getServerToken();
+  const token = isHostedReadOnly() ? null : getServerToken();
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -591,7 +614,7 @@ function pageHtml() {
 </head>
 <body>
 <div id="root"></div>
-<script>window.__FORGE_TOKEN__=${JSON.stringify(token)};</script>
+${token === null ? '' : `<script>window.__FORGE_TOKEN__=${JSON.stringify(token)};</script>`}
 <script src="/assets/main.js" defer></script>
 </body>
 </html>`;

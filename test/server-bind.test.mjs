@@ -103,3 +103,69 @@ test('parseAllowedHosts retains configured host names for the host-header guard'
     else process.env.UWP_ALLOWED_HOSTS = prev;
   }
 });
+
+// ── Public read-only hosting ────────────────────────────────────────────────
+// The mode that makes the browser UI hostable. Three signals, because two of
+// them get set by anyone wiring up a deployment; the third is the decision.
+
+test('isHostedReadOnly needs all three signals, not two', async () => {
+  const { isHostedReadOnly } = await import('../src/server-bind.mjs');
+  const prev = {
+    UWP_PUBLIC_READONLY: process.env.UWP_PUBLIC_READONLY,
+    UWP_FORGE_TOKEN: process.env.UWP_FORGE_TOKEN,
+    UWP_ALLOWED_HOSTS: process.env.UWP_ALLOWED_HOSTS,
+  };
+  const restore = () => {
+    for (const [k, v] of Object.entries(prev)) {
+      if (v === undefined) delete process.env[k]; else process.env[k] = v;
+    }
+  };
+  try {
+    // SILENCE: the legacy pair alone stays refused, same as the test above pins.
+    delete process.env.UWP_PUBLIC_READONLY;
+    process.env.UWP_FORGE_TOKEN = 'test-secret';
+    process.env.UWP_ALLOWED_HOSTS = 'forge.example.com';
+    assert.equal(isHostedReadOnly(), false);
+
+    // BELL: each missing piece keeps it off.
+    process.env.UWP_PUBLIC_READONLY = '1';
+    delete process.env.UWP_FORGE_TOKEN;
+    assert.equal(isHostedReadOnly(), false, 'no token');
+
+    process.env.UWP_FORGE_TOKEN = 'test-secret';
+    delete process.env.UWP_ALLOWED_HOSTS;
+    assert.equal(isHostedReadOnly(), false, 'no allowed hosts');
+
+    // All three: on.
+    process.env.UWP_ALLOWED_HOSTS = 'forge.example.com';
+    assert.equal(isHostedReadOnly(), true);
+  } finally {
+    restore();
+  }
+});
+
+test('assertPublicBindSafe allows a public bind only in read-only hosted mode', async () => {
+  const { assertPublicBindSafe: assertSafe } = await import('../src/server-bind.mjs');
+  const prev = {
+    UWP_PUBLIC_READONLY: process.env.UWP_PUBLIC_READONLY,
+    UWP_FORGE_TOKEN: process.env.UWP_FORGE_TOKEN,
+    UWP_ALLOWED_HOSTS: process.env.UWP_ALLOWED_HOSTS,
+  };
+  try {
+    process.env.UWP_PUBLIC_READONLY = '1';
+    process.env.UWP_FORGE_TOKEN = 'test-secret';
+    process.env.UWP_ALLOWED_HOSTS = 'forge.example.com';
+    assertSafe({ host: '0.0.0.0', port: 8080 }); // must not throw
+
+    // BELL: drop the decision flag and the blanket refusal returns.
+    delete process.env.UWP_PUBLIC_READONLY;
+    assert.throws(
+      () => assertSafe({ host: '0.0.0.0', port: 8080 }),
+      /public browser hosting is not supported/,
+    );
+  } finally {
+    for (const [k, v] of Object.entries(prev)) {
+      if (v === undefined) delete process.env[k]; else process.env[k] = v;
+    }
+  }
+});
