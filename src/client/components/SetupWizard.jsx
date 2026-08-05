@@ -4,7 +4,7 @@
 // GitHub / WordPress.org. Chakra handles backdrop, focus trap and Escape.
 import { useState, useEffect, useId, useRef } from 'react';
 import { useTheme } from 'next-themes';
-import { fetchJSON, apiFetch, useCore, connectorStatus } from '../core.jsx';
+import { fetchJSON, apiFetch, useCore, connectorStatus, isReadOnly } from '../core.jsx';
 import { currentBrowser, BROWSER_NAMES } from '../browser.js';
 import { LOGO_FULL, LOGO_WHITE } from '../brand.js';
 import { useI18n, __, availableLocales, LOCALE_NAMES, LOCALE_FLAGS } from '../i18n.jsx';
@@ -551,8 +551,17 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
               <Tabs.Root orientation="vertical" value={tab} onValueChange={(e) => setTab(e.value)} variant="plain" display="flex" w="full" flex="1" minH="0">
                 <Tabs.List flex="none" minW="12.5rem" bg="ui.sunk" borderRightWidth="1px" borderColor="ui.border" p="3" gap="0.5" display="flex" flexDirection="column" alignItems="stretch">
                   <TabItem value="general" icon={ICON_SLIDERS} label={t('General')} />
-                  <TabItem value="connectors" icon={ICON_PLUG} label={t('Connectors')} />
-                  <TabItem value="updates" icon={ICON_REFRESH} label={t('Updates')} />
+                  {/* Hidden on a public read-only instance: every action in
+                      this tab is a POST or DELETE the server refuses, and the
+                      credentials it asks for belong to the operator's warm-up
+                      job, not to a visitor. Offering them would be a form that
+                      cannot submit. */}
+                  {!isReadOnly() && (
+                    <TabItem value="connectors" icon={ICON_PLUG} label={t('Connectors')} />
+                  )}
+                  {!isReadOnly() && (
+                    <TabItem value="updates" icon={ICON_REFRESH} label={t('Updates')} />
+                  )}
                   <TabItem value="help" icon={ICON_HELP} label={t('Help')} />
                   <TabItem value="credits" icon={ICON_HEART} label={t('Credits')} />
                 </Tabs.List>
@@ -599,6 +608,7 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                     </Stack>
                   </Tabs.Content>
 
+                  {!isReadOnly() && (
                   <Tabs.Content value="connectors" mt="0">
                     <TabTitle>{t('Connectors')}</TabTitle>
                     <TabIntro>{t('Your plugins get their data from here. GitHub and WordPress.org power every plugin. Connect Claude Code, Claude Desktop or Codex so you can query AI Forge straight from your AI.')}</TabIntro>
@@ -621,6 +631,11 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                     </Stack>
                   </Tabs.Content>
 
+                  )}
+
+                  {/* Self-update is a POST the hosted server refuses, and
+                      updating a hosted instance is the deploy's job anyway. */}
+                  {!isReadOnly() && (
                   <Tabs.Content value="updates" mt="0">
                     <TabTitle>{t('Updates')}</TabTitle>
                     <TabIntro>{t('Updates come from the public GitHub repo. Nothing installs by itself. Check when you want, then install with one click.')}</TabIntro>
@@ -667,6 +682,8 @@ export default function SetupWizard({ status, refreshStatus, open, initialTab = 
                     )}
                     <Link href={REPO_URL + '/releases'} target="_blank" rel="noopener" display="inline-block" mt="4" fontSize="0.75rem" color="ui.primary" fontWeight="600">{t('All releases ↗')}</Link>
                   </Tabs.Content>
+
+                  )}
 
                   <Tabs.Content value="help" mt="0">
                     <TabTitle>{t('Help')}</TabTitle>

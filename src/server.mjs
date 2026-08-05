@@ -616,7 +616,7 @@ function pageHtml() {
 </head>
 <body>
 <div id="root"></div>
-<script>window.__FORGE_BASE__=${JSON.stringify(base)};</script>
+<script>window.__FORGE_BASE__=${JSON.stringify(base)};window.__FORGE_READONLY__=${isHostedReadOnly() ? 'true' : 'false'};</script>
 ${token === null ? '' : `<script>window.__FORGE_TOKEN__=${JSON.stringify(token)};</script>`}
 <script src="${base}/assets/main.js" defer></script>
 </body>
