@@ -39,6 +39,7 @@ import {
   isAllowedHost,
   isPublicBind,
   isHostedReadOnly,
+  basePath,
 } from './server-bind.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
 import { clearCaches } from './lib/wp-profiles.mjs';
@@ -603,19 +604,21 @@ function readBodyBuffer(req) {
 // than trusting this alone.
 function pageHtml() {
   const token = isHostedReadOnly() ? null : getServerToken();
+  const base = basePath();
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UnleashWP AI Forge</title>
-<link rel="icon" type="image/svg+xml" href="/brand/bulb.svg">
+<link rel="icon" type="image/svg+xml" href="${base}/brand/bulb.svg">
 <style>${FONT_FACE_CSS}</style>
 </head>
 <body>
 <div id="root"></div>
+<script>window.__FORGE_BASE__=${JSON.stringify(base)};</script>
 ${token === null ? '' : `<script>window.__FORGE_TOKEN__=${JSON.stringify(token)};</script>`}
-<script src="/assets/main.js" defer></script>
+<script src="${base}/assets/main.js" defer></script>
 </body>
 </html>`;
 }

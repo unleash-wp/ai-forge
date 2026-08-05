@@ -169,3 +169,25 @@ test('assertPublicBindSafe allows a public bind only in read-only hosted mode', 
     }
   }
 });
+
+test('basePath normalises whatever shape the operator writes', async () => {
+  const { basePath } = await import('../src/server-bind.mjs');
+  const prev = process.env.UWP_BASE_PATH;
+  try {
+    // Local `uwp serve` owns its root: no prefix, and nothing to strip.
+    delete process.env.UWP_BASE_PATH;
+    assert.equal(basePath(), '');
+    process.env.UWP_BASE_PATH = '/';
+    assert.equal(basePath(), '');
+
+    // Hosted under lumo-pro. All four spellings mean the same mount point, and
+    // a trailing slash would produce '//assets/main.js' in the shell.
+    for (const raw of ['/forge', 'forge', '/forge/', 'forge/']) {
+      process.env.UWP_BASE_PATH = raw;
+      assert.equal(basePath(), '/forge', `for ${JSON.stringify(raw)}`);
+    }
+  } finally {
+    if (prev === undefined) delete process.env.UWP_BASE_PATH;
+    else process.env.UWP_BASE_PATH = prev;
+  }
+});

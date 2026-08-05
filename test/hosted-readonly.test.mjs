@@ -67,3 +67,19 @@ test('SILENCE: reads still work, which is the entire point of hosting it', async
   const body = await res.json();
   assert.ok(Array.isArray(body.plugins));
 });
+
+test('BELL: mounted under a prefix, the shell points every URL at it', async () => {
+  // The proxy strips /forge before forwarding, so this server's own routing
+  // never sees the prefix -- but the browser does, and an unprefixed
+  // /assets/main.js would hit lumo-pro instead of Forge and 404.
+  process.env.UWP_BASE_PATH = '/forge';
+  try {
+    const res = await fetch(`${base}/`);
+    const html = await res.text();
+    assert.ok(html.includes('src="/forge/assets/main.js"'), 'bundle URL is prefixed');
+    assert.ok(html.includes('href="/forge/brand/bulb.svg"'), 'icon URL is prefixed');
+    assert.ok(html.includes('window.__FORGE_BASE__="/forge"'), 'client learns the base');
+  } finally {
+    delete process.env.UWP_BASE_PATH;
+  }
+});

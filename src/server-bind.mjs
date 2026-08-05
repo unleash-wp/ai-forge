@@ -30,6 +30,24 @@ export function parseAllowedHosts() {
     .filter(Boolean);
 }
 
+/**
+ * Path prefix this instance is served under, '' when it owns its own root.
+ *
+ * A hosted Forge sits behind lumo-pro at mcp.unleash-wp.com/forge/, because it
+ * is the same product with a graphical face rather than a second one. The proxy
+ * strips the prefix before forwarding, so routing here never sees it -- only
+ * the HTML shell needs it, for asset URLs and for the base the client resolves
+ * its /api calls against.
+ *
+ * Normalised so the value is either '' or '/something' with no trailing slash;
+ * '/forge/' and 'forge' both mean the same thing to whoever sets the variable.
+ */
+export function basePath() {
+  const raw = (process.env.UWP_BASE_PATH || '').trim();
+  if (!raw || raw === '/') return '';
+  return `/${raw.replace(/^\/+/, '').replace(/\/+$/, '')}`;
+}
+
 /** Host header check: loopback names always pass; deployed names need UWP_ALLOWED_HOSTS. */
 export function isAllowedHost(req, allowedHosts = parseAllowedHosts()) {
   let host = (req.headers.host || '').toLowerCase();
