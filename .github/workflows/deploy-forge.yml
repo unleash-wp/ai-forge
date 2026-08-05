@@ -1,13 +1,13 @@
 name: Deploy hosted Forge (Mittwald)
 
-# The public browser UI at mcp.unleash-wp.com/forge.
+# The public browser UI at mcp.unleash-wp.com.
 #
 # AI Forge is free for everyone, so this deploys the SAME package users run
 # locally -- no hosted fork, no second codebase. What differs is only the
 # environment: UWP_PUBLIC_READONLY=1 withholds the server token from the shell
-# and disables every mutating route, UWP_BASE_PATH tells the shell it is mounted
-# under /forge, and UWP_OFFLINE=1 keeps customer traffic from fanning out to
-# wp.org and GitHub.
+# and disables every mutating route, and UWP_OFFLINE=1 keeps customer traffic
+# from fanning out to wp.org and GitHub. Forge answers at the ROOT: the address
+# a person types is the product, with no path segment to explain.
 #
 # Runs after CI on main, never racing a red build, exactly like the lumo-pro
 # deploy it sits beside on the same server.
@@ -205,11 +205,12 @@ jobs:
                  exit 1
                fi
 
-               echo '==> Health check through the public mount'
-               # Probed the way a visitor reaches it, not the way the process
-               # describes itself: through lumo-pro at /forge. A Forge that is
-               # up while the proxy is misconfigured is still a broken product.
-               BODY=\$(curl -fsS -m 15 \"http://127.0.0.1:\${HEALTH_PORT}/forge/\")
+               echo '==> Health check the way a visitor reaches it'
+               # Through lumo-pro at the root, not the Forge port: a Forge that
+               # is up while the proxy is misconfigured is still a broken
+               # product. Accept: text/html is what makes the root serve the UI
+               # rather than the JSON index for agents.
+               BODY=\$(curl -fsS -m 15 -H 'Accept: text/html' \"http://127.0.0.1:\${HEALTH_PORT}/\")
                echo \"\$BODY\" | grep -q 'id=\"root\"'
                # The single line that would make hosting unsafe. If the shell
                # ever ships the server token again, every visitor can install a
@@ -224,7 +225,7 @@ jobs:
                # log line and carries on, so a broken install looks exactly like
                # a healthy instance from outside -- only quieter. Ask the server
                # which plugins it has, and compare against what was deployed.
-               PLUGINS=\$(curl -fsS -m 15 \"http://127.0.0.1:\${HEALTH_PORT}/forge/api/plugins\")
+               PLUGINS=\$(curl -fsS -m 15 \"http://127.0.0.1:\${HEALTH_PORT}/api/plugins\")
                for id in \$(ls ~/.config/uwp-ai-forge/plugins); do
                  echo \"\$PLUGINS\" | grep -q \"\\\"\$id\\\"\" || {
                    echo \"!! plugin '\$id' was deployed but the server is not serving it\"; exit 1; }

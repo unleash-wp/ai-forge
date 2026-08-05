@@ -119,5 +119,7 @@ test('the deploy installs the manifest and verifies it afterwards', { skip: !exi
   const workflow = readFileSync(workflowPath, 'utf8');
   assert.ok(workflow.includes('deploy/hosted-plugins.json'), 'the deploy reads the manifest');
   assert.ok(workflow.includes('.config/uwp-ai-forge/plugins'), 'it syncs to the user plugin dir');
-  assert.ok(workflow.includes('/forge/api/plugins'), 'it asks the server what it serves');
+  // Through lumo-pro at the root, not the Forge port: Forge answers at the
+  // root now, so the path a visitor uses is the path the deploy must check.
+  assert.ok(workflow.includes('/api/plugins'), 'it asks the server what it serves');
 });
