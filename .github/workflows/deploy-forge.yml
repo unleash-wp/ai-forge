@@ -180,13 +180,35 @@ jobs:
                # so restarting the pair is how a new Forge bundle goes live.
                echo '==> Restarting the app (MCP + Forge)'
                mittnitectl job restart node
-               sleep 6
+
+               # Wait for readiness rather than guessing at it. A fixed sleep
+               # was wrong twice: the supervisor now starts two children and
+               # the MCP server opens three databases and runs three migration
+               # sets first, so six seconds passed on a quiet run and failed on
+               # a busy one. A deploy that reports failure because it asked too
+               # early teaches people to ignore it.
+               echo '==> Waiting for the app to answer'
+               # PORT is injected into the job, not into an SSH shell, so the
+               # fallback is what usually applies here.
+               HEALTH_PORT=\"\${PORT:-3000}\"
+               ready=0
+               for i in \$(seq 1 30); do
+                 if curl -fsS -m 3 \"http://127.0.0.1:\${HEALTH_PORT}/health\" >/dev/null 2>&1; then
+                   ready=1
+                   echo \"   up after \${i}s\"
+                   break
+                 fi
+                 sleep 1
+               done
+               if [ \"\$ready\" -ne 1 ]; then
+                 echo '!! the app did not answer /health within 30s'
+                 exit 1
+               fi
 
                echo '==> Health check through the public mount'
                # Probed the way a visitor reaches it, not the way the process
                # describes itself: through lumo-pro at /forge. A Forge that is
                # up while the proxy is misconfigured is still a broken product.
-               HEALTH_PORT=\"\${PORT:-3000}\"
                BODY=\$(curl -fsS -m 15 \"http://127.0.0.1:\${HEALTH_PORT}/forge/\")
                echo \"\$BODY\" | grep -q 'id=\"root\"'
                # The single line that would make hosting unsafe. If the shell
