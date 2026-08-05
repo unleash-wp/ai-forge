@@ -123,7 +123,7 @@ jobs:
           # contains two. Split it by hand and pass the user with -l.
           SSH_HOST="${SSH_TARGET##*@}"
           SSH_USER="${SSH_TARGET%@*}"
-          E="ssh -i ~/.ssh/deploy_key -l ${SSH_USER} -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=25"
+          E="ssh -i $HOME/.ssh/deploy_key -l ${SSH_USER} -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=25"
           # rsync creates only the LAST path segment, so pre-create the tree.
           # The user plugin dir is where loadPlugins() looks for anything not
           # bundled with the package: XDG_CONFIG_HOME/uwp-ai-forge/plugins.
@@ -173,9 +173,14 @@ jobs:
                  exit 1
                fi
 
-               echo '==> Restarting'
-               mittnitectl job restart forge
-               sleep 5
+               # The job is 'node', not 'forge'. This platform does not allow a
+               # second mittnite job: /etc/mittnite.d/ is root-owned and
+               # node.hcl is read-only, verified on the server. Forge runs as a
+               # sibling under lumo-pro's scripts/start-hosted.mjs supervisor,
+               # so restarting the pair is how a new Forge bundle goes live.
+               echo '==> Restarting the app (MCP + Forge)'
+               mittnitectl job restart node
+               sleep 6
 
                echo '==> Health check through the public mount'
                # Probed the way a visitor reaches it, not the way the process

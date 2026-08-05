@@ -67,7 +67,7 @@ test('the steps that must reach the server are inside the argument', { skip: !ex
   for (const required of [
     'npm install --omit=dev',
     'mv dist.incoming dist',
-    'mittnitectl job restart forge',
+    'mittnitectl job restart node',
     '__FORGE_TOKEN__',
     'FORGE DEPLOY OK',
   ]) {
