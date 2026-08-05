@@ -79,3 +79,45 @@ test('SILENCE: an escaped quote is allowed', () => {
   assert.deepEqual(unescapedQuotes('HEALTH_PORT=\\"\\${PORT:-3000}\\"'), []);
   assert.equal(unescapedQuotes('# with "|| true" and').length, 2);
 });
+
+// ── The hosted plugin set ───────────────────────────────────────────────────
+
+const manifestPath = join(repoRoot, 'deploy/hosted-plugins.json');
+
+test('the hosted plugin manifest pins every version', { skip: !existsSync(manifestPath) }, () => {
+  // 'latest' would let the hosted free tier change under us between deploys.
+  // Visitors judge the product by what they see; it should change when someone
+  // decides it changes, not when an unrelated publish happens.
+  const { plugins } = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  assert.ok(Array.isArray(plugins) && plugins.length > 0, 'the manifest lists plugins');
+
+  for (const p of plugins) {
+    assert.ok(p.id, 'each entry has an id');
+    assert.match(p.repo, /^[^/\s]+\/[^/\s]+$/, `${p.id} names a GitHub owner/repo`);
+    assert.ok(p.ref, `${p.id} names a ref`);
+    assert.ok(p.why, `${p.id} says why it is on a public instance`);
+  }
+});
+
+test('the manifest sources plugins the way Forge itself installs them', { skip: !existsSync(manifestPath) }, () => {
+  // Forge's installer accepts github:owner/repo and nothing else
+  // (parseSource in src/installer.mjs). Sourcing the hosted set from npm
+  // instead would ship a different artifact than a user gets -- and for
+  // @unleashwp/lumo it would ship no plugin at all: that package's `files`
+  // omits plugin.json and server.mjs, verified by unpacking 0.4.1.
+  const { plugins } = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  for (const p of plugins) {
+    assert.ok(!p.package, `${p.id} must not be sourced from npm`);
+  }
+});
+
+test('the deploy installs the manifest and verifies it afterwards', { skip: !existsSync(manifestPath) }, () => {
+  // Two halves that have to stay together: fetching the plugins, and asking
+  // the running server whether it is actually serving them. loadPlugins skips
+  // a broken plugin with a log line and carries on, so without the second half
+  // a failed install looks exactly like a healthy instance.
+  const workflow = readFileSync(workflowPath, 'utf8');
+  assert.ok(workflow.includes('deploy/hosted-plugins.json'), 'the deploy reads the manifest');
+  assert.ok(workflow.includes('.config/uwp-ai-forge/plugins'), 'it syncs to the user plugin dir');
+  assert.ok(workflow.includes('/forge/api/plugins'), 'it asks the server what it serves');
+});
