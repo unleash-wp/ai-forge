@@ -8,6 +8,8 @@ import { readFileSync, writeFileSync, mkdirSync, unlinkSync, existsSync } from '
 import { homedir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { timeoutSignal } from '../lib/net.mjs';
+// Env-only predicate, no imports of its own, so this stays acyclic.
+import { isHostedReadOnly } from '../server-bind.mjs';
 
 // Local config file for a saved GitHub token - same owner-only dir as the Trac
 // cookie, outside any repo so it is never committed by accident.
@@ -125,6 +127,52 @@ export function nextLink(linkHeader) {
   return m ? m[1] : null;
 }
 
+/**
+ * When GitHub's quota comes back, as a UTC clock time, or null.
+ *
+ * `x-ratelimit-reset` is unix seconds. A wall-clock time is the only part of a
+ * rate-limit message a reader can act on: "try again shortly" is a guess, and a
+ * visitor who reloads on that guess spends the recovered quota immediately.
+ */
+export function resetClock(headers, now = Date.now()) {
+  const raw = Number(headers?.get?.('x-ratelimit-reset'));
+  if (!Number.isFinite(raw) || raw <= 0) return null;
+  const at = raw * 1000;
+  // A reset already past, or absurdly far ahead, means a clock nobody should
+  // quote at a visitor. GitHub's window is an hour.
+  if (at <= now || at - now > 2 * 60 * 60 * 1000) return null;
+  return new Date(at).toISOString().slice(11, 16) + ' UTC';
+}
+
+/**
+ * What to tell the reader about a 403, given who they are.
+ *
+ * The message used to say `gh auth login` whenever no token was set. On a
+ * hosted instance nobody reading it has a shell there: the visitor cannot log
+ * in, the operator's token belongs in the server's environment, and the
+ * instruction sends somebody to a command that would do nothing for the page in
+ * front of them. Same shape as requiresWporgCookie in server-bind.mjs, which
+ * exists because a gate told public readers to open Setup and sign in.
+ *
+ * Exported so it can be tested without a network call.
+ */
+export function rateLimitHint({ hasToken, hostedReadOnly, resetsAt }) {
+  const when = resetsAt ? `resets at ${resetsAt}` : 'resets within the hour';
+
+  if (hostedReadOnly) {
+    // No instruction, because there is none this reader can carry out. What is
+    // useful is that the site is not broken and which parts still answer.
+    return (
+      ` (this window is not cached yet and the shared GitHub quota for this site is spent, ${when};` +
+      ' windows already cached still answer)'
+    );
+  }
+  if (hasToken) {
+    return ` (GitHub rate limit reached even at 5000/h, ${when})`;
+  }
+  return ` (rate limit at 60/h without a token, ${when}; run \`gh auth login\` for 5000/h)`;
+}
+
 // Authenticated GET returning { data, link }. Throws on non-2xx with a hint that
 // distinguishes rate limits (403) from missing repos/branches (404).
 export async function githubFetch(url) {
@@ -136,9 +184,11 @@ export async function githubFetch(url) {
   if (!res.ok) {
     let hint = '';
     if (res.status === 403) {
-      hint = resolveToken().token
-        ? ' (GitHub rate limit reached even at 5000/h - resets within the hour, try again shortly)'
-        : ' (rate limit - run `gh auth login` for 5000/h)';
+      hint = rateLimitHint({
+        hasToken: Boolean(resolveToken().token),
+        hostedReadOnly: isHostedReadOnly(),
+        resetsAt: resetClock(res.headers),
+      });
     }
     if (res.status === 404) hint = ' (repo or branch not found)';
     throw new Error(`GitHub ${res.status} ${res.statusText}${hint}: ${url}`);
