@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Flex, Heading, HStack, Popover, Portal, SimpleGrid, Spinner, Stack, Skeleton, Text, chakra } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { useCore, fetchJSON } from '../../src/client/core.jsx';
+import { useCore, fetchJSON, isReadOnly } from '../../src/client/core.jsx';
 import { TextInput, Select, DateRangePicker } from '../../src/client/ui';
 import { CoreIcon, GutenbergIcon } from '../../src/client/wp-icons.jsx';
 import { donutSvg } from './lib/charts.mjs';
@@ -779,7 +779,12 @@ export default function Contributors() {
               Trac this window: <chakra.b color="ui.heading">{report.tickets.opened}</chakra.b> tickets opened · <chakra.b color="ui.heading">{report.tickets.closed}</chakra.b> closed{report.tickets.closedApprox ? ' (by last change; Trac has no close-date field)' : ''}.
             </Text>
           ) : report.tickets === null ? (
-            <Text color="ui.muted" fontSize="0.75rem" mb="6" lineHeight="1.5">Connect WordPress.org in Settings to see Trac ticket activity (opened / closed).</Text>
+            // On a read-only instance Settings has no Connectors tab and every
+            // route that would store the cookie is refused, so pointing a visitor
+            // there would be the same dead end the setup wizard used to be.
+            isReadOnly() ? <Box mb="6" /> : (
+              <Text color="ui.muted" fontSize="0.75rem" mb="6" lineHeight="1.5">Connect WordPress.org in Settings to see Trac ticket activity (opened / closed).</Text>
+            )
           ) : <Box mb="6" />}
 
           {report.timeline && report.timeline.length > 1 && (

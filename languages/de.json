@@ -345,5 +345,6 @@
   "Copy failed": "Kopieren fehlgeschlagen",
   "Paste a token first.": "Zuerst ein Token einfügen.",
   "Paste the cookie first.": "Zuerst das Cookie einfügen.",
-  "+%s more, refine search": "+%s weitere, Suche verfeinern"
+  "+%s more, refine search": "+%s weitere, Suche verfeinern",
+  "This instance is rate limited by GitHub right now. Try again in a little while.": "Diese Instanz ist bei GitHub gerade im Anfragelimit. Versuch es in einer Weile noch einmal."
 }
