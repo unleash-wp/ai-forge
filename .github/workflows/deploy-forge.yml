@@ -210,11 +210,34 @@ jobs:
                # is up while the proxy is misconfigured is still a broken
                # product. Accept: text/html is what makes the root serve the UI
                # rather than the JSON index for agents.
-               BODY=\$(curl -fsS -m 15 -H 'Accept: text/html' \"http://127.0.0.1:\${HEALTH_PORT}/\")
-               echo \"\$BODY\" | grep -q 'id=\"root\"'
+               #
+               # Retried against a hard deadline, because two deploys answer for
+               # this one URL: lumo-pro owns the root, Forge owns what is served
+               # there, and either can be mid-restart while the other finishes.
+               # Three runs failed exactly that way on 2026-08-05, all after the
+               # bundle was already in place. Sixty seconds, then the deploy
+               # fails: a check that waits as long as it takes cannot fail, and a
+               # check that cannot fail is not a check.
+               DEADLINE=\$(( \$(date +%s) + 60 ))
+               served=0
+               while [ \$(date +%s) -lt \$DEADLINE ]; do
+                 BODY=\$(curl -fsS -m 15 -H 'Accept: text/html' \"http://127.0.0.1:\${HEALTH_PORT}/\" || true)
+                 if echo \"\$BODY\" | grep -q 'id=\"root\"'; then
+                   served=1
+                   echo '   the root served the Forge shell'
+                   break
+                 fi
+                 sleep 3
+               done
+               if [ \"\$served\" -ne 1 ]; then
+                 echo '!! the root did not serve the Forge shell within 60s'
+                 exit 1
+               fi
                # The single line that would make hosting unsafe. If the shell
                # ever ships the server token again, every visitor can install a
-               # plugin, which is code execution in this process.
+               # plugin, which is code execution in this process. Judged once, on
+               # the body that answered: a leaked token is not a condition that
+               # improves if you wait for it.
                if echo \"\$BODY\" | grep -q '__FORGE_TOKEN__'; then
                  echo '!! the hosted shell contains the server token; refusing to call this a success'
                  exit 1

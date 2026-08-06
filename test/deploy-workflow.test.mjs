@@ -123,3 +123,35 @@ test('the deploy installs the manifest and verifies it afterwards', { skip: !exi
   // root now, so the path a visitor uses is the path the deploy must check.
   assert.ok(workflow.includes('/api/plugins'), 'it asks the server what it serves');
 });
+
+// ── The visitor check must survive the order two deploys happen in ──────────
+//
+// The check asks lumo-pro at the root, but lumo-pro is deployed from its own
+// repo. Three runs failed on 2026-08-05 because Forge's deploy finished at
+// 22:57 and the lumo-pro deploy that made the root serve HTML at all finished
+// at 22:58. The bundle was already on the server every time; only the
+// confirmation was too early.
+//
+// Retrying is the fix, but a retry without an end is how a check stops being
+// one, so the deadline is part of the rule.
+
+test('the visitor check retries against a hard deadline', { skip: !existsSync(workflowPath) }, () => {
+  const script = sshScriptLines().join('\n');
+  assert.ok(/DEADLINE=.*date \+%s.*\+ 60/.test(script), 'the retry window is bounded to 60s');
+  assert.ok(script.includes('while [ \\$(date +%s) -lt \\$DEADLINE ]'), 'it retries until that deadline');
+  assert.ok(
+    script.includes('the root did not serve the Forge shell within 60s'),
+    'running out of the window fails the deploy',
+  );
+});
+
+test('BELL: a leaked server token is judged once, not waited out', { skip: !existsSync(workflowPath) }, () => {
+  // Inside the retry loop, a shell that ships the token would simply be fetched
+  // again until it did not, or until the window closed with a different error.
+  // The token check has to sit after the loop has settled on a body.
+  const script = sshScriptLines().join('\n');
+  const loopEnd = script.indexOf('the root did not serve the Forge shell within 60s');
+  const tokenCheck = script.indexOf('__FORGE_TOKEN__');
+  assert.ok(loopEnd > -1 && tokenCheck > -1, 'both parts are present');
+  assert.ok(tokenCheck > loopEnd, 'the token check runs after the retry loop, not inside it');
+});
