@@ -85,6 +85,29 @@ export function isHostedReadOnly() {
   return parseAllowedHosts().length > 0;
 }
 
+/**
+ * Whether a tool data route must refuse until wordpress.org is connected.
+ *
+ * The gate exists because Core ticket counts are wrong without a logged-in Trac
+ * session, and the message it returns tells the reader to open Setup and sign
+ * in. On a public read-only instance that instruction cannot be followed: every
+ * route that would store a cookie is refused, and the credential belongs to the
+ * operator's warm-up job rather than to a visitor. The gate would be a
+ * permanent 403 on the product's own front page, which is not a gate but an
+ * outage.
+ *
+ * What it withholds there is small and already honest: a cookie adds Trac
+ * ticket activity, which is opt-in and degrades to null rather than to a wrong
+ * number (`ticketActivity` in lib/wp-tickets.mjs). What is genuinely
+ * approximate on an offline host is the GitHub-to-wp.org identity merge with a
+ * cold cache, and the report says so on its own (`identityGap`).
+ */
+export function requiresWporgCookie(route, { hasCookie, hostedReadOnly }) {
+  if (route.open) return false; // not every plugin's data comes from wordpress.org
+  if (hostedReadOnly) return false;
+  return !hasCookie;
+}
+
 /** Refuse to expose the browser UI until it has real hosted-user authentication. */
 export function assertPublicBindSafe(listen) {
   if (!isPublicBind(listen.host)) return;

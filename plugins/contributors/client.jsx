@@ -769,6 +769,11 @@ export default function Contributors() {
             <StatCard n={co ? co.byCompany.length : report.totals.coreCommits + report.totals.gutenbergCommits} label={co ? 'Companies' : 'Total changes'} />
           </SimpleGrid>
           <Text color="ui.muted" fontSize="0.75rem" pt="2" mb="1.5" lineHeight="1.5">Counts only merged changes (Core changesets, Gutenberg merges). Open PRs, reverts and release plumbing are excluded.</Text>
+          {report.identityGap ? (
+            <Text color="ui.muted" fontSize="0.75rem" mb="1.5" lineHeight="1.5">
+              The contributor count is an upper bound: <chakra.b color="ui.heading">{report.identityGap}</chakra.b> GitHub {report.identityGap === 1 ? 'login is' : 'logins are'} not yet matched to a wordpress.org account, so one person can appear twice.
+            </Text>
+          ) : null}
           {report.tickets ? (
             <Text color="ui.muted" fontSize="0.75rem" mb="6" lineHeight="1.5">
               Trac this window: <chakra.b color="ui.heading">{report.tickets.opened}</chakra.b> tickets opened · <chakra.b color="ui.heading">{report.tickets.closed}</chakra.b> closed{report.tickets.closedApprox ? ' (by last change; Trac has no close-date field)' : ''}.

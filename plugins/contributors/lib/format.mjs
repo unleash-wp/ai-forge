@@ -42,6 +42,14 @@ function tableSections(report, top) {
   return lines;
 }
 
+// Said wherever the contributor count is shown while some GitHub logins are
+// still unmatched: the same person can appear twice, so the number is an upper
+// bound. One sentence, and it names the fix, because the reader can do nothing
+// about it but the operator can.
+export function identityGapNote(n) {
+  return `_The contributor count is an upper bound: ${n} GitHub ${n === 1 ? 'login is' : 'logins are'} not yet matched to a wordpress.org account, so one person can appear twice. It settles once the profile cache has been warmed._`;
+}
+
 // Render the report as Markdown, capping each table to `top` rows (keeps the
 // output within an AI's context budget).
 export function toMarkdown(report, { top = 25 } = {}) {
@@ -51,6 +59,7 @@ export function toMarkdown(report, { top = 25 } = {}) {
     `## Contributors · ${w.label}`, '',
     `**${t.contributors}** contributors · ${t.coreCommits} Core changes · ${t.gutenbergCommits} Gutenberg changes  `,
     `_Window: ${w.since} to ${w.until} (Core + Gutenberg)_`, '',
+    ...(report.identityGap ? [identityGapNote(report.identityGap), ''] : []),
     ...tableSections(report, top),
   ].join('\n');
 }

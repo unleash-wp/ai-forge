@@ -39,6 +39,7 @@ import {
   isAllowedHost,
   isPublicBind,
   isHostedReadOnly,
+  requiresWporgCookie,
   basePath,
 } from './server-bind.mjs';
 import { wporgAvailable, wporgListTools, wporgExecute, mcpText } from './mcp-wporg.mjs';
@@ -493,9 +494,12 @@ export function startServer({ port, quiet = false, internal = false, bind } = {}
           // Mandatory wordpress.org gate: a tool data route returns counts that are
           // wrong without a logged-in Trac session, so refuse until connected. The
           // setup/connector routes above stay open so the user can connect first.
-          // Routes marked `open: true` opt out. Not every plugin's data comes
-          // from wordpress.org (e.g. Lumo answers from its local snapshot).
-          if (!r.open && !resolveCookie()) { json(res, 403, { error: WPORG_HTTP_MSG }); return; }
+          // The rule, including why a hosted read-only instance is exempt, lives
+          // in server-bind.mjs where it can be tested without a network.
+          if (requiresWporgCookie(r, { hasCookie: !!resolveCookie(), hostedReadOnly: isHostedReadOnly() })) {
+            json(res, 403, { error: WPORG_HTTP_MSG });
+            return;
+          }
           await r.handler(req, res, url, {
             json,
             query: url.searchParams,

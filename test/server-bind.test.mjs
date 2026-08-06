@@ -191,3 +191,35 @@ test('basePath normalises whatever shape the operator writes', async () => {
     else process.env.UWP_BASE_PATH = prev;
   }
 });
+
+// ---------------------------------------------------------------------------
+// The wordpress.org gate must not become an outage on the hosted instance.
+//
+// Measured on the live server before this: /api/report, /api/branches and
+// /api/devnotes all answered 403 "wordpress.org connection required. Open Setup
+// and sign in", while the routes that would store that cookie were refused as
+// mutating. A visitor could follow the instruction nowhere, and the operator's
+// cache was never the thing being asked for.
+// ---------------------------------------------------------------------------
+
+test('BELL: a hosted read-only instance serves data routes without a cookie', async () => {
+  const { requiresWporgCookie } = await import('../src/server-bind.mjs');
+  assert.equal(
+    requiresWporgCookie({ path: '/api/report' }, { hasCookie: false, hostedReadOnly: true }),
+    false,
+  );
+});
+
+test('SILENCE: a local instance without a cookie still refuses', async () => {
+  const { requiresWporgCookie } = await import('../src/server-bind.mjs');
+  assert.equal(
+    requiresWporgCookie({ path: '/api/report' }, { hasCookie: false, hostedReadOnly: false }),
+    true,
+  );
+});
+
+test('SILENCE: a connected local instance is not gated, and open routes never are', async () => {
+  const { requiresWporgCookie } = await import('../src/server-bind.mjs');
+  assert.equal(requiresWporgCookie({ path: '/api/report' }, { hasCookie: true, hostedReadOnly: false }), false);
+  assert.equal(requiresWporgCookie({ path: '/api/lumo', open: true }, { hasCookie: false, hostedReadOnly: false }), false);
+});

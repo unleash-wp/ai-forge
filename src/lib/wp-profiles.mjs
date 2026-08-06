@@ -159,6 +159,20 @@ async function canonicalSlug(name, slugCache) {
   return slugCache[name] || name;
 }
 
+// How many GitHub logins resolveIdentities cannot fold onto a wp.org identity.
+//
+// Zero unless the cache is missing them AND fetching is off, which is exactly an
+// offline host that has not been warmed yet. Every unresolved name is a person
+// who may already be in the list under their wp.org username, so the contributor
+// count is an upper bound until the warm-up job has run. Measured on a cold cache
+// under UWP_OFFLINE=1: "t-hamano" and "wildworks" both appeared, one person twice.
+export function unresolvedIdentities(byContributor) {
+  if (!OFFLINE) return 0; // with fetching on, every name resolves or is a real miss
+  const slugCache = loadSlugCache();
+  return [...new Set(byContributor.filter((c) => c.source !== 'core').map((c) => c.name))]
+    .filter((name) => !(name in slugCache)).length;
+}
+
 // Merge a byContributor list by canonical wp.org identity, so the same person
 // credited under a GitHub login (Gutenberg) and a wp.org username (Core) collapses
 // into one entry. Sums props/core/gutenberg, unions their shipped items, sets the
