@@ -3,9 +3,10 @@
 // under it. Every piece is its own component in ./components/.
 import { useState, useEffect, useCallback } from 'react';
 import { Box, Flex, Heading, Text } from '@chakra-ui/react';
-import { CoreContext, useToast, apiFetch } from './core.jsx';
+import { CoreContext, useToast, apiFetch, isReadOnly } from './core.jsx';
 import { useT } from './i18n.jsx';
 import { applyFilters, doAction, hooks } from './hooks.js';
+import { shouldRunInstaller } from './install-gate.js';
 import REGISTRY from './registry.js';
 import Header from './components/Header.jsx';
 import Rail from './components/Rail.jsx';
@@ -61,7 +62,7 @@ export default function App() {
     refreshStatus();
   }, [loadPluginList, refreshStatus]);
 
-  const installing = status && !status.installed;
+  const installing = shouldRunInstaller(status, isReadOnly());
   useEffect(() => { document.body.classList.toggle('is-installing', !!installing); }, [installing]);
 
   const toggleRail = useCallback(() => setRailCollapsed((c) => { const n = !c; try { localStorage.setItem('forge:rail-collapsed', n ? '1' : '0'); } catch { /* blocked */ } return n; }), []);
