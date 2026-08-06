@@ -771,7 +771,7 @@ export default function Contributors() {
           <Text color="ui.muted" fontSize="0.75rem" pt="2" mb="1.5" lineHeight="1.5">Counts only merged changes (Core changesets, Gutenberg merges). Open PRs, reverts and release plumbing are excluded.</Text>
           {report.identityGap ? (
             <Text color="ui.muted" fontSize="0.75rem" mb="1.5" lineHeight="1.5">
-              The contributor count is an upper bound: <chakra.b color="ui.heading">{report.identityGap}</chakra.b> GitHub {report.identityGap === 1 ? 'login is' : 'logins are'} not yet matched to a wordpress.org account, so one person can appear twice.
+              The contributor count is an upper bound: <chakra.b color="ui.heading">{report.identityGap}</chakra.b> GitHub {report.identityGap === 1 ? 'login is' : 'logins are'} not yet matched to a wordpress.org account, so one person can appear twice. It settles once the profile cache has been warmed.
             </Text>
           ) : null}
           {report.tickets ? (
