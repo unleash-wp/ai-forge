@@ -5,7 +5,7 @@
 // dangerouslySetInnerHTML) styled by the `changelogCss` block below.
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Box, Button, Checkbox as CChk, Flex, Grid, Heading, HStack, Link, Popover, Portal, SimpleGrid, Skeleton, Spinner, Stack, Tabs, Text, chakra } from '@chakra-ui/react';
-import { useCore } from '../../src/client/core.jsx';
+import { useCore, isReadOnly } from '../../src/client/core.jsx';
 import { useT, useI18n, __, currentLocale } from '../../src/client/i18n.jsx';
 import { Button as UButton, Select, Checkbox, TextInput, DateRangePicker } from '../../src/client/ui'; // eslint-disable-line no-unused-vars
 import { coreSvgHtml, gutenbergSvgHtml } from '../../src/client/wp-icons.jsx';
@@ -489,7 +489,12 @@ export default function ChangelogTool() {
       .then((d) => { setData(d); setStatus(''); })
       .catch((err) => {
         const m = err.message || 'request failed';
-        if (/rate limit|\b403\b/i.test(m)) { setStatus(__('GitHub rate limit reached. That is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.')); core.openSetup(); }
+        // A visitor on a read-only instance cannot add a credential and has no
+        // Connectors tab to be sent to, so say what happened and stop there.
+        if (isReadOnly()) setStatus(/rate limit|\b403\b/i.test(m)
+          ? __('This instance is rate limited by GitHub right now. Try again in a little while.')
+          : __('Error: %s', m));
+        else if (/rate limit|\b403\b/i.test(m)) { setStatus(__('GitHub rate limit reached. That is the anonymous 60 requests/hour. Add a GitHub token in Setup (any account, no scopes) for 5000/hour, then try again.')); core.openSetup(); }
         else if (/cookie/i.test(m)) { setStatus(__('Error: %s', m)); core.openSetup(); }
         else setStatus(__('Error: %s', m));
       })
