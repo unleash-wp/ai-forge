@@ -1,5 +1,5 @@
 import { fetchContributors } from '../../../src/lib/wp-contributors.mjs';
-import { companyBreakdown, enrichCommitters, resolveIdentities } from '../../../src/lib/wp-profiles.mjs';
+import { companyBreakdown, enrichCommitters, resolveIdentities, unresolvedIdentities } from '../../../src/lib/wp-profiles.mjs';
 import { ticketActivity } from '../../../src/lib/wp-tickets.mjs';
 import { resolveWindow } from './quarters.mjs';
 
@@ -37,8 +37,13 @@ export async function contributorsReport(opts = {}) {
   // "wildworks") by default, so counts are correct in the UI, CLI and MCP alike.
   // Opt out with identities:false to skip the wp.org slug lookups.
   if (opts.identities !== false) {
+    // Count what cannot be folded BEFORE the merge: on an offline host with a cold
+    // cache the merge keeps a GitHub login and its wp.org username apart, so the
+    // contributor total is an upper bound and the report has to say so.
+    const gap = unresolvedIdentities(data.byContributor);
     report.byContributor = await resolveIdentities(data.byContributor);
     report.totals = { ...report.totals, contributors: report.byContributor.length };
+    if (gap) report.identityGap = gap;
   }
   if (opts.companies) {
     const companies = await companyBreakdown(report.byContributor);
