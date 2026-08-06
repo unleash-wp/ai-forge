@@ -155,3 +155,30 @@ test('BELL: a leaked server token is judged once, not waited out', { skip: !exis
   assert.ok(loopEnd > -1 && tokenCheck > -1, 'both parts are present');
   assert.ok(tokenCheck > loopEnd, 'the token check runs after the retry loop, not inside it');
 });
+
+// ── The warm-up job ─────────────────────────────────────────────────────────
+//
+// It exists to make identityGap go away (unleash-wp/lumo-pro#182). The way it
+// could fail is not by crashing: it could fill a directory nobody reads and
+// report success, which is what happens when the cache path is left to $HOME
+// (lumo-pro#197), or it could run without credentials and warm nothing.
+
+const warmPath = join(repoRoot, '.github/workflows/warm-cache.yml');
+
+test('the warm-up job writes where the app reads', { skip: !existsSync(warmPath) }, () => {
+  const wf = readFileSync(warmPath, 'utf8');
+  assert.ok(wf.includes('UWP_CACHE_DIR='), 'it names the cache directory');
+  assert.ok(wf.includes('data/forge-cache'), 'the same one lumo-pro gives the app');
+  assert.ok(wf.includes('unset UWP_OFFLINE'), 'this job is the one allowed to fetch');
+});
+
+test('BELL: without credentials the warm-up fails instead of reporting success', { skip: !existsSync(warmPath) }, () => {
+  // Proven by running the extracted block: with neither credential it prints
+  // both reasons and exits 1; with both it proceeds. A job that exits 0 having
+  // warmed nothing is the failure this whole stack keeps producing.
+  const wf = readFileSync(warmPath, 'utf8');
+  assert.ok(wf.includes('GITHUB_TOKEN'), 'it checks for the GitHub token');
+  assert.ok(wf.includes('WPORG_TRAC_COOKIE'), 'it checks for the wordpress.org cookie');
+  assert.ok(wf.includes('Nothing was warmed'), 'it says so');
+  assert.ok(/missing.*-ne 0/s.test(wf) && wf.includes('exit 1'), 'and it exits non-zero');
+});

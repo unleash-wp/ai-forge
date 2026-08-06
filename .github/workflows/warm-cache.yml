@@ -1,0 +1,142 @@
+name: Warm the hosted cache
+
+# The hosted instance runs with UWP_OFFLINE=1, so visitor traffic never fans out
+# to wp.org. That keeps Automattic from seeing many clients, and it means the
+# GitHub-login-to-wordpress.org mapping is never fetched while serving. Without
+# it the same person is counted twice and the contributor total is an upper
+# bound; the UI says so, which is honest but not right.
+#
+# This job is the one thing allowed to fetch. It runs with the operator's own
+# credentials, never a visitor's, writes into the directory the app reads, and
+# then gets out of the way.
+#
+# Deliberately small, because it is a bridge. The decided answer is the mirror
+# in unleash-wp/wp-forge-mirror (#1 real data, #2 deploy, #3 point Forge at it),
+# after which no instance needs credentials of its own.
+#
+# Two things must be true on the server before this does anything useful, and
+# the job says so rather than succeeding quietly:
+#   - GITHUB_TOKEN in ~/.config/node/.env (unleash-wp/ai-forge#48). Anonymous is
+#     60 requests an hour for every visitor combined, and warming spends the
+#     same quota visitors need.
+#   - WPORG_TRAC_COOKIE in the same file, or a cookie file at
+#     ~/.config/wp-trac/cookie. The CLI refuses every plugin data command
+#     without it, measured, regardless of UWP_OFFLINE.
+
+on:
+  schedule:
+    # Nightly, well away from the deploy window. Warming is not urgent; being
+    # warm before the next working day is the whole point.
+    - cron: '20 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: warm-cache
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  warm:
+    name: Warm the wp.org and GitHub caches
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          MITTWALD_SSH_KEY: ${{ secrets.MITTWALD_SSH_KEY }}
+          SSH_TARGET: ${{ secrets.MITTWALD_SSH_TARGET }}
+        run: |
+          install -m 700 -d ~/.ssh
+          # A key pasted into a GitHub secret can arrive with literal \n instead
+          # of newlines, or with CRLF. Same handling as the deploy workflow.
+          printf '%s\n' "$MITTWALD_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
+            printf '%b\n' "$MITTWALD_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          fi
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null
+          SSH_HOST="${SSH_TARGET##*@}"
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Warm the cache the app reads
+        env:
+          SSH_TARGET: ${{ secrets.MITTWALD_SSH_TARGET }}
+        # The remote script goes in on stdin, not as a quoted ssh argument. The
+        # deploy beside this one learned the hard way that a single unescaped
+        # quote inside such an argument truncates it and the step still exits 0.
+        # A heredoc cannot lose its tail that way.
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+              -o StrictHostKeyChecking=accept-new -o ConnectTimeout=25 \
+              "${SSH_TARGET}" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+
+          cd ~/forge
+
+          # The app's own cache, named by lumo-pro's supervisor. Filling any
+          # other directory is the failure this job exists to avoid: green here,
+          # unchanged for every visitor. See unleash-wp/lumo-pro#197.
+          export UWP_CACHE_DIR="${FORGE_CACHE_DIR:-$HOME/data/forge-cache}"
+
+          # The operator's credentials live in one place, the file the app is
+          # started with. Read them rather than keeping a second copy in GitHub.
+          if [ -r ~/.config/node/.env ]; then
+            set -a
+            . ~/.config/node/.env
+            set +a
+          fi
+
+          # This job is the opposite of the app: it is allowed to fetch.
+          unset UWP_OFFLINE
+          # Politeness, not speed. Automattic blocking this address would cost
+          # more than a slow night.
+          export UWP_FETCH_RPS="${UWP_FETCH_RPS:-2}"
+
+          missing=0
+          if [ -z "${GITHUB_TOKEN:-}" ]; then
+            echo '!! GITHUB_TOKEN is not set in ~/.config/node/.env'
+            echo '   Anonymous GitHub is 60 requests an hour for every visitor combined.'
+            echo '   See unleash-wp/ai-forge#48.'
+            missing=1
+          fi
+          if [ -z "${WPORG_TRAC_COOKIE:-}" ] && [ ! -s ~/.config/wp-trac/cookie ]; then
+            echo '!! No wordpress.org cookie: neither WPORG_TRAC_COOKIE nor ~/.config/wp-trac/cookie'
+            echo '   Every plugin data command refuses without it, measured.'
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo '!! Nothing was warmed. Set the credentials above, then run this again.'
+            exit 1
+          fi
+
+          # Last full month: the window the "Month in Core" work actually uses,
+          # and the one a visitor is most likely to open.
+          MONTH=$(date -u -d '1 month ago' +%Y-%m 2>/dev/null || date -u -v-1m +%Y-%m)
+
+          echo "==> Warming wordpress.org profiles for ${MONTH}"
+          node bin/ai-forge.mjs contributors ingest-profiles --month "$MONTH"
+
+          echo "==> Warming the commit cache for ${MONTH}"
+          node bin/ai-forge.mjs contributors --month "$MONTH" --json > /dev/null
+
+          echo '==> What is in the cache now'
+          # Effect, not intent: name the directory and show that it has content.
+          ls -la "$UWP_CACHE_DIR"
+          test -s "$UWP_CACHE_DIR/ghslug-cache-v1.json"
+          echo '===== CACHE WARMED ====='
+          REMOTE
+
+      - name: Say what a visitor sees now
+        # The number that decides whether this job did anything: identityGap
+        # gone means the counts are counts again rather than upper bounds.
+        run: |
+          set -euo pipefail
+          GAP=$(curl -fsS -m 120 \
+            'https://mcp.unleash-wp.com/api/contributors?month=2025-10&companies=false&committers=false&tickets=false' \
+            | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const r=JSON.parse(d).report;console.log(r.identityGap ?? 0)})')
+          echo "identityGap on the delivered page: ${GAP}"
+          if [ "$GAP" != "0" ]; then
+            echo "note: still ${GAP} unmatched GitHub logins; the count is an upper bound until this reaches 0"
+          fi
