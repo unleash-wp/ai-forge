@@ -37,11 +37,33 @@ name: Warm the hosted cache
 # app rather than for this job: without it every visitor shares 60 requests an
 # hour, and the instance has hit that ceiling (unleash-wp/ai-forge#48).
 
+# ─── The schedule is OFF, deliberately ───────────────────────────────────────
+#
+# It ran nightly at 03:20 and failed every night on the same line:
+#
+#     GITHUB_TOKEN is not set in ~/.config/node/.env
+#
+# No commit can fix that. It is a value on the server, and until somebody puts
+# it there this job cannot do its work -- so every night produced a red run
+# that said nothing new.
+#
+# That is worse than not running. A pipeline that is always red teaches whoever
+# watches this organisation that red is background noise, and that habit is the
+# precondition for the kind of silent outage the canary in unleash-wp/lumo-pro
+# exists to catch. An intentionally disabled cron is honest; a permanently red
+# one is not.
+#
+# It is NOT deleted, and the difference matters: workflow_dispatch stays, so a
+# hand-started run works the moment the token exists. That is exactly how the
+# 2026-08-07 run described above was made, and it warmed the cache correctly.
+#
+# TO TURN IT BACK ON: put GITHUB_TOKEN in ~/.config/node/.env on the hosted
+# instance (unleash-wp/ai-forge#48), confirm one hand-started run goes green,
+# then uncomment the two lines below -- in that order. Re-enabling it while the
+# token is still missing only restores the nightly red.
 on:
-  schedule:
-    # Nightly, well away from the deploy window. Warming is not urgent; being
-    # warm before the next working day is the whole point.
-    - cron: '20 3 * * *'
+  # schedule:
+  #   - cron: '20 3 * * *'   # nightly, well away from the deploy window
   workflow_dispatch:
 
 concurrency:
