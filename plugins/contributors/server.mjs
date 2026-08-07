@@ -173,6 +173,16 @@ export const commands = [
   {
     name: 'ingest-profiles',
     summary: 'Warm the shared wp.org profile cache for a period, politely. Deploy as a cron with UWP_CACHE_DIR (shared volume) + UWP_FETCH_RPS (e.g. 2); the app then runs read-only with UWP_OFFLINE=1. Run this WITHOUT UWP_OFFLINE.',
+    // No Trac, so no cookie. The `build()` call below asks for companies and
+    // committers and never for tickets, and ticket activity is the only thing in
+    // a report that reads Trac (lib/report.mjs). What this command does fetch is
+    // profiles.wordpress.org, whose GitHub lookup endpoint is public.
+    //
+    // This matters more than an ergonomic detail: this is the job that closes
+    // `identityGap`, and while the CLI required a cookie of every command, the job
+    // could not run at all. The fix for the counts was gated on a credential the
+    // fix does not use.
+    needsWporg: false,
     run: async (args, ctx) => {
       if (OFFLINE) { ctx.error('uwp: UWP_OFFLINE is set - ingestion needs to fetch. Unset it for the ingest job.'); return; }
       const report = await build({

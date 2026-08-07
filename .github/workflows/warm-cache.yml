@@ -14,14 +14,24 @@ name: Warm the hosted cache
 # in unleash-wp/wp-forge-mirror (#1 real data, #2 deploy, #3 point Forge at it),
 # after which no instance needs credentials of its own.
 #
-# Two things must be true on the server before this does anything useful, and
-# the job says so rather than succeeding quietly:
-#   - GITHUB_TOKEN in ~/.config/node/.env (unleash-wp/ai-forge#48). Anonymous is
-#     60 requests an hour for every visitor combined, and warming spends the
-#     same quota visitors need.
-#   - WPORG_TRAC_COOKIE in the same file, or a cookie file at
-#     ~/.config/wp-trac/cookie. The CLI refuses every plugin data command
-#     without it, measured, regardless of UWP_OFFLINE.
+# One thing must be true before this does anything useful, and the job says so
+# rather than succeeding quietly: a GitHub token, because anonymous GitHub is 60
+# requests an hour for every visitor combined and warming spends the same quota
+# visitors need (unleash-wp/ai-forge#48). The server's own GITHUB_TOKEN in
+# ~/.config/node/.env is used when it is there; otherwise this workflow forwards
+# its own short-lived Actions token, so the job works today instead of waiting.
+#
+# It used to demand a second thing, a wordpress.org cookie, and refuse to run
+# without one. That was wrong in the way that costs most: the cookie is for Trac,
+# `ingest-profiles` never asks Trac anything, and so the job that fixes the count
+# was blocked by a guard belonging to a feature it does not use. The profile
+# lookup it does use is public. Measured with a deliberately invalid cookie: the
+# ingest ran to completion and wrote 84 GitHub-to-wordpress.org mappings.
+#
+# The other half of the same bug: this called `contributors ingest-profiles`.
+# Dispatch matches only the first positional, so that ran the REPORTING command
+# and passed "ingest-profiles" along as its `since`. Wrong command, exit 0, no
+# message. The command is top-level: `ingest-profiles`.
 
 on:
   schedule:
@@ -62,15 +72,24 @@ jobs:
       - name: Warm the cache the app reads
         env:
           SSH_TARGET: ${{ secrets.MITTWALD_SSH_TARGET }}
+          # This run's own token, valid only while the job lasts. It is the
+          # fallback when the server has no token of its own, so the job can do
+          # its work today rather than waiting on a credential nobody has set.
+          FORWARDED_TOKEN: ${{ github.token }}
         # The remote script goes in on stdin, not as a quoted ssh argument. The
         # deploy beside this one learned the hard way that a single unescaped
         # quote inside such an argument truncates it and the step still exits 0.
         # A heredoc cannot lose its tail that way.
+        #
+        # The token goes down the same pipe, as the first line, and the remote
+        # shell reads exactly that line before handing the rest to bash. Not as an
+        # argument, because arguments are visible in `ps` to anyone else on a
+        # shared host, and not as a file, because a file outlives the job.
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
-              -o StrictHostKeyChecking=accept-new -o ConnectTimeout=25 \
-              "${SSH_TARGET}" 'bash -s' <<'REMOTE'
+          {
+            printf '%s\n' "${FORWARDED_TOKEN}"
+            cat <<'REMOTE'
           set -euo pipefail
 
           cd ~/forge
@@ -94,29 +113,29 @@ jobs:
           # more than a slow night.
           export UWP_FETCH_RPS="${UWP_FETCH_RPS:-2}"
 
-          missing=0
           if [ -z "${GITHUB_TOKEN:-}" ]; then
             echo '!! GITHUB_TOKEN is not set in ~/.config/node/.env'
-            echo '   Anonymous GitHub is 60 requests an hour for every visitor combined.'
-            echo '   See unleash-wp/ai-forge#48.'
-            missing=1
-          fi
-          if [ -z "${WPORG_TRAC_COOKIE:-}" ] && [ ! -s ~/.config/wp-trac/cookie ]; then
-            echo '!! No wordpress.org cookie: neither WPORG_TRAC_COOKIE nor ~/.config/wp-trac/cookie'
-            echo '   Every plugin data command refuses without it, measured.'
-            missing=1
-          fi
-          if [ "$missing" -ne 0 ]; then
-            echo '!! Nothing was warmed. Set the credentials above, then run this again.'
+            echo '   Anonymous GitHub is 60 requests an hour for every visitor combined,'
+            echo '   so warming would spend the quota visitors need.'
+            echo '!! Nothing was warmed. See unleash-wp/ai-forge#48 -- and note that the'
+            echo '   SERVING app needs the same token, so this is not busywork for the job.'
             exit 1
           fi
+
+          # No wordpress.org cookie is checked for, and that is deliberate. The
+          # cookie is Trac's; nothing below reads Trac. Requiring it here is what
+          # kept this job from ever running -- a guard for one feature refusing
+          # the fix for another.
 
           # Last full month: the window the "Month in Core" work actually uses,
           # and the one a visitor is most likely to open.
           MONTH=$(date -u -d '1 month ago' +%Y-%m 2>/dev/null || date -u -v-1m +%Y-%m)
 
           echo "==> Warming wordpress.org profiles for ${MONTH}"
-          node bin/ai-forge.mjs contributors ingest-profiles --month "$MONTH"
+          # Top-level command. `contributors ingest-profiles` ran the REPORTING
+          # command and passed "ingest-profiles" along as its `since`: wrong
+          # command, exit 0, nothing said.
+          node bin/ai-forge.mjs ingest-profiles --month "$MONTH"
 
           echo "==> Warming the commit cache for ${MONTH}"
           node bin/ai-forge.mjs contributors --month "$MONTH" --json > /dev/null
