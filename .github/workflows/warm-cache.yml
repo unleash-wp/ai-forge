@@ -14,24 +14,28 @@ name: Warm the hosted cache
 # in unleash-wp/wp-forge-mirror (#1 real data, #2 deploy, #3 point Forge at it),
 # after which no instance needs credentials of its own.
 #
-# One thing must be true before this does anything useful, and the job says so
-# rather than succeeding quietly: a GitHub token, because anonymous GitHub is 60
-# requests an hour for every visitor combined and warming spends the same quota
-# visitors need (unleash-wp/ai-forge#48). The server's own GITHUB_TOKEN in
-# ~/.config/node/.env is used when it is there; otherwise this workflow forwards
-# its own short-lived Actions token, so the job works today instead of waiting.
+# It works. On 2026-08-07 a hand-started run ingested 281 contributors, resolved
+# 182 employers, and took identityGap from 87 to 0 on the delivered page.
 #
-# It used to demand a second thing, a wordpress.org cookie, and refuse to run
-# without one. That was wrong in the way that costs most: the cookie is for Trac,
-# `ingest-profiles` never asks Trac anything, and so the job that fixes the count
-# was blocked by a guard belonging to a feature it does not use. The profile
-# lookup it does use is public. Measured with a deliberately invalid cookie: the
-# ingest ran to completion and wrote 84 GitHub-to-wordpress.org mappings.
+# Getting there took four separate guards off its neck, and they are worth
+# listing because each looked deliberate:
 #
-# The other half of the same bug: this called `contributors ingest-profiles`.
-# Dispatch matches only the first positional, so that ran the REPORTING command
-# and passed "ingest-profiles" along as its `since`. Wrong command, exit 0, no
-# message. The command is top-level: `ingest-profiles`.
+#   - a wordpress.org cookie demanded of every command. The cookie is Trac's;
+#     ingest-profiles never asks Trac anything, and the profile lookup it does
+#     use is public. A test had pinned the demand in place.
+#   - the wrong command name. `contributors ingest-profiles` ran the REPORTING
+#     command and passed "ingest-profiles" along as its `since`: exit 0, no
+#     message, nothing warmed.
+#   - a GitHub token demanded unconditionally. The mapping costs GitHub nothing,
+#     and a cached commit window costs nothing either, so the token gate withheld
+#     a fix that was free. Now: the nightly run insists, a hand-started run
+#     measures what is left of the anonymous hour and decides.
+#   - a second, redundant CLI call afterwards that still carried the cookie gate,
+#     so the job reported failure for work that had already succeeded.
+#
+# What is still wanted is GITHUB_TOKEN in ~/.config/node/.env, for the SERVING
+# app rather than for this job: without it every visitor shares 60 requests an
+# hour, and the instance has hit that ceiling (unleash-wp/ai-forge#48).
 
 on:
   schedule:
@@ -193,13 +197,18 @@ jobs:
           MONTH=$(date -u -d '1 month ago' +%Y-%m 2>/dev/null || date -u -v-1m +%Y-%m)
 
           echo "==> Warming wordpress.org profiles for ${MONTH}"
-          # Top-level command. `contributors ingest-profiles` ran the REPORTING
-          # command and passed "ingest-profiles" along as its `since`: wrong
-          # command, exit 0, nothing said.
+          # Top-level command name, and the only command this job runs.
+          #
+          # A second call followed it -- the reporting command, to warm the commit
+          # cache -- and it warmed nothing: the ingest builds the same report over
+          # the same window with a SUPERSET of the options, so the cache was
+          # already warm before that line ran. What it did add was the
+          # wordpress.org gate, which the reporting command keeps because it
+          # reports Trac ticket activity, on a host that has no cookie and is not
+          # meant to have one. The run of 2026-08-07 ingested 281 contributors,
+          # resolved 182 employers, took identityGap to 0 -- and then exited 1 on
+          # that redundant line, reporting failure for work that had succeeded.
           node bin/ai-forge.mjs ingest-profiles --month "$MONTH"
-
-          echo "==> Warming the commit cache for ${MONTH}"
-          node bin/ai-forge.mjs contributors --month "$MONTH" --json > /dev/null
 
           echo '==> What is in the cache now'
           # Effect, not intent: name the directory and show that it has content.
