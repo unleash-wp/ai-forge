@@ -137,10 +137,44 @@ jobs:
             echo '   To warm now anyway, start this workflow by hand.'
             exit 1
           else
-            REMAINING=$(curl -fsS -m 15 https://api.github.com/rate_limit \
-              | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{console.log(JSON.parse(d).resources.core.remaining)}catch{console.log(0)}})') || REMAINING=0
+            # From the response HEADER, not the body, and the reason is worth the
+            # lines. The first version parsed the JSON with a quoted `node -e`
+            # program. On the server node received only the word "let" and died:
+            #
+            #     ReferenceError: let is not defined
+            #
+            # What that is NOT: a transport problem. Checked by extracting this
+            # step and stubbing ssh -- the program arrives at the far end
+            # character for character, and it runs correctly here. So something in
+            # the remote node invocation splits its argument, and the remote node
+            # is not ours to assume. This job already runs on a host we configure
+            # loosely; it should not also depend on how an interpreter there is
+            # wrapped.
+            #
+            # The part that made it costly was the trailing `|| REMAINING=0`,
+            # which dressed a crash up as a measured zero -- so the job refused on
+            # a number nobody had measured. Same shape as the failures this
+            # product is sold to prevent.
+            #
+            # x-ratelimit-remaining carries the same number, and getting it needs
+            # only the tools this script already relies on. Every api.github.com
+            # response returns it.
+            REMAINING=$(curl -fsS -m 15 -o /dev/null -D - https://api.github.com/rate_limit \
+              | tr -d '\r' | awk 'tolower($1) == "x-ratelimit-remaining:" { print $2 }') || REMAINING=''
+
+            # Unreadable is not empty. Keeping the two apart is the same rule the
+            # product itself is built on: 503 means no answer was obtained, 403
+            # means an answer was obtained and it was no.
+            if [ -z "${REMAINING}" ]; then
+              echo '!! Could not read x-ratelimit-remaining from api.github.com.'
+              echo '   That is NOT the same as having none left, so nothing is assumed.'
+              echo '!! Nothing was warmed. Set GITHUB_TOKEN (ai-forge#48) and this'
+              echo '   question stops being asked at all.'
+              exit 1
+            fi
+
             echo "==> No GitHub token; anonymous requests left this hour: ${REMAINING}"
-            if [ "${REMAINING:-0}" -lt 50 ]; then
+            if [ "${REMAINING}" -lt 50 ]; then
               echo '!! Too little left to risk. Visitors share this budget.'
               echo '!! Nothing was warmed. Set GITHUB_TOKEN (ai-forge#48) or retry later.'
               exit 1
