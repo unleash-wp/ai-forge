@@ -72,24 +72,19 @@ jobs:
       - name: Warm the cache the app reads
         env:
           SSH_TARGET: ${{ secrets.MITTWALD_SSH_TARGET }}
-          # This run's own token, valid only while the job lasts. It is the
-          # fallback when the server has no token of its own, so the job can do
-          # its work today rather than waiting on a credential nobody has set.
-          FORWARDED_TOKEN: ${{ github.token }}
+          # Not a secret, and not a preference: the nightly run must not risk the
+          # anonymous GitHub budget visitors share, while a run someone started by
+          # hand is someone deciding to. See the branch further down.
+          STRICT: ${{ github.event_name != 'workflow_dispatch' }}
         # The remote script goes in on stdin, not as a quoted ssh argument. The
         # deploy beside this one learned the hard way that a single unescaped
         # quote inside such an argument truncates it and the step still exits 0.
         # A heredoc cannot lose its tail that way.
-        #
-        # The token goes down the same pipe, as the first line, and the remote
-        # shell reads exactly that line before handing the rest to bash. Not as an
-        # argument, because arguments are visible in `ps` to anyone else on a
-        # shared host, and not as a file, because a file outlives the job.
         run: |
           set -euo pipefail
-          {
-            printf '%s\n' "${FORWARDED_TOKEN}"
-            cat <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+              -o StrictHostKeyChecking=accept-new -o ConnectTimeout=25 \
+              "${SSH_TARGET}" "STRICT='${STRICT}' bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd ~/forge
@@ -113,13 +108,45 @@ jobs:
           # more than a slow night.
           export UWP_FETCH_RPS="${UWP_FETCH_RPS:-2}"
 
-          if [ -z "${GITHUB_TOKEN:-}" ]; then
-            echo '!! GITHUB_TOKEN is not set in ~/.config/node/.env'
-            echo '   Anonymous GitHub is 60 requests an hour for every visitor combined,'
-            echo '   so warming would spend the quota visitors need.'
-            echo '!! Nothing was warmed. See unleash-wp/ai-forge#48 -- and note that the'
-            echo '   SERVING app needs the same token, so this is not busywork for the job.'
+          # A token is what this job should have, and the nightly run insists on
+          # one. A hand-started run does not, and the difference is measured
+          # rather than assumed.
+          #
+          # The work splits in two. The profile mapping -- the part that makes
+          # identityGap go away -- reads profiles.wordpress.org, which is public
+          # and costs GitHub nothing. Only the commit window behind it touches
+          # GitHub, and it reads through the cache. When that window is already
+          # cached, the whole run makes ZERO GitHub requests, and refusing it for
+          # want of a token withholds a fix that costs nothing.
+          #
+          # Measured: with a warm commit cache and GITHUB_TOKEN unset, the ingest
+          # completed -- 199 contributors, employer resolved for 128.
+          #
+          # So without a token: ask GitHub what is left of the anonymous hour and
+          # decide on the answer. A warm run spends none of it. A cold one cannot
+          # finish inside 60 requests anyway, and would spend the budget visitors
+          # share -- the instance has hit that ceiling before (ai-forge#48).
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            echo '==> GitHub token present'
+          elif [ "${STRICT:-true}" = 'true' ]; then
+            echo '!! GITHUB_TOKEN is not set in ~/.config/node/.env, and this is the'
+            echo '   scheduled run. Nightly warming is not worth any risk to the 60'
+            echo '   requests an hour that every visitor shares.'
+            echo '!! Nothing was warmed. See unleash-wp/ai-forge#48 -- the SERVING app'
+            echo '   needs the same token, so this is not busywork for the job.'
+            echo '   To warm now anyway, start this workflow by hand.'
             exit 1
+          else
+            REMAINING=$(curl -fsS -m 15 https://api.github.com/rate_limit \
+              | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{console.log(JSON.parse(d).resources.core.remaining)}catch{console.log(0)}})') || REMAINING=0
+            echo "==> No GitHub token; anonymous requests left this hour: ${REMAINING}"
+            if [ "${REMAINING:-0}" -lt 50 ]; then
+              echo '!! Too little left to risk. Visitors share this budget.'
+              echo '!! Nothing was warmed. Set GITHUB_TOKEN (ai-forge#48) or retry later.'
+              exit 1
+            fi
+            echo '    Proceeding: a cached window needs none of these. If the window is'
+            echo '    cold this will run out and fail, which is the honest outcome.'
           fi
 
           # No wordpress.org cookie is checked for, and that is deliberate. The
@@ -152,10 +179,15 @@ jobs:
         # gone means the counts are counts again rather than upper bounds.
         run: |
           set -euo pipefail
+          # The SAME window the step above warmed. It used to ask about a fixed
+          # 2025-10, which is a different question: a gap there says nothing
+          # about whether this run did anything, and no gap there would have
+          # reported success for work that never happened.
+          MONTH=$(date -u -d '1 month ago' +%Y-%m 2>/dev/null || date -u -v-1m +%Y-%m)
           GAP=$(curl -fsS -m 120 \
-            'https://mcp.unleash-wp.com/api/contributors?month=2025-10&companies=false&committers=false&tickets=false' \
+            "https://mcp.unleash-wp.com/api/contributors?month=${MONTH}&companies=false&committers=false&tickets=false" \
             | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{const r=JSON.parse(d).report;console.log(r.identityGap ?? 0)})')
-          echo "identityGap on the delivered page: ${GAP}"
+          echo "identityGap for ${MONTH} on the delivered page: ${GAP}"
           if [ "$GAP" != "0" ]; then
             echo "note: still ${GAP} unmatched GitHub logins; the count is an upper bound until this reaches 0"
           fi
