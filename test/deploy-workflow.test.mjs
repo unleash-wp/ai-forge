@@ -172,13 +172,27 @@ test('the warm-up job writes where the app reads', { skip: !existsSync(warmPath)
   assert.ok(wf.includes('unset UWP_OFFLINE'), 'this job is the one allowed to fetch');
 });
 
-test('BELL: without credentials the warm-up fails instead of reporting success', { skip: !existsSync(warmPath) }, () => {
-  // Proven by running the extracted block: with neither credential it prints
-  // both reasons and exits 1; with both it proceeds. A job that exits 0 having
-  // warmed nothing is the failure this whole stack keeps producing.
+test('BELL: without a GitHub token the warm-up fails instead of reporting success', { skip: !existsSync(warmPath) }, () => {
+  // A job that exits 0 having warmed nothing is the failure this whole stack
+  // keeps producing, so the one credential the work genuinely needs stays fatal.
   const wf = readFileSync(warmPath, 'utf8');
   assert.ok(wf.includes('GITHUB_TOKEN'), 'it checks for the GitHub token');
-  assert.ok(wf.includes('WPORG_TRAC_COOKIE'), 'it checks for the wordpress.org cookie');
   assert.ok(wf.includes('Nothing was warmed'), 'it says so');
-  assert.ok(/missing.*-ne 0/s.test(wf) && wf.includes('exit 1'), 'and it exits non-zero');
+  assert.ok(wf.includes('exit 1'), 'and it exits non-zero');
+});
+
+test('SILENCE: it does NOT demand a wordpress.org cookie', { skip: !existsSync(warmPath) }, () => {
+  // This assertion used to run the other way, and that is the point of writing it
+  // down. The earlier version required WPORG_TRAC_COOKIE and pinned the demand in
+  // place, so the guard looked deliberate and reviewed. It was neither: the
+  // cookie is Trac's, `ingest-profiles` never asks Trac (ticket activity is
+  // fetched only under `opts.tickets`, which it does not set), and the profile
+  // lookup it does use is public. Measured with an invalid cookie value: the
+  // ingest completed and wrote 84 mappings.
+  //
+  // Net effect while it stood: the job that turns the contributor count from an
+  // upper bound into a count could not run at all, on a hosted instance whose
+  // whole visible defect was that upper bound.
+  const wf = readFileSync(warmPath, 'utf8');
+  assert.ok(!wf.includes('WPORG_TRAC_COOKIE'), 'no cookie gate: this job never reads Trac');
 });

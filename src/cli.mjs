@@ -1,10 +1,21 @@
 import { resolveCookie } from './connectors/wporg-cookie.mjs';
 
-// WordPress.org is mandatory for any plugin data command: without a logged-in
-// session Trac serves its bot wall and contributor + Core ticket counts come back
-// inaccurate. Throw a clear, actionable error before running one. The connect path
-// (`cookie-import`) and `serve`/`mcp`/`update`/`skills`/help are handled earlier
-// and stay open, so the user can always reach the way to connect.
+// WordPress.org is required for a plugin data command that reads Trac: without a
+// logged-in session Trac serves its bot wall and contributor + Core ticket counts
+// come back inaccurate. Throw a clear, actionable error before running one. The
+// connect path (`cookie-import`) and `serve`/`mcp`/`update`/`skills`/help are
+// handled earlier and stay open, so the user can always reach the way to connect.
+//
+// It is NOT required of every command, and asking anyway had a cost. This gate ran
+// unconditionally and so it blocked `contributors ingest-profiles`, the one command
+// whose whole job is to fetch the GitHub-login-to-wordpress.org mapping that turns
+// the contributor count from an upper bound into a count. That command never asks
+// Trac anything: ticket activity is fetched only under `opts.tickets`
+// (plugins/contributors/lib/report.mjs), which it does not set, and the mapping
+// endpoint it does use is public. Measured, with a deliberately invalid cookie
+// value: it ran to completion and wrote 84 mappings. So the guard for a feature
+// held back the fix for a different one, and the hosted instance kept reporting
+// `identityGap` for want of a credential it had no use for.
 function requireWporg() {
   if (resolveCookie()) return;
   throw new Error(
@@ -101,7 +112,16 @@ export async function run(argv) {
     const { loadPlugins } = await import('./plugins.mjs');
     for (const p of await loadPlugins()) {
       const cmd = (p.commands || []).find((c) => c.name === sub);
-      if (cmd) { requireWporg(); await cmd.run(args, { log: console.log, error: console.error }); return; }
+      // A command declares for itself whether it reads wordpress.org. The default
+      // is to require it, so a command that declares nothing keeps today's
+      // behaviour. That default is the safe direction: asking for the cookie
+      // needlessly costs one confusing message, while skipping it wrongly costs an
+      // inaccurate count presented as a count.
+      if (cmd) {
+        if (cmd.needsWporg !== false) requireWporg();
+        await cmd.run(args, { log: console.log, error: console.error });
+        return;
+      }
     }
   }
 
