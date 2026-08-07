@@ -139,6 +139,40 @@ test('BELL: an unreadable rate limit is not compared as a number', { skip: !exis
   );
 });
 
+test('BELL: the warm job only calls commands that need no wordpress.org cookie', { skip: !existsSync(dir) }, async () => {
+  // The host has no cookie and is not meant to have one -- that is the whole
+  // reason ingest-profiles was opened up. So a command in this job that still
+  // carries the gate cannot succeed there, ever.
+  //
+  // It is not a loud failure either. The run of 2026-08-07 ingested 281
+  // contributors, resolved 182 employers and took identityGap to 0, then exited
+  // 1 on a redundant command afterwards -- reporting failure for work that had
+  // succeeded. Which is the same disease as reporting success for work that had
+  // not: the exit code stopped describing the outcome.
+  //
+  // Read from the command definitions rather than a list kept here, so adding a
+  // gated command to the job fails without anyone remembering to update a list.
+  const warm = runBlocks()
+    .map((b) => code(b.body))
+    .find((b) => b.includes('ai-forge.mjs'));
+  assert.ok(warm, 'the warm job no longer runs the CLI at all');
+
+  const { commands = [] } = await import('../plugins/contributors/server.mjs')
+    .then((m) => m.default ?? m);
+  const gated = commands.filter((c) => c.needsWporg !== false).map((c) => c.name);
+  assert.ok(gated.length > 0, 'no command is gated any more; this check would be vacuous');
+
+  const called = [...warm.matchAll(/ai-forge\.mjs\s+([a-z][a-z0-9-]*)/g)].map((m) => m[1]);
+  assert.ok(called.length > 0, 'the workflow calls no command');
+
+  const offenders = called.filter((c) => gated.includes(c));
+  assert.deepEqual(
+    offenders,
+    [],
+    `These need a wordpress.org cookie the warm host does not have: ${offenders.join(', ')}`,
+  );
+});
+
 test('BELL: a step that means to reach the server actually invokes ssh', { skip: !existsSync(dir) }, () => {
   // The specific shape of the bug above: the script survived, the transport did
   // not. A heredoc named REMOTE is only ever there to be fed to a remote shell,
