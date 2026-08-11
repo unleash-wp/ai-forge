@@ -11,6 +11,11 @@ jobs:
   # build here. The build toolchain (Babel 8) needs Node >=22 and would falsely
   # fail the 18/20 legs.
   test:
+    # Stays on GitHub-hosted runners, deliberately. This repository is PUBLIC:
+    # a pull_request workflow runs a stranger's code, and on our own runner that
+    # is our filesystem, our SSH agent and our deploy key. See lumo-pro's
+    # docs/self-hosted-runner.md. Do not add the RUNNER_LABEL switch here -- it
+    # also reads organisation variables, so it would move this repo too.
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -36,6 +41,11 @@ jobs:
 
   # Build coverage: the webpack/Babel toolchain runs on the release Node version.
   build:
+    # Stays on GitHub-hosted runners, deliberately. This repository is PUBLIC:
+    # a pull_request workflow runs a stranger's code, and on our own runner that
+    # is our filesystem, our SSH agent and our deploy key. See lumo-pro's
+    # docs/self-hosted-runner.md. Do not add the RUNNER_LABEL switch here -- it
+    # also reads organisation variables, so it would move this repo too.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
